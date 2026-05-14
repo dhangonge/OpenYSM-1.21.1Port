@@ -18,7 +18,7 @@ import org.gagravarr.ogg.OggStreamIdentifier.OggStreamType;
 
 /**
  * Interface for reading the headers at the start of an
- *  {@link OggAudioStream}
+ *  {@link Object }
  */
 public interface OggAudioHeaders {
     /**

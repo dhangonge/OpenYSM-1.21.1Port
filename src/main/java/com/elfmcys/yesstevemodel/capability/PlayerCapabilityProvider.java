@@ -1,47 +1,51 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.core.Direction;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import com.elfmcys.yesstevemodel.YesSteveModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 @OnlyIn(Dist.CLIENT)
-public class PlayerCapabilityProvider implements ICapabilityProvider {
+public final class PlayerCapabilityProvider implements ICapabilityProvider<Entity, Void, PlayerCapability> {
 
-    public static Capability<PlayerCapability> PLAYER_CAP = CapabilityManager.get(new CapabilityToken<PlayerCapability>() {
-    });
+    public static final EntityCapability<PlayerCapability, Void> PLAYER_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "animatable"), PlayerCapability.class);
 
-    private PlayerCapability capability;
+    public static final PlayerCapabilityProvider INSTANCE = new PlayerCapabilityProvider();
 
-    private AbstractClientPlayer player;
+    private final ConcurrentHashMap<UUID, PlayerCapability> cache = new ConcurrentHashMap<>();
 
-    public PlayerCapabilityProvider(AbstractClientPlayer abstractClientPlayer) {
-        this.player = abstractClientPlayer;
-    }
+    private PlayerCapabilityProvider() {}
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return getCapability(capability);
-    }
-
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability) {
-        return PLAYER_CAP.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
-    }
-
-    @NotNull
-    private PlayerCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new PlayerCapability(this.player);
-            this.player = null;
+    @Override
+    @Nullable
+    public PlayerCapability getCapability(Entity entity, Void context) {
+        if (entity instanceof Player player) {
+            return cache.computeIfAbsent(entity.getUUID(), uuid -> new PlayerCapability(player));
         }
-        return this.capability;
+        return null;
+    }
+
+    public void invalidate(UUID uuid) {
+        cache.remove(uuid);
+    }
+
+    @EventBusSubscriber(value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
+    private static class CleanupHandler {
+        @SubscribeEvent
+        public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+            INSTANCE.invalidate(event.getEntity().getUUID());
+        }
     }
 }

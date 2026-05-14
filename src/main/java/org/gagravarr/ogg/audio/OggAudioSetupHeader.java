@@ -15,10 +15,10 @@ package org.gagravarr.ogg.audio;
 
 import org.gagravarr.ogg.OggStreamPacket;
 
+/* TODO: OggAudioStream removed */
 /**
  * Common interface for the Setup header near the
- *  start of an {@link OggAudioStream}.
- *
+ *  start of an {@link Object}.
  * Note that not all Ogg Audio formats have Setup headers.
  */
 public interface OggAudioSetupHeader extends OggStreamPacket {

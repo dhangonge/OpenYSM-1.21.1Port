@@ -27,17 +27,19 @@ public class JadeWailaPlugin implements IWailaPlugin {
         public void appendTooltip(ITooltip iTooltip, EntityAccessor entityAccessor, IPluginConfig iPluginConfig) {
             Entity entity = entityAccessor.getEntity();
             if (entity instanceof Player) {
-                entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+                var cap = entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+                if (cap != null) {
                     if (cap.isModelActive()) {
                         iTooltip.add(Component.translatable("top.yes_steve_model.model_info.id").append(cap.getModelAssembly().getDisplayName(FileTypeUtil.getNameWithoutArchiveExtension(cap.getModelId()))));
                     }
-                });
+                }
             } else {
-                entityAccessor.getEntity().getCapability(VehicleCapabilityProvider.VEHICLE_CAP).ifPresent(cap -> {
+                var cap = entityAccessor.getEntity().getCapability(VehicleCapabilityProvider.VEHICLE_CAP);
+                if (cap != null) {
                     if (cap.isModelInitialized() && cap.isModelReady()) {
                         iTooltip.add(Component.translatable("top.yes_steve_model.model_info.id").append(cap.getModelAssembly().getDisplayName(FileTypeUtil.getNameWithoutArchiveExtension(cap.getModelId()))));
                     }
-                });
+                }
             }
         }
 

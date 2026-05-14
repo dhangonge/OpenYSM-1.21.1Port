@@ -1,5 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.event.EntityJoinCallbackEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
@@ -10,18 +12,29 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Math;
 
-import java.util.function.Supplier;
+public class S2CSyncPlayerStatePacket implements CustomPacketPayload, IPayloadHandler<S2CSyncPlayerStatePacket> {
 
-public class S2CSyncPlayerStatePacket {
+    public static final CustomPacketPayload.Type<S2CSyncPlayerStatePacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "sync_player_state"));
+
+    public static final StreamCodec<FriendlyByteBuf, S2CSyncPlayerStatePacket> STREAM_CODEC =
+            StreamCodec.of(S2CSyncPlayerStatePacket::encode, S2CSyncPlayerStatePacket::decode);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     public int entityId;
 
@@ -173,7 +186,7 @@ public class S2CSyncPlayerStatePacket {
         return this;
     }
 
-    public static void encode(S2CSyncPlayerStatePacket message, FriendlyByteBuf buffer) {
+    public static void encode(FriendlyByteBuf buffer, S2CSyncPlayerStatePacket message) {
         buffer.writeVarInt(message.entityId);
         buffer.writeShort(message.flags);
         short flags = message.flags;
@@ -183,7 +196,7 @@ public class S2CSyncPlayerStatePacket {
         if ((flags & 4) != 0) {
             buffer.writeVarInt(message.effectAmplifiers.size());
             Object2ByteMaps.fastForEach(message.effectAmplifiers, entry -> {
-                buffer.writeId(BuiltInRegistries.MOB_EFFECT, entry.getKey());
+                buffer.writeVarInt(BuiltInRegistries.MOB_EFFECT.getId(entry.getKey()));
                 buffer.writeByte(entry.getByteValue());
             });
         }
@@ -237,12 +250,12 @@ public class S2CSyncPlayerStatePacket {
             if (effectCount == 0) {
                 message.effectAmplifiers = Object2ByteMaps.emptyMap();
             } else if (effectCount == 1) {
-                message.effectAmplifiers = Object2ByteMaps.singleton(buffer.readById(BuiltInRegistries.MOB_EFFECT), buffer.readByte());
+                message.effectAmplifiers = Object2ByteMaps.singleton(BuiltInRegistries.MOB_EFFECT.byId(buffer.readVarInt()), buffer.readByte());
             } else {
                 MobEffect[] effects = new MobEffect[effectCount];
                 byte[] amplifiers = new byte[effectCount];
                 for (int i = 0; i < effectCount; i++) {
-                    effects[i] = buffer.readById(BuiltInRegistries.MOB_EFFECT);
+                    effects[i] = BuiltInRegistries.MOB_EFFECT.byId(buffer.readVarInt());
                     amplifiers[i] = buffer.readByte();
                 }
                 message.effectAmplifiers = new Object2ByteArrayMap<>(effects, amplifiers);
@@ -301,18 +314,19 @@ public class S2CSyncPlayerStatePacket {
         return message;
     }
 
-    public static void handle(S2CSyncPlayerStatePacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            EntityJoinCallbackEvent.addCallback(message.entityId, entity -> handleCapability(entity, message));
+    @Override
+    public void handle(S2CSyncPlayerStatePacket payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() ->
+                    EntityJoinCallbackEvent.addCallback(payload.entityId, entity -> handleCapability(entity, payload))
+            );
         }
-        context.setPacketHandled(true);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void handleCapability(Entity entity, S2CSyncPlayerStatePacket message) {
         if (entity instanceof Player) {
-            entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+            PlayerCapability cap = entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP, null);
+            if (cap != null) {
                 if ((message.flags & 2048) != 0) {
                     if (!StringUtils.isEmpty(message.modelSwitchId)) {
                         cap.requestModelSwitch(message.modelSwitchId);
@@ -328,7 +342,7 @@ public class S2CSyncPlayerStatePacket {
                     }
                 }
                 cap.getPositionTracker().applySyncMessage(message);
-            });
+            }
         }
     }
 }

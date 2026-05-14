@@ -2,7 +2,7 @@ package com.elfmcys.yesstevemodel.client.compat.bettercombat;
 
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.client.animation.molang.CtrlBinding;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.LoadingModList;
 
 public class BetterCombatCompat {
 

@@ -7,9 +7,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin({FishingHook.class})
 public interface FishingHookAccessor {
-    @Accessor("biting")
+    @Accessor(value="biting",remap = false)
     boolean isBiting();
 
-    @Accessor("hookedIn")
+    @Accessor(value="hookedIn",remap = false)
     Entity getHookedIn();
 }

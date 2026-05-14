@@ -1,16 +1,25 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class C2SRequestSwitchModelPacket implements CustomPacketPayload, IPayloadHandler<C2SRequestSwitchModelPacket> {
 
-public class C2SRequestSwitchModelPacket {
+    public static final CustomPacketPayload.Type<C2SRequestSwitchModelPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "c2s_request_switch_model"));
+
+    public static final StreamCodec<FriendlyByteBuf, C2SRequestSwitchModelPacket> STREAM_CODEC =
+            StreamCodec.of(C2SRequestSwitchModelPacket::encode, C2SRequestSwitchModelPacket::decode);
 
     private final String modelId;
 
@@ -21,7 +30,7 @@ public class C2SRequestSwitchModelPacket {
         this.textureId = textureId;
     }
 
-    public static void encode(C2SRequestSwitchModelPacket message, FriendlyByteBuf buf) {
+    public static void encode(FriendlyByteBuf buf, C2SRequestSwitchModelPacket message) {
         buf.writeUtf(message.modelId);
         buf.writeUtf(message.textureId);
     }
@@ -30,22 +39,26 @@ public class C2SRequestSwitchModelPacket {
         return new C2SRequestSwitchModelPacket(buf.readUtf(), buf.readUtf());
     }
 
-    public static void handle(C2SRequestSwitchModelPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isServer()) {
+    @Override
+    public Type<C2SRequestSwitchModelPacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(C2SRequestSwitchModelPacket payload, IPayloadContext context) {
+        if (context.flow().isServerbound()) {
             context.enqueueWork(() -> {
-                ServerPlayer sender = context.getSender();
+                ServerPlayer sender = (ServerPlayer) context.player();
                 if (sender != null && ServerConfig.CAN_SWITCH_MODEL.get()) {
-                    handleCapability(message, sender);
+                    handleCapability(payload, sender);
                 }
             });
         }
-        context.setPacketHandled(true);
     }
 
     private static void handleCapability(C2SRequestSwitchModelPacket message, ServerPlayer sender) {
-        sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
-            sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(cap2 -> {
+        sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null).ifPresent(cap -> {
+            sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null).ifPresent(cap2 -> {
                 String str = message.modelId;
                 if (!ServerModelManager.getServerModelInfo().containsKey(str) || ((ServerModelManager.getAuthModels().contains(str) && !cap2.containsModel(message.modelId)) || !ServerModelManager.getServerModelInfo().get(str).getModelInfo().getTextures().contains(message.textureId))) {
                     cap.resetToDefault();

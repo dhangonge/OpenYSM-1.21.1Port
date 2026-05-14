@@ -30,13 +30,14 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.locating.IModFile;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.locating.IModFile;
+import net.neoforged.neoforge.network.connection.ConnectionType;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -935,13 +936,13 @@ public final class ServerModelManager {
     private static boolean sendModelData(UUID uuid, ByteBuffer byteBuffer, PendingTransfer pendingTransfer) {
         Connection connection = getPlayerConnection(uuid);
         if (connection != null) {
-            return sendPacketReliably(connection, NetworkHandler.CHANNEL.toVanillaPacket(new S2CModelSyncPayload(byteBuffer), NetworkDirection.PLAY_TO_CLIENT), pendingTransfer);
+            return sendPacketReliably(connection, new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(byteBuffer)), pendingTransfer);
         }
         return false;
     }
 
     private static Object createModelPacket(ByteBuffer byteBuffer) {
-        return NetworkHandler.CHANNEL.toVanillaPacket(new S2CModelSyncPayload(byteBuffer), NetworkDirection.PLAY_TO_CLIENT);
+        return new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(byteBuffer));
     }
 
     private static boolean sendPacketToPlayer(UUID uuid, Object obj, PendingTransfer pendingTransfer) {

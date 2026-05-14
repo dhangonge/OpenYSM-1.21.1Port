@@ -39,19 +39,21 @@ public final class TheOneProbeEntityProvider implements Function<ITheOneProbe, V
 
         public void addProbeEntityInfo(ProbeMode probeMode, IProbeInfo iProbeInfo, Player player, Level level, Entity entity, IProbeHitEntityData iProbeHitEntityData) {
             if (entity instanceof ServerPlayer serverPlayer) {
-                serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
+                var cap = serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+                if (cap != null) {
                     if (cap.isMandatory() || NetworkHandler.isPlayerConnected(serverPlayer)) {
                         ServerModelManager.getModelDefinition(cap.getModelId()).ifPresent(data -> {
                             iProbeInfo.horizontal(iProbeInfo.defaultLayoutStyle().alignment(ElementAlignment.ALIGN_CENTER)).text(Component.translatable("top.yes_steve_model.model_info.id").append(StringUtils.defaultIfBlank(data.getLoadedModelData().getExtraInfo() == null ? StringPool.EMPTY : data.getLoadedModelData().getExtraInfo().getName(), FileTypeUtil.getNameWithoutArchiveExtension(cap.getModelId()))));
                         });
                     }
-                });
+                }
             } else {
-                entity.getCapability(VehicleModelCapabilityProvider.VEHICLE_MODEL_CAP).ifPresent(cap -> {
+                var cap = entity.getCapability(VehicleModelCapabilityProvider.VEHICLE_MODEL_CAP);
+                if (cap != null) {
                     if (cap.isInitialized()) {
                         ServerModelManager.getModelDefinition(cap.getOwnerModelId()).filter(data -> data.getExcludedEntityTypes().contains(entity.getType().builtInRegistryHolder().key().location())).ifPresent(serverModelData -> iProbeInfo.horizontal(iProbeInfo.defaultLayoutStyle().alignment(ElementAlignment.ALIGN_CENTER)).text(Component.translatable("top.yes_steve_model.model_info.id").append(StringUtils.defaultIfBlank(serverModelData.getLoadedModelData().getExtraInfo() == null ? StringPool.EMPTY : serverModelData.getLoadedModelData().getExtraInfo().getName(), FileTypeUtil.getNameWithoutArchiveExtension(cap.getOwnerModelId())))));
                     }
-                });
+                }
             }
         }
 

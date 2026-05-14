@@ -2,7 +2,7 @@ package com.elfmcys.yesstevemodel.client.compat.immersivemelodies;
 
 import com.elfmcys.yesstevemodel.client.animation.molang.CtrlBinding;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class ImmersiveMelodiesCompat {
 

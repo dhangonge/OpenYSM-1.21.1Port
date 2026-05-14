@@ -5,7 +5,7 @@ import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.util.MathUtil;
 import immersive_aircraft.entity.AircraftEntity;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.LoadingModList;
 import org.joml.Vector3f;
 
 import java.util.Optional;

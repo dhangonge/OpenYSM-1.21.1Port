@@ -24,8 +24,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
+import net.neoforged.neoforge.network.connection.ConnectionType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.message.StringFormattedMessage;
@@ -491,7 +492,7 @@ public class ClientModelManager {
     }
 
     public static SyncStatus getSyncStatus() {
-        RenderSystem.assertOnGameThread();
+        RenderSystem.assertOnRenderThread();
         return syncState;
     }
 
@@ -569,7 +570,7 @@ public class ClientModelManager {
     private static void sendModelFile(ByteBuffer byteBuffer) {
         if (Minecraft.getInstance().player != null) {
             try {
-                NetworkHandler.CHANNEL.sendToServer(new C2SModelSyncPayload(byteBuffer));
+                NetworkHandler.sendToServer(new C2SModelSyncPayload(byteBuffer));
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -581,7 +582,7 @@ public class ClientModelManager {
             return;
         }
         try {
-            connection.send(NetworkHandler.CHANNEL.toVanillaPacket(new C2SModelSyncPayload(byteBuffer), NetworkDirection.PLAY_TO_SERVER));
+            connection.send(new ServerboundCustomPayloadPacket(new C2SModelSyncPayload(byteBuffer)));
         } catch (Exception e2) {
             e2.printStackTrace();
         }
@@ -631,7 +632,7 @@ public class ClientModelManager {
             if (iconTexture != null) {
                 ResourceLocation location2 = FileTypeUtil.getPackIconLocation(packData.getPath());
                 Minecraft.getInstance().submit(() -> {
-                    Minecraft.getInstance().textureManager.register(location2, iconTexture);
+                    Minecraft.getInstance().getTextureManager().register(location2, iconTexture);
                 });
             }
         }
@@ -639,7 +640,7 @@ public class ClientModelManager {
         for (ModelPackData packData : modelPackMap.values()) {
             if (!newPackMap.containsKey(packData.getPath()) && packData.getTexture() != null) {
                 ResourceLocation location = FileTypeUtil.getPackIconLocation(packData.getPath());
-                Minecraft.getInstance().submit(() -> Minecraft.getInstance().textureManager.release(location));
+                Minecraft.getInstance().submit(() -> Minecraft.getInstance().getTextureManager().release(location));
             }
         }
         modelPackMap = newPackMap;

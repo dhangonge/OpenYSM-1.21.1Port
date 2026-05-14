@@ -7,8 +7,8 @@ import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.IContext;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.geckolib3.core.enums.PlayState;
 import com.elfmcys.yesstevemodel.util.ItemTagsConstants;
-import mods.flammpfeil.slashblade.capability.slashblade.CapabilitySlashBlade;
-import mods.flammpfeil.slashblade.capability.slashblade.SlashBladeState;
+import mods.flammpfeil.slashblade.capability.slashblade.BladeStateAccess;
+import mods.flammpfeil.slashblade.capability.slashblade.ISlashBladeState;
 import mods.flammpfeil.slashblade.item.ItemSlashBlade;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -42,16 +42,18 @@ public class SlashBladeStateHelper {
         if (!SlashBladeCompat.isSlashBladeItem(itemStack)) {
             return StringPool.EMPTY;
         }
-        return itemStack.getCapability(CapabilitySlashBlade.BLADESTATE).map(iSlashBladeState -> {
+
+        return BladeStateAccess.of(itemStack).map(iSlashBladeState -> {
             long gameTime = (livingEntity.level().getGameTime() - iSlashBladeState.getLastActionTime()) * 50;
             if (SlashBladeCompat.hasNewApi()) {
                 return SlashBladeComboHelper.getComboState(iSlashBladeState, gameTime, livingEntity);
             }
-            if (iSlashBladeState instanceof SlashBladeState) {
-                return SlashBladeStateAccess.getComboState((SlashBladeState) iSlashBladeState, gameTime);
+            if (iSlashBladeState instanceof ISlashBladeState) {
+                return SlashBladeStateAccess.getComboState(iSlashBladeState, gameTime);
             }
             return StringPool.EMPTY;
         }).orElse(StringPool.EMPTY);
+
     }
 
     @NotNull

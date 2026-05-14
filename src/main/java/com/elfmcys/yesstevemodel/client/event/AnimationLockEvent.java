@@ -8,13 +8,12 @@ import com.elfmcys.yesstevemodel.network.message.C2SPlayAnimationPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber({Dist.CLIENT})
+@EventBusSubscriber({Dist.CLIENT})
 public class AnimationLockEvent {
 
     private static boolean animationLocked = false;
@@ -27,17 +26,18 @@ public class AnimationLockEvent {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent event) {
         LocalPlayer localPlayer;
-        if (YesSteveModel.isAvailable() && event.phase == TickEvent.Phase.END && !animationLocked && (localPlayer = Minecraft.getInstance().player) != null && isPlayerMoving(localPlayer)) {
-            localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        if (YesSteveModel.isAvailable() && event.phase == net.neoforged.neoforge.client.event.ClientTickEvent.Phase.END && !animationLocked && (localPlayer = Minecraft.getInstance().player) != null && isPlayerMoving(localPlayer)) {
+            var cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+            if (cap != null) {
                 if (cap.isModelSwitching()) {
                     cap.clearModelSwitch();
                     if (NetworkHandler.isClientConnected()) {
                         NetworkHandler.sendToServer(C2SPlayAnimationPacket.createDefault());
                     }
                 }
-            });
+            }
         }
     }
 

@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class IsItemNameAny extends LivingEntityFunction {
     @Override
@@ -20,7 +20,7 @@ public class IsItemNameAny extends LivingEntityFunction {
             return null;
         }
         ItemStack stack = CosmeticArmorHelper.getArmorItem(context.entity().entity(), slotType);
-        if (!stack.isEmpty() && (key = ForgeRegistries.ITEMS.getKey(stack.getItem())) != null) {
+        if (!stack.isEmpty() && (key = BuiltInRegistries.ITEM.getKey(stack.getItem())) != null) {
             for (int i = 1; i < arguments.size(); i++) {
                 ResourceLocation location = arguments.getResourceLocation(context, i);
                 if (location == null) {

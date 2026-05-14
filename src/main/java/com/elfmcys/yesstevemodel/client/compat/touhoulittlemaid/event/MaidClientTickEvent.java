@@ -1,13 +1,14 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event;
 
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.YsmMaidClientTickEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
 
 @OnlyIn(Dist.CLIENT)
 public class MaidClientTickEvent {
@@ -24,7 +25,7 @@ public class MaidClientTickEvent {
     }
 
     private void tickMaidModel(EntityMaid entityMaid) {
-        entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP).ifPresent(cap -> {
-        });
+        MaidCapability cap = entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        if(cap != null) return;
     }
 }

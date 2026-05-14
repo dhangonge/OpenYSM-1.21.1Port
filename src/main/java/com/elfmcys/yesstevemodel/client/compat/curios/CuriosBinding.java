@@ -20,6 +20,7 @@ import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 public class CuriosBinding {
@@ -68,24 +69,27 @@ public class CuriosBinding {
         if (!context.isDebugMode()) {
             return null;
         }
-        CuriosApi.getCuriosInventory(context.entity()).ifPresent(handler -> {
-            for (Map.Entry<String, ICurioStacksHandler> entry : handler.getCurios().entrySet()) {
-                context.logWarningComponent(Component.literal("-------- Type ").append(ComponentUtils.copyOnClickText(entry.getKey())).append(" --------"));
-                context.logWarning(StringPool.EMPTY);
-                findInSlot(entry.getValue(), stack -> {
-                    context.logWarningComponent(Component.literal("Display ").append(ComponentUtils.copyOnClickText(stack.getHoverName().getString(99))));
-                    Holder<Item> itemHolder = stack.getItemHolder();
-                    itemHolder.unwrapKey().ifPresent(resourceKey -> {
-                        context.logWarningComponent(Component.literal("Name ").append(ComponentUtils.copyOnClickText(resourceKey.location().toString())));
-                    });
-                    itemHolder.tags().forEach(tagKey -> {
-                        context.logWarningComponent(Component.literal("Tag ").append(ComponentUtils.copyOnClickText(tagKey.location().toString())));
-                    });
+        Optional<ICuriosItemHandler> opt = CuriosApi.getCuriosInventory(context.entity());
+        if(opt.isPresent()) {
+                for (Map.Entry<String, ICurioStacksHandler> entry : opt.get().getCurios().entrySet()) {
+                    context.logWarningComponent(Component.literal("-------- Type ").append(ComponentUtils.copyOnClickText(entry.getKey())).append(" --------"));
                     context.logWarning(StringPool.EMPTY);
-                    return false;
-                });
-            }
-        });
+                    findInSlot(entry.getValue(), stack -> {
+                        context.logWarningComponent(Component.literal("Display ").append(ComponentUtils.copyOnClickText(stack.getHoverName().getString(99))));
+                        Holder<Item> itemHolder = stack.getItemHolder();
+                        itemHolder.unwrapKey().ifPresent(resourceKey -> {
+                            context.logWarningComponent(Component.literal("Name ").append(ComponentUtils.copyOnClickText(resourceKey.location().toString())));
+                        });
+                        itemHolder.tags().forEach(tagKey -> {
+                            context.logWarningComponent(Component.literal("Tag ").append(ComponentUtils.copyOnClickText(tagKey.location().toString())));
+                        });
+                        context.logWarning(StringPool.EMPTY);
+                        return false;
+                    });
+                }
+
+        }
+
         return null;
     }
 }

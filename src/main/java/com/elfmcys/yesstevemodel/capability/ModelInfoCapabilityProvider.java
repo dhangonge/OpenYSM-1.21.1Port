@@ -1,45 +1,42 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.core.Direction;
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import org.jetbrains.annotations.Nullable;
 
-public class ModelInfoCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static Capability<ModelInfoCapability> MODEL_INFO_CAP = CapabilityManager.get(new CapabilityToken<ModelInfoCapability>() {
-    });
+public final class ModelInfoCapabilityProvider implements ICapabilityProvider<Entity, Void, ModelInfoCapability> {
 
-    private ModelInfoCapability capability = null;
+    public static final EntityCapability<ModelInfoCapability, Void> MODEL_INFO_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "model_id"), ModelInfoCapability.class);
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return MODEL_INFO_CAP.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
+    public static final ModelInfoCapabilityProvider INSTANCE = new ModelInfoCapabilityProvider();
+
+    private final ConcurrentHashMap<UUID, ModelInfoCapability> cache = new ConcurrentHashMap<>();
+
+    private ModelInfoCapabilityProvider() {}
+
+    @Override
+    @Nullable
+    public ModelInfoCapability getCapability(Entity entity, Void context) {
+        return cache.computeIfAbsent(entity.getUUID(), uuid -> new ModelInfoCapability());
     }
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability) {
-        return getCapability(capability, null);
+    public CompoundTag serializeNBT(Entity entity) {
+        ModelInfoCapability cap = getCapability(entity, null);
+        return cap != null ? cap.serializeNBT() : new CompoundTag();
     }
 
-    @NotNull
-    private ModelInfoCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new ModelInfoCapability();
+    public void deserializeNBT(Entity entity, CompoundTag nbt) {
+        ModelInfoCapability cap = getCapability(entity, null);
+        if (cap != null) {
+            cap.deserializeNBT(nbt);
         }
-        return this.capability;
-    }
-
-    public void deserializeNBT(CompoundTag compoundTag) throws NumberFormatException {
-        getOrCreateCapability().deserializeNBT(compoundTag);
-    }
-
-    public CompoundTag serializeNBT() {
-        return getOrCreateCapability().serializeNBT();
     }
 }

@@ -515,9 +515,9 @@ public class AnimationRouletteScreen extends Screen {
             }
             Entity entity = this.animatableModel.getEntity();
             if (entity instanceof Player) {
-                NetworkHandler.CHANNEL.sendToServer(new C2SPlayAnimationPacket(this.hoveredIndex, str2));
+                NetworkHandler.sendToServer(new C2SPlayAnimationPacket(this.hoveredIndex, str2));
             } else {
-                NetworkHandler.CHANNEL.sendToServer(new C2SPlayAnimationPacket(this.hoveredIndex, str2, entity.getId()));
+                NetworkHandler.sendToServer(new C2SPlayAnimationPacket(this.hoveredIndex, str2, entity.getId()));
             }
         } else if (localPlayer != null) {
             localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {

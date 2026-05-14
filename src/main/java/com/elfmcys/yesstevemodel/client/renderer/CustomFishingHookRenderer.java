@@ -14,7 +14,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ToolActions;
+import net.minecraft.world.item.FishingRodItem;
 import org.spongepowered.asm.mixin.Unique;
 
 public class CustomFishingHookRenderer {
@@ -38,7 +38,7 @@ public class CustomFishingHookRenderer {
 
     private static void renderFishingLine(FishingHook fishingHook, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, Player player) {
         int hand = player.getMainArm() == HumanoidArm.RIGHT ? 1 : -1;
-        if (!player.getMainHandItem().canPerformAction(ToolActions.FISHING_ROD_CAST)) {
+        if (!(player.getMainHandItem().getItem() instanceof FishingRodItem)) {
             hand = -hand;
         }
         float swingProgressSqrt = Mth.sin(Mth.sqrt(player.getAttackAnim(partialTick)) * 3.1415927f);

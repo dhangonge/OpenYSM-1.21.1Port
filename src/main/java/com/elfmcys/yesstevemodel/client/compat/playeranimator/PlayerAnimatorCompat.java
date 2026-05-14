@@ -3,7 +3,7 @@ package com.elfmcys.yesstevemodel.client.compat.playeranimator;
 import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class PlayerAnimatorCompat {
 

@@ -15,9 +15,9 @@ import java.util.Map;
 @Mixin({MultiBufferSource.BufferSource.class})
 public class BufferSourceMixin implements BufferSourceAccessor {
 
-    @Shadow
+    @Shadow(remap = false)
     @Final
-    public Map<RenderType, BufferBuilder> fixedBuffers;
+    protected Map<RenderType, BufferBuilder> fixedBuffers;
 
     @Override
     @Unique

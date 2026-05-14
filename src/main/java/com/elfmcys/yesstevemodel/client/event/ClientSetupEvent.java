@@ -30,24 +30,20 @@ import com.elfmcys.yesstevemodel.client.renderer.*;
 import com.elfmcys.yesstevemodel.client.compat.simpleplanes.SimplePlanesCompat;
 import com.elfmcys.yesstevemodel.client.compat.create.CreateCompat;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.ModLoadingStage;
-import net.minecraftforge.fml.ModLoadingWarning;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.loading.LoadingModList;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(value = {Dist.CLIENT}, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = {Dist.CLIENT}, bus = EventBusSubscriber.Bus.MOD)
 public class ClientSetupEvent {
     public static Object nativeClientInit() {
         try {
@@ -55,7 +51,7 @@ public class ClientSetupEvent {
             if (maxTexSize <= 0) {
                 return Component.literal("YSM: OpenGL context not available");
             }
-            // 原始C++碼檢查了GL20（著色器）和 GL30（VAO）的可用性
+            // 原始C++碼檢查了GL20（著色器）和 GL30（VAO）的可用�?
             try {
                 int testShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
                 if (testShader != 0) {
@@ -113,12 +109,12 @@ public class ClientSetupEvent {
     }
 
     private static void showInCompatibleMod(Optional<Pair<String, String>> optional) {
-        optional.ifPresent(pair -> ModLoader.get().addWarning(new ModLoadingWarning(LoadingModList.get().getModFileById(YesSteveModel.MOD_ID).getMods().get(0), ModLoadingStage.SIDED_SETUP, "error.yes_steve_model.incompatible_mod_version", pair.getKey(), pair.getValue())));
+        optional.ifPresent(pair -> YesSteveModel.LOGGER.warn("Incompatible mod version: {} v{}", pair.getKey(), pair.getValue()));
     }
 
     private static void showInCompatibleMod(String str, String str2) {
         if (LoadingModList.get().getModFileById(str) != null) {
-            ModLoader.get().addWarning(new ModLoadingWarning(LoadingModList.get().getModFileById(YesSteveModel.MOD_ID).getMods().get(0), ModLoadingStage.SIDED_SETUP, "error.yes_steve_model.incompatible_mod", str2));
+            YesSteveModel.LOGGER.warn("Incompatible mod: {}", str2);
         }
     }
 
@@ -136,13 +132,13 @@ public class ClientSetupEvent {
     }
 
     @SubscribeEvent
-    public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
+    public static void onRegisterGuiOverlays(RegisterGuiLayersEvent event) {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        event.registerAbove(VanillaGuiOverlay.DEBUG_TEXT.id(), "ysm_debug_info", AnimationDebugOverlay.createOverlay());
-        event.registerAbove(VanillaGuiOverlay.DEBUG_TEXT.id(), "ysm_extra_player", new LoadingStateOverlay());
-        event.registerAbove(VanillaGuiOverlay.DEBUG_TEXT.id(), "ysm_loading_state", new ModelSyncStateOverlay());
+        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_debug_info"), AnimationDebugOverlay.createOverlay());
+        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_extra_player"), new LoadingStateOverlay());
+        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_loading_state"), new ModelSyncStateOverlay());
     }
 
     private static void checkNativeInitialization() {
@@ -152,5 +148,5 @@ public class ClientSetupEvent {
         }
     }
 
-    // 這裡本來有一個native方法，可能是運行時會初始化載入模型
+    // 這裡本來有一個native方法，可能是運行時會初始化載入模�?
 }

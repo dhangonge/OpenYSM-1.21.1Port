@@ -9,15 +9,15 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.ModLoadingWarning;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModLoadingIssue;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLPaths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,17 +38,17 @@ public class YesSteveModel {
 
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
-    public YesSteveModel() throws IOException {
+    public YesSteveModel(IEventBus modEventBus) throws IOException {
         NativeLibLoader.init();
         if (!NativeLibLoader.isAvailable()) {
             LOGGER.error(getErrorMessage());
         } else {
-            initConfig();
+            initConfig(modEventBus);
         }
     }
 
     @SuppressWarnings({"deprecation", "removal"})
-    private static void initConfig() {
+    private static void initConfig(IEventBus modEventBus) {
         File oldConfig = FMLPaths.CONFIGDIR.get().resolve("yes_steve_model-common.toml").toFile();
         if (oldConfig.isFile()) {
             File file2 = FMLPaths.CONFIGDIR.get().resolve("yes_steve_model-client.toml").toFile();
@@ -61,7 +61,7 @@ public class YesSteveModel {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            ModSoundEvents.REGISTER.register(FMLJavaModLoadingContext.get().getModEventBus());
+            ModSoundEvents.REGISTER.register(modEventBus);
         }
     }
 
@@ -82,8 +82,8 @@ public class YesSteveModel {
         }
     }
 
-    public static ModLoadingWarning getLoadingWarning() {
-        return NativeLibLoader.createLoadingWarning();
+    public static ModLoadingIssue getLoadingWarning() {
+        return NativeLibLoader.createLoadingIssue();
     }
 
     public static Component getUnavailableComponent() {

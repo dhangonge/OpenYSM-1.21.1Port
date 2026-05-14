@@ -11,8 +11,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.tags.ITagManager;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.TagKey;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Locale;
@@ -63,15 +63,11 @@ public class ConditionHold {
             return;
         }
         String strSubstring = name.substring(this.preSize);
-        if (name.startsWith(this.idPre) && ResourceLocation.isValidResourceLocation(strSubstring)) {
+        if (name.startsWith(this.idPre) && ResourceLocation.tryParse(strSubstring) != null) {
             this.idTest.add(ResourceLocation.parse(strSubstring));
         }
-        if (name.startsWith(this.tagPre) && ResourceLocation.isValidResourceLocation(strSubstring)) {
-            ITagManager<Item> iTagManagerTags = ForgeRegistries.ITEMS.tags();
-            if (iTagManagerTags == null) {
-                return;
-            }
-            this.tagTest.add(iTagManagerTags.createTagKey(ResourceLocation.parse(strSubstring)));
+        if (name.startsWith(this.tagPre) && ResourceLocation.tryParse(strSubstring) != null) {
+            this.tagTest.add(TagKey.create(BuiltInRegistries.ITEM.key(), ResourceLocation.parse(strSubstring)));
         }
         if (!name.startsWith(this.extraPre) || strSubstring.equals(UseAnim.NONE.name().toLowerCase(Locale.US))) {
             return;
@@ -101,7 +97,7 @@ public class ConditionHold {
         if (this.idTest.isEmpty()) {
             return EMPTY;
         }
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(livingEntity.getItemInHand(interactionHand).getItem());
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(livingEntity.getItemInHand(interactionHand).getItem());
         if (key != null && this.idTest.contains(key)) {
             return this.idPre + key;
         }
@@ -113,9 +109,6 @@ public class ConditionHold {
             return EMPTY;
         }
         ItemStack itemInHand = livingEntity.getItemInHand(interactionHand);
-        if (ForgeRegistries.ITEMS.tags() == null) {
-            return EMPTY;
-        }
         Stream<TagKey<Item>> stream = this.tagTest.stream();
         Objects.requireNonNull(itemInHand);
         return stream.filter(itemInHand::is).findFirst().map(tagKey -> this.tagPre + tagKey.location()).orElse("");

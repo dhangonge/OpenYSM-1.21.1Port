@@ -18,7 +18,7 @@ import org.gagravarr.ogg.OggStreamPacket;
 /**
  * Common interface for the Info (Information /
  *  Identification) header at the start of an
- *  {@link OggAudioStream}
+ *  {@link Object TODO: OggAudioStream removed }
  */
 public interface OggAudioInfoHeader extends OggStreamPacket {
     /**

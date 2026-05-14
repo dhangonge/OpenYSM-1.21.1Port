@@ -1,6 +1,6 @@
 package com.elfmcys.yesstevemodel.client.compat.swem;
 
-import com.alaharranhonor.swem.forge.entities.horse.SWEMHorseEntityBase;
+import com.alaharranhonor.swem.entity.horse.AbstractSwemHorse;
 import com.google.common.collect.Maps;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -12,13 +12,13 @@ import java.util.Locale;
 
 public class SWEMHorseUtils {
 
-    private static final EnumMap<SWEMHorseEntityBase.Gait, String> GAIT_NAMES = Maps.newEnumMap(SWEMHorseEntityBase.Gait.class);
+    private static final EnumMap<AbstractSwemHorse.Gait, String> GAIT_NAMES = Maps.newEnumMap(AbstractSwemHorse.Gait.class);
 
     @Nullable
     public static String getGaitName(LivingEntity livingEntity) {
         Entity vehicle = livingEntity.getVehicle();
-        if (vehicle instanceof SWEMHorseEntityBase sWEMHorseEntityBase) {
-            SWEMHorseEntityBase.Gait gait = sWEMHorseEntityBase.getGait();
+        if (vehicle instanceof AbstractSwemHorse sWEMHorseEntityBase) {
+            AbstractSwemHorse.Gait gait = sWEMHorseEntityBase.getGait();
             double jumpHeight = sWEMHorseEntityBase.jumpHeight;
             if (jumpHeight > 0.0d) {
                 return "swem:jump_lv" + ((Math.min(Mth.ceil(jumpHeight), 5) - 1) + 1);
@@ -33,9 +33,9 @@ public class SWEMHorseUtils {
         return null;
     }
 
-    public static boolean isRiding(SWEMHorseEntityBase sWEMHorseEntityBase) {
-        double x = sWEMHorseEntityBase.getX() - sWEMHorseEntityBase.xo;
-        double z = sWEMHorseEntityBase.getZ() - sWEMHorseEntityBase.zo;
+    public static boolean isRiding(AbstractSwemHorse sWEMHorseEntityBase) {
+        double x = sWEMHorseEntityBase.getX() - sWEMHorseEntityBase.xOld;
+        double z = sWEMHorseEntityBase.getZ() - sWEMHorseEntityBase.zOld;
         return Math.sqrt((x * x) + (z * z)) <= 0.0d;
     }
 }

@@ -2,8 +2,11 @@ package com.elfmcys.yesstevemodel.geckolib3.core.molang.context;
 
 import com.elfmcys.yesstevemodel.audio.AudioPlayerManager;
 import com.elfmcys.yesstevemodel.geckolib3.core.controller.AnimationControllerContext;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.VehicleCapability;
 import com.elfmcys.yesstevemodel.capability.VehicleCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ProjectileCapability;
 import com.elfmcys.yesstevemodel.capability.ProjectileCapabilityProvider;
 import com.elfmcys.yesstevemodel.audio.PlaybackFlags;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
@@ -69,11 +72,20 @@ public class AnimationContext<TEntity> implements IContext<TEntity> {
         this.storage = context.storage;
         this.audioPlayerManager = context.audioPlayerManager;
         if (entity instanceof Player) {
-            ((Player) entity).getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> this.foreignStorage = cap.getPropertyGetter());
+            PlayerCapability cap = ((Player) entity).getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+            if (cap != null) {
+                this.foreignStorage = cap.getPropertyGetter();
+            }
         } else if (entity instanceof Projectile) {
-            ((Projectile) entity).getCapability(ProjectileCapabilityProvider.PROJECTILE_CAP).ifPresent(cap -> this.foreignStorage = cap.getPropertyGetter());
+            ProjectileCapability cap = ((Projectile) entity).getCapability(ProjectileCapabilityProvider.PROJECTILE_CAP);
+            if (cap != null) {
+                this.foreignStorage = cap.getPropertyGetter();
+            }
         } else if (entity instanceof Entity) {
-            ((Entity) entity).getCapability(VehicleCapabilityProvider.VEHICLE_CAP).ifPresent(cap -> this.foreignStorage = cap.getPropertyGetter());
+            VehicleCapability cap = ((Entity) entity).getCapability(VehicleCapabilityProvider.VEHICLE_CAP);
+            if (cap != null) {
+                this.foreignStorage = cap.getPropertyGetter();
+            }
         }
     }
 

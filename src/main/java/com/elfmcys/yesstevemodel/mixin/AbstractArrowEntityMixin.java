@@ -3,11 +3,11 @@ package com.elfmcys.yesstevemodel.mixin;
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.util.accessors.ProjectileStateAccessor;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,11 +21,11 @@ public class AbstractArrowEntityMixin implements ProjectileStateAccessor {
     @Unique
     private String ownerMainHandItem = StringPool.EMPTY;
 
-    @Shadow
-    public boolean inGround;
+    @Shadow(remap = false)
+    protected boolean inGround;
 
-    @Shadow
-    public int inGroundTime;
+    @Shadow(remap = false)
+    protected int inGroundTime;
 
     @Override
     @Unique
@@ -45,10 +45,11 @@ public class AbstractArrowEntityMixin implements ProjectileStateAccessor {
         return this.ownerMainHandItem;
     }
 
-    @Inject(at = {@At("RETURN")}, method = {"setOwner(Lnet/minecraft/world/entity/Entity;)V"})
+    @Inject(at = {@At("RETURN")}, method = {"setOwner(Lnet/minecraft/world/entity/Entity;)V"}, remap = false)
     private void onSetOwner(Entity entity, CallbackInfo callbackInfo) {
         ResourceLocation key;
-        if (YesSteveModel.isAvailable() && (entity instanceof LivingEntity) && (key = ForgeRegistries.ITEMS.getKey(((LivingEntity) entity).getMainHandItem().getItem())) != null) {
+        if (YesSteveModel.isAvailable() && (entity instanceof LivingEntity) ) {
+            key = BuiltInRegistries.ITEM.getKey(((LivingEntity) entity).getMainHandItem().getItem());
             this.ownerMainHandItem = key.toString();
         }
     }

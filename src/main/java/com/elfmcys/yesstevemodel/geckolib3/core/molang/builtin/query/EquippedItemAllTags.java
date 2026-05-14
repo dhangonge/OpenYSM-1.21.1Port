@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class EquippedItemAllTags extends LivingEntityFunction {
     @Override
@@ -27,7 +27,7 @@ public class EquippedItemAllTags extends LivingEntityFunction {
             if (key == null) {
                 return null;
             }
-            if (!stack.is(ForgeRegistries.ITEMS.tags().createTagKey(key))) {
+            if (!stack.is(BuiltInRegistries.ITEM.tags().createTagKey(key))) {
                 return false;
             }
         }

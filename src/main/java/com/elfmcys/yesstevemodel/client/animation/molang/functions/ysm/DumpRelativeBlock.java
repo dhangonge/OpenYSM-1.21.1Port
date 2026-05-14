@@ -9,14 +9,14 @@ import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class DumpRelativeBlock extends EntityFunction {
     @Override
     public Object eval(ExecutionContext<IContext<Entity>> context, ArgumentCollection arguments) {
         BlockState blockState;
         ResourceLocation key;
-        if (!context.entity().isDebugMode() || (blockState = MolangUtils.getRelativeBlockState(context, arguments)) == null || (key = ForgeRegistries.BLOCKS.getKey(blockState.getBlock())) == null) {
+        if (!context.entity().isDebugMode() || (blockState = MolangUtils.getRelativeBlockState(context, arguments)) == null || (key = BuiltInRegistries.BLOCK.getKey(blockState.getBlock())) == null) {
             return null;
         }
         context.entity().logWarningComponent(Component.literal("Display ").append(ComponentUtils.copyOnClickText(blockState.getBlock().getName().getString(99))));

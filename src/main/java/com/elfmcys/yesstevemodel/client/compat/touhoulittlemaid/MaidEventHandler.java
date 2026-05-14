@@ -15,9 +15,9 @@ import com.github.tartaricacid.touhoulittlemaid.item.ItemHakureiGohei;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
 
 @OnlyIn(Dist.CLIENT)
 public class MaidEventHandler {
@@ -25,10 +25,10 @@ public class MaidEventHandler {
     private static MaidEntityRenderer maidRenderer;
 
     public static void init() {
-        MinecraftForge.EVENT_BUS.register(new MaidScreenEvent());
-        MinecraftForge.EVENT_BUS.register(new MaidCapabilityEvent());
-        MinecraftForge.EVENT_BUS.register(new MaidClientTickEvent());
-        MinecraftForge.EVENT_BUS.register(new ClientDistChecker());
+        NeoForge.EVENT_BUS.register(new MaidScreenEvent());
+        NeoForge.EVENT_BUS.register(new MaidCapabilityEvent());
+        NeoForge.EVENT_BUS.register(new MaidClientTickEvent());
+        NeoForge.EVENT_BUS.register(new ClientDistChecker());
     }
 
     public static void registerMaidRenderer() {

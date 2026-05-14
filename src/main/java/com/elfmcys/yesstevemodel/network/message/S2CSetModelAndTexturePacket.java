@@ -1,16 +1,26 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.event.EntityJoinCallbackEvent;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class S2CSetModelAndTexturePacket implements CustomPacketPayload, IPayloadHandler<S2CSetModelAndTexturePacket> {
 
-public class S2CSetModelAndTexturePacket {
+    public static final CustomPacketPayload.Type<S2CSetModelAndTexturePacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "s2c_set_model_and_texture"));
+
+    public static final StreamCodec<FriendlyByteBuf, S2CSetModelAndTexturePacket> STREAM_CODEC =
+            StreamCodec.of(S2CSetModelAndTexturePacket::encode, S2CSetModelAndTexturePacket::decode);
 
     private final int entityId;
 
@@ -30,34 +40,39 @@ public class S2CSetModelAndTexturePacket {
         this.disabled = disabled;
     }
 
-    public static void encode(S2CSetModelAndTexturePacket other, FriendlyByteBuf friendlyByteBuf) {
-        friendlyByteBuf.writeVarInt(other.entityId);
-        friendlyByteBuf.writeUtf(other.modelId);
-        friendlyByteBuf.writeUtf(other.textureId);
-        friendlyByteBuf.writeBoolean(other.disabled);
-        S2CSyncPlayerStatePacket.encode(other.entityModelSync, friendlyByteBuf);
+    public static void encode(FriendlyByteBuf buf, S2CSetModelAndTexturePacket other) {
+        buf.writeVarInt(other.entityId);
+        buf.writeUtf(other.modelId);
+        buf.writeUtf(other.textureId);
+        buf.writeBoolean(other.disabled);
+        S2CSyncPlayerStatePacket.encode(buf, other.entityModelSync);
     }
 
-    public static S2CSetModelAndTexturePacket decode(FriendlyByteBuf friendlyByteBuf) {
-        return new S2CSetModelAndTexturePacket(friendlyByteBuf.readVarInt(), friendlyByteBuf.readUtf(), friendlyByteBuf.readUtf(), friendlyByteBuf.readBoolean(), S2CSyncPlayerStatePacket.decode(friendlyByteBuf));
+    public static S2CSetModelAndTexturePacket decode(FriendlyByteBuf buf) {
+        return new S2CSetModelAndTexturePacket(buf.readVarInt(), buf.readUtf(), buf.readUtf(), buf.readBoolean(), S2CSyncPlayerStatePacket.decode(buf));
     }
 
-    public static void handle(S2CSetModelAndTexturePacket other, Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            EntityJoinCallbackEvent.addCallback(other.entityId, entity -> {
-                applyOnClient(entity, other);
+    @Override
+    public Type<S2CSetModelAndTexturePacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(S2CSetModelAndTexturePacket payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            EntityJoinCallbackEvent.addCallback(payload.entityId, entity -> {
+                applyOnClient(entity, payload);
             });
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void applyOnClient(Entity entity, S2CSetModelAndTexturePacket other) {
-        entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        PlayerCapability cap = entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP, null);
+        if (cap != null) {
             cap.initModelWithTexture(other.modelId, other.textureId);
             cap.setForceDisabled(other.disabled);
             S2CSyncPlayerStatePacket.handleCapability(entity, other.entityModelSync);
-        });
+        }
     }
 }

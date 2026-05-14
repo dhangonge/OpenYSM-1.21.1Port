@@ -4,11 +4,10 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Platform;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.ModLoadingStage;
-import net.minecraftforge.fml.ModLoadingWarning;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModLoadingIssue;
+import net.neoforged.fml.loading.FMLPaths;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -235,8 +234,8 @@ public final class NativeLibLoader {
         return lastError != null ? lastError.logMsg : null;
     }
 
-    public static ModLoadingWarning createLoadingWarning() {
+    public static ModLoadingIssue createLoadingIssue() {
         if (lastError == null) return null;
-        return new ModLoadingWarning(ModList.get().getModFileById(YesSteveModel.MOD_ID).getFile().getModInfos().get(0), ModLoadingStage.SIDED_SETUP, lastError.key, lastError.args);
+        return new ModLoadingIssue(ModList.get().getModFileById(YesSteveModel.MOD_ID).getMods().get(0), lastError.key, lastError.args);
     }
 }

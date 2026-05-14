@@ -3,7 +3,7 @@ package com.elfmcys.yesstevemodel.client.compat.firstperson;
 import dev.tr7zw.firstperson.api.FirstPersonAPI;
 import dev.tr7zw.firstperson.api.PlayerOffsetHandler;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.LoadingModList;
 
 public class FirstPersonCompat {
 

@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemHakureiGohei;
@@ -10,8 +11,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 public class MaidInteractionEvent {
     @SubscribeEvent
@@ -55,14 +56,15 @@ public class MaidInteractionEvent {
     }
 
     private void applyModelToMaid(Player player, CompoundTag compoundTag) {
-        player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
-            String str = cap.getModelId();
-            String str2 = cap.getSelectTexture();
+        ModelInfoCapability cap_info = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+
+            String str = cap_info.getModelId();
+            String str2 = cap_info.getSelectTexture();
             compoundTag.putBoolean("IsYsmModel", true);
             compoundTag.putString("YsmModelId", str);
             compoundTag.putString("YsmModelTexture", str2);
             compoundTag.putInt("YsmRoamingUpdateFlag", compoundTag.getInt("YsmRoamingUpdateFlag") + 1);
             compoundTag.put("YsmRoamingVars", new CompoundTag());
-        });
+
     }
 }

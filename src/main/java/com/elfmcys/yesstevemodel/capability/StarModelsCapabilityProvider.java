@@ -1,45 +1,42 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.core.Direction;
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import net.minecraft.nbt.ListTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import org.jetbrains.annotations.Nullable;
 
-public class StarModelsCapabilityProvider implements ICapabilitySerializable<ListTag> {
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static Capability<StarModelsCapability> STAR_MODELS_CAP = CapabilityManager.get(new CapabilityToken<StarModelsCapability>() {
-    });
+public final class StarModelsCapabilityProvider implements ICapabilityProvider<Entity, Void, StarModelsCapability> {
 
-    private StarModelsCapability capability = null;
+    public static final EntityCapability<StarModelsCapability, Void> STAR_MODELS_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "star_models"), StarModelsCapability.class);
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return STAR_MODELS_CAP.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
+    public static final StarModelsCapabilityProvider INSTANCE = new StarModelsCapabilityProvider();
+
+    private final ConcurrentHashMap<UUID, StarModelsCapability> cache = new ConcurrentHashMap<>();
+
+    private StarModelsCapabilityProvider() {}
+
+    @Override
+    @Nullable
+    public StarModelsCapability getCapability(Entity entity, Void context) {
+        return cache.computeIfAbsent(entity.getUUID(), uuid -> new StarModelsCapability());
     }
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability) {
-        return getCapability(capability, null);
+    public ListTag serializeNBT(Entity entity) {
+        StarModelsCapability cap = getCapability(entity, null);
+        return cap != null ? cap.serializeNBT() : new ListTag();
     }
 
-    @NotNull
-    private StarModelsCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new StarModelsCapability();
+    public void deserializeNBT(Entity entity, ListTag nbt) {
+        StarModelsCapability cap = getCapability(entity, null);
+        if (cap != null) {
+            cap.deserializeNBT(nbt);
         }
-        return this.capability;
-    }
-
-    public void deserializeNBT(ListTag listTag) {
-        getOrCreateCapability().deserializeNBT(listTag);
-    }
-
-    public ListTag serializeNBT() {
-        return getOrCreateCapability().serializeNBT();
     }
 }

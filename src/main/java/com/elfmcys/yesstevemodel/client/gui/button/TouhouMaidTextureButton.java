@@ -1,12 +1,13 @@
 package com.elfmcys.yesstevemodel.client.gui.button;
 
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.entity.PlayerPreviewEntity;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.util.ComponentUtil;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
-import com.github.tartaricacid.touhoulittlemaid.network.message.YsmMaidModelMessage;
+import com.github.tartaricacid.touhoulittlemaid.network.message.YsmMaidModelPackage;
 import net.minecraft.network.chat.Component;
 
 public class TouhouMaidTextureButton extends TextureButton {
@@ -27,19 +28,20 @@ public class TouhouMaidTextureButton extends TextureButton {
         this.maid.setIsYsmModel(true);
         this.maid.setOnGround(true);
         this.index = entityMaid.getId();
-        entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP).ifPresent(cap -> {
-            this.textureId = cap.getModelId();
-            ModelAssembly modelAssembly2 = cap.getModelAssembly();
-            this.displayComponent = ComponentUtil.getDisplayName(modelAssembly2, this.textureId);
-            this.textureName = modelAssembly2.getAnimationBundle().getTextures().getKeyAt(textureIndex);
-            this.maid.setYsmModel(this.textureId, this.textureName, this.displayComponent);
-            previewEntity.initModelWithTexture(this.textureId, this.textureName);
-        });
+        MaidCapability cap = entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        if(cap != null) {
+                this.textureId = cap.getModelId();
+                ModelAssembly modelAssembly2 = cap.getModelAssembly();
+                this.displayComponent = ComponentUtil.getDisplayName(modelAssembly2, this.textureId);
+                this.textureName = modelAssembly2.getAnimationBundle().getTextures().getKeyAt(textureIndex);
+                this.maid.setYsmModel(this.textureId, this.textureName, this.displayComponent);
+                previewEntity.initModelWithTexture(this.textureId, this.textureName);
+        }
     }
 
     @Override
     public void onPress() {
         this.maid.setYsmModel(this.textureId, this.textureName, this.displayComponent);
-        NetworkHandler.CHANNEL.sendToServer(new YsmMaidModelMessage(this.index, this.textureId, this.textureName, this.displayComponent));
+        NetworkHandler.CHANNEL.sendToServer(new YsmMaidModelPackage(this.index, this.textureId, this.textureName, this.displayComponent));
     }
 }

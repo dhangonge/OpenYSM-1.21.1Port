@@ -4,12 +4,13 @@ import com.elfmcys.yesstevemodel.client.gui.ExtraPlayerRenderScreen;
 import com.elfmcys.yesstevemodel.config.ExtraPlayerRenderConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
-public class LoadingStateOverlay implements IGuiOverlay {
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+public class LoadingStateOverlay implements LayeredDraw.Layer {
+    public void render(GuiGraphics guiGraphics, float partialTick) {
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         Minecraft minecraft;
         LocalPlayer localPlayer;
         if (ExtraPlayerRenderConfig.DISABLE_PLAYER_RENDER.get() || (localPlayer = (minecraft = Minecraft.getInstance()).player) == null || (minecraft.screen instanceof ExtraPlayerRenderScreen)) {

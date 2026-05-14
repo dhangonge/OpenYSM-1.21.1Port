@@ -7,15 +7,23 @@ import com.elfmcys.yesstevemodel.geckolib3.resource.GeckoLibCache;
 import com.elfmcys.yesstevemodel.molang.parser.ParseException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class S2CExecuteMolangPacket implements CustomPacketPayload, IPayloadHandler<S2CExecuteMolangPacket> {
 
-public class S2CExecuteMolangPacket {
+    public static final CustomPacketPayload.Type<S2CExecuteMolangPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "s2c_execute_molang"));
+
+    public static final StreamCodec<FriendlyByteBuf, S2CExecuteMolangPacket> STREAM_CODEC =
+            StreamCodec.of(S2CExecuteMolangPacket::encode, S2CExecuteMolangPacket::decode);
 
     private final int[] entityIds;
 
@@ -31,7 +39,7 @@ public class S2CExecuteMolangPacket {
         this.expression = expression;
     }
 
-    public static void encode(S2CExecuteMolangPacket message, FriendlyByteBuf buf) {
+    public static void encode(FriendlyByteBuf buf, S2CExecuteMolangPacket message) {
         buf.writeVarIntArray(message.entityIds);
         buf.writeUtf(message.expression);
     }
@@ -40,14 +48,16 @@ public class S2CExecuteMolangPacket {
         return new S2CExecuteMolangPacket(buf.readVarIntArray(), buf.readUtf());
     }
 
-    public static void handle(S2CExecuteMolangPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> {
-                handleCapability(message);
-            });
+    @Override
+    public Type<S2CExecuteMolangPacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(S2CExecuteMolangPacket payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() -> handleCapability(payload));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -59,7 +69,7 @@ public class S2CExecuteMolangPacket {
         for (int i : message.entityIds) {
             Entity entity = minecraft.level.getEntity(i);
             if (entity instanceof Player) {
-                entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+                entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP, null).ifPresent(cap -> {
                     try {
                         cap.executeExpression(GeckoLibCache.parseSimpleExpression(message.expression), true, false, null);
                     } catch (ParseException e) {

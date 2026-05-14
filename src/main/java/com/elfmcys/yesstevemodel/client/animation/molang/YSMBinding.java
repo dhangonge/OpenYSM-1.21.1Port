@@ -30,6 +30,7 @@ import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -49,9 +50,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.fml.ModList;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -153,12 +154,12 @@ public class YSMBinding extends ContextBinding {
         playerEntityVar("movement_speed", ctx -> ctx.entity().getAttributeValue(Attributes.MOVEMENT_SPEED));
         playerEntityVar("knockback_resistance", ctx -> ctx.entity().getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
         playerEntityVar("luck", ctx -> ctx.entity().getAttributeValue(Attributes.LUCK));
-        playerEntityVar("block_reach", ctx -> ctx.entity().getAttributeValue(ForgeMod.BLOCK_REACH.get()));
-        playerEntityVar("entity_reach", ctx -> ctx.entity().getAttributeValue(ForgeMod.ENTITY_REACH.get()));
-        playerEntityVar("swim_speed", ctx -> ctx.entity().getAttributeValue(ForgeMod.SWIM_SPEED.get()));
-        playerEntityVar("entity_gravity", ctx -> ctx.entity().getAttributeValue(ForgeMod.ENTITY_GRAVITY.get()));
-        playerEntityVar("step_height_addition", ctx -> ctx.entity().getAttributeValue(ForgeMod.STEP_HEIGHT_ADDITION.get()));
-        playerEntityVar("nametag_distance", ctx -> ctx.entity().getAttributeValue(ForgeMod.NAMETAG_DISTANCE.get()));
+        playerEntityVar("block_reach", ctx -> ctx.entity().getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE));
+        playerEntityVar("entity_reach", ctx -> ctx.entity().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
+        playerEntityVar("swim_speed", ctx -> ctx.entity().getAttributeValue(NeoForgeMod.SWIM_SPEED));
+        playerEntityVar("entity_gravity", ctx -> ctx.entity().getAttributeValue(Attributes.GRAVITY));
+        playerEntityVar("step_height_addition", ctx -> ctx.entity().getAttributeValue(Attributes.STEP_HEIGHT));
+        playerEntityVar("nametag_distance", ctx -> ctx.entity().getAttributeValue(NeoForgeMod.NAMETAG_DISTANCE));
         playerEntityVar("in_shield_block_cooldown", YSMBinding::isInShieldBlockCooldown);
 
         clientPlayerEntityVar("elytra_rot_x", ctx -> Math.toDegrees(ctx.entity().elytraRotX));
@@ -202,14 +203,14 @@ public class YSMBinding extends ContextBinding {
             if (blockHitResult.getType() == HitResult.Type.MISS || (clientLevel = Minecraft.getInstance().level) == null) {
                 return StringPool.EMPTY;
             }
-            ResourceLocation key = ForgeRegistries.BLOCKS.getKey(clientLevel.getBlockState(blockHitResult.getBlockPos()).getBlock());
+            ResourceLocation key = BuiltInRegistries.BLOCK.getKey(clientLevel.getBlockState(blockHitResult.getBlockPos()).getBlock());
             if (key != null) {
                 return key.toString();
             }
             return StringPool.EMPTY;
         }
         if (hitResult instanceof EntityHitResult) {
-            ResourceLocation key2 = ForgeRegistries.ENTITY_TYPES.getKey(((EntityHitResult) hitResult).getEntity().getType());
+            ResourceLocation key2 = BuiltInRegistries.ENTITY_TYPE.getKey(((EntityHitResult) hitResult).getEntity().getType());
             if (key2 != null) {
                 return key2.toString();
             }
@@ -235,7 +236,7 @@ public class YSMBinding extends ContextBinding {
     private static String getHookedEntityType(IContext<FishingHook> context) {
         ResourceLocation key;
         Entity entity = ((FishingHookAccessor) context.entity()).getHookedIn();
-        if (entity != null && (key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType())) != null) {
+        if (entity != null && (key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType())) != null) {
             return key.toString();
         }
         return StringPool.EMPTY;
@@ -244,7 +245,7 @@ public class YSMBinding extends ContextBinding {
     private static String getThrowableItemId(IContext<ThrowableItemProjectile> context) {
         ThrowableItemProjectile throwableItemProjectile = context.entity();
         if (throwableItemProjectile instanceof ThrowableItemProjectileAccessor) {
-            ResourceLocation key = ForgeRegistries.ITEMS.getKey(((ThrowableItemProjectileAccessor) throwableItemProjectile).invokeGetDefaultItem());
+            ResourceLocation key = BuiltInRegistries.ITEM.getKey(((ThrowableItemProjectileAccessor) throwableItemProjectile).invokeGetDefaultItem());
             if (key != null) {
                 return key.toString();
             }
@@ -315,7 +316,7 @@ public class YSMBinding extends ContextBinding {
         if (livingEntityMo327xaffeef43 instanceof Player) {
             return "player";
         }
-        ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(livingEntityMo327xaffeef43.getType());
+        ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(livingEntityMo327xaffeef43.getType());
         if (key == null) {
             return StringPool.EMPTY;
         }
@@ -381,14 +382,15 @@ public class YSMBinding extends ContextBinding {
             return null;
         }
         if (context.entity() instanceof Arrow) {
-            activeEffects = ((ArrowEntityAccessor) context.entity()).getEffects();
+            activeEffects = ((ArrowEntityAccessor) context.entity()).invokeGetPotionContents().customEffects();
         } else if (context.entity() instanceof LivingEntity) {
             activeEffects = ((LivingEntity) context.entity()).getActiveEffects();
         } else {
             return null;
         }
         for (MobEffectInstance mobEffectInstance : activeEffects) {
-            context.logWarningComponent(Component.literal("Effect: display ").append(ComponentUtils.copyOnClickText(mobEffectInstance.getEffect().getDisplayName().getString(99))).append(Component.literal("  name ").append(ComponentUtils.copyOnClickText(ForgeRegistries.MOB_EFFECTS.getKey(mobEffectInstance.getEffect()).toString()))).append("  lv=").append(String.valueOf(mobEffectInstance.getAmplifier() + 1)));
+            Holder<MobEffect> effectHolder = mobEffectInstance.getEffect();
+            context.logWarningComponent(Component.literal("Effect: display ").append(ComponentUtils.copyOnClickText(effectHolder.value().getDisplayName().getString(99))).append(Component.literal("  name ").append(ComponentUtils.copyOnClickText(BuiltInRegistries.MOB_EFFECT.getKey(effectHolder.value()).toString()))).append("  lv=").append(String.valueOf(mobEffectInstance.getAmplifier() + 1)));
         }
         return null;
     }

@@ -1,6 +1,6 @@
 package com.elfmcys.yesstevemodel.client.compat.realcamera;
 
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class RealCameraCompat {
 

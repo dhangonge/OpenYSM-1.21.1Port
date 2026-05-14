@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.capability.ClientLazyCapabilityProvider;
 import com.elfmcys.yesstevemodel.capability.VehicleModelCapability;
 import com.elfmcys.yesstevemodel.event.EntityJoinCallbackEvent;
@@ -9,14 +10,22 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class S2CSyncVehicleModelPacket implements CustomPacketPayload, IPayloadHandler<S2CSyncVehicleModelPacket> {
 
-public class S2CSyncVehicleModelPacket {
+    public static final CustomPacketPayload.Type<S2CSyncVehicleModelPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "s2c_sync_vehicle_model"));
+
+    public static final StreamCodec<FriendlyByteBuf, S2CSyncVehicleModelPacket> STREAM_CODEC =
+            StreamCodec.of(S2CSyncVehicleModelPacket::encode, S2CSyncVehicleModelPacket::decode);
 
     private final int entityId;
 
@@ -34,9 +43,9 @@ public class S2CSyncVehicleModelPacket {
         this(entityId, capability, new Int2FloatOpenHashMap(0));
     }
 
-    public static void encode(S2CSyncVehicleModelPacket message, FriendlyByteBuf friendlyByteBuf) {
-        friendlyByteBuf.writeVarInt(message.entityId);
-        friendlyByteBuf.writeNbt(message.capability.serializeNBT());
+    public static void encode(FriendlyByteBuf buf, S2CSyncVehicleModelPacket message) {
+        buf.writeVarInt(message.entityId);
+        buf.writeNbt(message.capability.serializeNBT());
     }
 
     public static S2CSyncVehicleModelPacket decode(FriendlyByteBuf buf) {
@@ -52,17 +61,21 @@ public class S2CSyncVehicleModelPacket {
         return new S2CSyncVehicleModelPacket(varInt, cap, floatMap);
     }
 
-    public static void handle(S2CSyncVehicleModelPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            EntityJoinCallbackEvent.addCallback(message.entityId, entity -> handleCapability(entity, message.capability, message.floatMap));
+    @Override
+    public Type<S2CSyncVehicleModelPacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(S2CSyncVehicleModelPacket payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            EntityJoinCallbackEvent.addCallback(payload.entityId, entity -> handleCapability(entity, payload.capability, payload.floatMap));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void handleCapability(Entity entity, VehicleModelCapability capability, Int2FloatOpenHashMap floatMap) {
-        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP).ifPresent(cap -> {
+        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null).ifPresent(cap -> {
             VehicleCapability vehicleCapability = cap.getEntityRenderProvider().getOrCreateCapability();
             vehicleCapability.setOwnerModelId(capability.getOwnerModelId());
             vehicleCapability.setFloatMap(floatMap);

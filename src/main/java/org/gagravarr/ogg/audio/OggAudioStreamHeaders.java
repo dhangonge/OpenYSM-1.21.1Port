@@ -30,9 +30,14 @@ import org.gagravarr.vorbis.VorbisPacketFactory;
 
 /**
  * Streaming friendly way to get at the headers at the
- *  start of an {@link OggAudioStream}, allowing for the fact
+ *  start of an {@link Object}, allowing for the fact
  *  that they may be interspersed with other streams' data.
  */
+
+/* TODO: OggAudioStream removed */
+/* TODO: OggAudioStream removed */
+/* TODO: OggAudioStream removed */
+
 public class OggAudioStreamHeaders implements OggAudioHeaders {
     private int sid;
     private OggStreamType type;
@@ -56,23 +61,23 @@ public class OggAudioStreamHeaders implements OggAudioHeaders {
                 firstPacket.getData().length > 10) {
             int sid = firstPacket.getSid();
             if (VorbisPacketFactory.isVorbisStream(firstPacket)) {
-                return new OggAudioStreamHeaders(sid, 
+                return new OggAudioStreamHeaders(sid,
                         OggStreamIdentifier.OGG_VORBIS,
                         (VorbisInfo)VorbisPacketFactory.create(firstPacket));
             }
             if (SpeexPacketFactory.isSpeexStream(firstPacket)) {
-                return new OggAudioStreamHeaders(sid, 
+                return new OggAudioStreamHeaders(sid,
                         OggStreamIdentifier.SPEEX_AUDIO,
                         (SpeexInfo)SpeexPacketFactory.create(firstPacket));
             }
             if (OpusPacketFactory.isOpusStream(firstPacket)) {
-                return new OggAudioStreamHeaders(sid, 
+                return new OggAudioStreamHeaders(sid,
                         OggStreamIdentifier.OPUS_AUDIO,
                         (OpusInfo)OpusPacketFactory.create(firstPacket));
             }
             if (FlacFirstOggPacket.isFlacStream(firstPacket)) {
                 FlacFirstOggPacket flac = new FlacFirstOggPacket(firstPacket);
-                return new OggAudioStreamHeaders(sid, 
+                return new OggAudioStreamHeaders(sid,
                         OggStreamIdentifier.OGG_FLAC,
                         flac.getInfo());
             }

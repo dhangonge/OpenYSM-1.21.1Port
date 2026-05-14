@@ -3,14 +3,14 @@ package com.elfmcys.yesstevemodel.client.compat.oculus;
 import com.elfmcys.yesstevemodel.client.texture.OuterFileTexture;
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.coderbot.iris.texture.pbr.loader.PBRTextureLoader;
-import net.coderbot.iris.texture.pbr.loader.PBRTextureLoaderRegistry;
-import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.irisshaders.iris.pbr.loader.PBRTextureLoader;
+import net.irisshaders.iris.pbr.loader.PBRTextureLoaderRegistry;
+import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 import java.util.function.LongSupplier;
@@ -37,7 +37,7 @@ public class OculusCompat {
                     currentFrameSupplier = OculusCompat::getOrUpdateFrame;
                     PBRTextureLoaderV2.register();
                 } else {
-                    vertexFormat = net.coderbot.iris.vertices.IrisVertexFormats.ENTITY;
+                    vertexFormat = net.irisshaders.iris.vertices.IrisVertexFormats.ENTITY;
                     currentFrameSupplier = OculusCompat::getCurrentFrame;
                     PBRTextureLoaderV1.register();
                 }
@@ -99,14 +99,15 @@ public class OculusCompat {
         }
     }
 
-    private static class PBRTextureLoaderV2 implements net.irisshaders.iris.texture.pbr.loader.PBRTextureLoader<OuterFileTexture> {
+    private static class PBRTextureLoaderV2 implements net.irisshaders.iris.pbr.loader.PBRTextureLoader<OuterFileTexture> {
 
         private static final PBRTextureLoaderV2 INSTANCE = new PBRTextureLoaderV2();
 
         private PBRTextureLoaderV2() {
         }
 
-        public void load(OuterFileTexture texture, ResourceManager resourceManager, net.irisshaders.iris.texture.pbr.loader.PBRTextureLoader.PBRTextureConsumer pBRTextureConsumer) {
+        @Override
+        public void load(OuterFileTexture texture, ResourceManager resourceManager, net.irisshaders.iris.pbr.loader.PBRTextureLoader.PBRTextureConsumer pBRTextureConsumer) {
             AbstractTexture abstractTexture = texture.getSuffixTextures().get(ShadersTextureType.NORMAL);
             if (abstractTexture != null) {
                 pBRTextureConsumer.acceptNormalTexture(abstractTexture);
@@ -118,7 +119,7 @@ public class OculusCompat {
         }
 
         public static void register() {
-            net.irisshaders.iris.texture.pbr.loader.PBRTextureLoaderRegistry.INSTANCE.register(OuterFileTexture.class, INSTANCE);
+            net.irisshaders.iris.pbr.loader.PBRTextureLoaderRegistry.INSTANCE.register(OuterFileTexture.class, INSTANCE);
         }
     }
 }

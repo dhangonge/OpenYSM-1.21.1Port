@@ -1,10 +1,11 @@
 package com.elfmcys.yesstevemodel.geckolib3.geo;
 
+import com.elfmcys.yesstevemodel.capability.VehicleCapability;
 import com.elfmcys.yesstevemodel.capability.VehicleCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.entity.LivingAnimatable;
-import com.elfmcys.yesstevemodel.geckolib3.extended.LivingEntityRendererAccessor;
 import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.util.Color;
+import com.elfmcys.yesstevemodel.geckolib3.extended.LivingEntityRendererAccessor;
 import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.geckolib3.model.provider.data.EntityModelData;
 import com.elfmcys.yesstevemodel.geckolib3.util.EModelRenderCycle;
@@ -27,8 +28,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraftforge.client.event.RenderLivingEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -82,7 +83,9 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
 
     public void renderEntityWithTexture(T t, @Nullable ResourceLocation resourceLocation, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight) {
         Direction bedOrientation;
-        if (MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Pre(t.getEntity(), this, partialTick, poseStack, multiBufferSource, packedLight))) {
+        RenderLivingEvent.Pre preEvent = new RenderLivingEvent.Pre(t.getEntity(), this, partialTick, poseStack, multiBufferSource, packedLight);
+        NeoForge.EVENT_BUS.post(preEvent);
+        if (preEvent.isCanceled()) {
             return;
         }
         AnimationEvent<?> event = t.processAnimation(partialTick);
@@ -99,12 +102,15 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
             }
             setupRotations(entity, poseStack, modelData.lerpedAge, modelData.lerpBodyRot, partialTick);
             if (t.getEntity().getVehicle() != null) {
-                t.getEntity().getVehicle().getCapability(VehicleCapabilityProvider.VEHICLE_CAP).ifPresent(cap -> {
+                VehicleCapability cap = t.getEntity().getVehicle().getCapability(VehicleCapabilityProvider.VEHICLE_CAP);
+
+                if (cap != null) {
                     Vector3f vector3f = cap.getExpressionOffset();
                     if (vector3f != null) {
                         poseStack.mulPose(new Quaternionf().rotateZYX(vector3f.z, 0.0f, vector3f.x).invert());
                     }
-                });
+                }
+
             }
             preRenderCallback(entity, poseStack, partialTick);
             poseStack.translate(0.0f, 0.01f, 0.0f);
@@ -126,7 +132,7 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
             poseStack.popPose();
         }
         ((LivingEntityRendererAccessor) this).tlm$renderNameTag(entity, entityYaw, partialTick, poseStack, multiBufferSource, packedLight);
-        MinecraftForge.EVENT_BUS.post(new RenderLivingEvent.Post(entity, this, partialTick, poseStack, multiBufferSource, packedLight));
+        NeoForge.EVENT_BUS.post(new RenderLivingEvent.Post(entity, this, partialTick, poseStack, multiBufferSource, packedLight));
     }
 
     public void render(T entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLightIn, AnimationEvent<?> event, EntityModelData data) {
@@ -160,7 +166,7 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
                 }
             }
         }
-        super.setupRotations(tentity, poseStack, ageInTicks, rotationYaw, partialTicks);
+        super.setupRotations(tentity, poseStack, ageInTicks, rotationYaw, partialTicks, tentity.getScale());
         if (t > 0) {
             tentity.deathTime = t;
         }

@@ -1,44 +1,44 @@
 package com.elfmcys.yesstevemodel.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class GeneralConfig {
 
-    public static ForgeConfigSpec.BooleanValue DISCLAIMER_SHOW;
+    public static ModConfigSpec.BooleanValue DISCLAIMER_SHOW;
 
-    public static ForgeConfigSpec.BooleanValue PRINT_ANIMATION_ROULETTE_MSG;
+    public static ModConfigSpec.BooleanValue PRINT_ANIMATION_ROULETTE_MSG;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_SELF_MODEL;
+    public static ModConfigSpec.BooleanValue DISABLE_SELF_MODEL;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_OTHER_MODEL;
+    public static ModConfigSpec.BooleanValue DISABLE_OTHER_MODEL;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_SELF_HANDS;
+    public static ModConfigSpec.BooleanValue DISABLE_SELF_HANDS;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_PROJECTILE_MODEL;
+    public static ModConfigSpec.BooleanValue DISABLE_PROJECTILE_MODEL;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_VEHICLE_MODEL;
+    public static ModConfigSpec.BooleanValue DISABLE_VEHICLE_MODEL;
 
-    public static ForgeConfigSpec.BooleanValue DISABLE_EXTERNAL_FP_ANIM;
+    public static ModConfigSpec.BooleanValue DISABLE_EXTERNAL_FP_ANIM;
 
-    public static ForgeConfigSpec.BooleanValue USE_COMPATIBILITY_RENDERER;
+    public static ModConfigSpec.BooleanValue USE_COMPATIBILITY_RENDERER;
 
-    public static ForgeConfigSpec.DoubleValue SOUND_VOLUME;
+    public static ModConfigSpec.DoubleValue SOUND_VOLUME;
 
-    public static ForgeConfigSpec.BooleanValue SHOW_MODEL_ID_FIRST;
+    public static ModConfigSpec.BooleanValue SHOW_MODEL_ID_FIRST;
 
-    public static ForgeConfigSpec.BooleanValue SOPHISTICATEDBACKPACK;
+    public static ModConfigSpec.BooleanValue SOPHISTICATEDBACKPACK;
 
-    public static ForgeConfigSpec.BooleanValue PARCOOL;
+    public static ModConfigSpec.BooleanValue PARCOOL;
 
-    public static ForgeConfigSpec buildSpec() {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+    public static ModConfigSpec buildSpec() {
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         defineGeneral(builder);
         ExtraPlayerRenderConfig.define(builder);
         LoadingStateConfig.define(builder);
         return builder.build();
     }
 
-    public static void defineGeneral(ForgeConfigSpec.Builder builder) {
+    public static void defineGeneral(ModConfigSpec.Builder builder) {
         builder.push("general");
         builder.comment("Whether to display disclaimer GUI");
         DISCLAIMER_SHOW = builder.define("DisclaimerShow", true);

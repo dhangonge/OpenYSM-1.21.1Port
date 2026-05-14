@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin({ThrowableItemProjectile.class})
 public interface ThrowableItemProjectileAccessor {
-    @Invoker("getDefaultItem")
+    @Invoker(value="getDefaultItem",remap = false)
     Item invokeGetDefaultItem();
 }

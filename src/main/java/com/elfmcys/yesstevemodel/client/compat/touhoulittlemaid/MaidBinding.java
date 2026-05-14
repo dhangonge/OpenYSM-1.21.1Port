@@ -12,7 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidGameRecordMan
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
@@ -66,7 +66,7 @@ public class MaidBinding {
     private static String getMaidSchedule(EntityMaid entityMaid) {
         ResourceLocation key;
         ItemStack backpackShowItem = entityMaid.getBackpackShowItem();
-        if (backpackShowItem.isEmpty() || (key = ForgeRegistries.ITEMS.getKey(backpackShowItem.getItem())) == null) {
+        if (backpackShowItem.isEmpty() || (key = BuiltInRegistries.ITEM.getKey(backpackShowItem.getItem())) == null) {
             return StringPool.EMPTY;
         }
         return key.toString();

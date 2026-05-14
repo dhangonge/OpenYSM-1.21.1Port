@@ -1,9 +1,11 @@
 package com.elfmcys.yesstevemodel.command.subcommands;
 
-import com.elfmcys.yesstevemodel.model.ServerModelManager;
-import com.elfmcys.yesstevemodel.event.CommandRegistry;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
+import com.elfmcys.yesstevemodel.event.CommandRegistry;
+import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import com.elfmcys.yesstevemodel.network.message.S2CSyncAuthModelsPacket;
 import com.elfmcys.yesstevemodel.util.YSMMessageFormatter;
@@ -57,53 +59,82 @@ public class AuthCommand {
             return Command.SINGLE_SUCCESS;
         }
         targets.forEach(player -> {
-            player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(ownModelCap -> {
-                ownModelCap.addModel(string);
-                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(ownModelCap.getAuthModels()), player);
+            AuthModelsCapability cap = player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap != null) {
+                cap.addModel(string);
+                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(cap.getAuthModels()), player);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.add.info", string, player.getScoreboardName()), true);
-            });
+
+            }
+
         });
         return Command.SINGLE_SUCCESS;
     }
 
     private static int addAllAuthModel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        EntityArgument.getPlayers(context, TARGETS_NAME).forEach(player -> player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(ownModelCap -> {
-            Set<String> setKeySet = ServerModelManager.getServerModelInfo().keySet();
-            Objects.requireNonNull(ownModelCap);
-            setKeySet.forEach(ownModelCap::addModel);
-            NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(ownModelCap.getAuthModels()), player);
-            context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.all.info", player.getScoreboardName()), true);
-        }));
+
+        EntityArgument.getPlayers(context, TARGETS_NAME).forEach(player -> {
+            AuthModelsCapability cap = player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap != null) {
+
+                Set<String> setKeySet = ServerModelManager.getServerModelInfo().keySet();
+                Objects.requireNonNull(cap);
+                setKeySet.forEach(cap::addModel);
+                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(cap.getAuthModels()), player);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.all.info", player.getScoreboardName()), true);
+
+            }
+
+        });
         return Command.SINGLE_SUCCESS;
     }
 
     private static int removeAuthModel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, TARGETS_NAME);
         String modelName = StringArgumentType.getString(context, MODEL_ID_NAME);
-        targets.forEach(player -> player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(ownModelsCap -> {
-            ownModelsCap.removeModel(modelName);
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(modelIdCap -> {
-                if (ServerModelManager.getAuthModels().contains(modelIdCap.getModelId()) && !ownModelsCap.containsModel(modelIdCap.getModelId())) {
-                    modelIdCap.resetToDefault();
+        targets.forEach(player -> {
+            AuthModelsCapability cap_auth = player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap_auth != null) {
+
+
+                cap_auth.removeModel(modelName);
+                ModelInfoCapability cap_info = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+                if (cap_info != null) {
+
+                    if (ServerModelManager.getAuthModels().contains(cap_info.getModelId()) && !cap_auth.containsModel(cap_info.getModelId())) {
+                        cap_info.resetToDefault();
+                    }
+
                 }
-            });
-            NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(ownModelsCap.getAuthModels()), player);
-            context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.remove.info", modelName, player.getScoreboardName()), true);
-        }));
+
+
+                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(cap_auth.getAuthModels()), player);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.remove.info", modelName, player.getScoreboardName()), true);
+
+            }
+
+        });
         return Command.SINGLE_SUCCESS;
     }
 
     private static int executeClear(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        EntityArgument.getPlayers(context, TARGETS_NAME).forEach(player -> player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(ownModelCap -> {
-            ownModelCap.clear();
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(modelIdCap -> {
-                if (ServerModelManager.getAuthModels().contains(modelIdCap.getModelId())) {
-                    modelIdCap.resetToDefault();
+        EntityArgument.getPlayers(context, TARGETS_NAME).forEach(player -> {
+            AuthModelsCapability cap_auth = player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap_auth != null) {
+
+                cap_auth.clear();
+                ModelInfoCapability cap_info = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+                if (cap_info != null) {
+                    if (ServerModelManager.getAuthModels().contains(cap_info.getModelId())) {
+                        cap_info.resetToDefault();
+                    }
                 }
-            });
-            NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(ownModelCap.getAuthModels()), player);
-            context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.clear.info", player.getScoreboardName()), true);
-        }));
+                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(cap_auth.getAuthModels()), player);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.yes_steve_model.auth_model.clear.info", player.getScoreboardName()), true);
+
+            }
+
+        });
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -26,7 +26,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +43,7 @@ public class TacAnimHandler {
     }
 
     public static void clearGunState() {
-        MinecraftForge.EVENT_BUS.register(new GunFireReloadEvent());
+        NeoForge.EVENT_BUS.register(new GunFireReloadEvent());
     }
 
     public static boolean isTaczGunInHand(ItemStack stack) {

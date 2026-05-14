@@ -3,7 +3,7 @@ package com.elfmcys.yesstevemodel.client.compat.elytraslot;
 import com.illusivesoulworks.elytraslot.platform.Services;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class ElytraSlotCompat {
 

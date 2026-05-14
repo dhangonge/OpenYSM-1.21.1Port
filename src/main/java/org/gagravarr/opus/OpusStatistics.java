@@ -16,6 +16,7 @@ package org.gagravarr.opus;
 import java.io.IOException;
 
 import org.gagravarr.ogg.OggStreamAudioData;
+import org.gagravarr.ogg.audio.Object;
 import org.gagravarr.ogg.audio.OggAudioHeaders;
 import org.gagravarr.ogg.audio.OggAudioStatistics;
 import org.gagravarr.ogg.audio.OggAudioStream;
@@ -40,7 +41,7 @@ public class OpusStatistics extends OggAudioStatistics {
 
     private OpusInfo info;
 
-    public OpusStatistics(OggAudioHeaders headers, OggAudioStream audio) throws IOException {
+    public OpusStatistics(OggAudioHeaders headers, org.gagravarr.ogg.audio.Object audio) throws IOException {
         super(headers, audio);
 
         if (headers.getInfo() instanceof OpusInfo) {
@@ -52,7 +53,7 @@ public class OpusStatistics extends OggAudioStatistics {
         init(headers);
     }
     public OpusStatistics(OpusFile opus) throws IOException {
-        super(opus, opus);
+        super(opus, new Object(opus));
         this.info = opus.getInfo();
         init(opus);
     }

@@ -4,10 +4,10 @@ import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.MaidIntera
 import com.elfmcys.yesstevemodel.network.message.FeedbackData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.ModList;
 
 public class TouhouMaidCompat {
 
@@ -19,7 +19,7 @@ public class TouhouMaidCompat {
 
     public static void init() {
         if (isLoaded()) {
-            MinecraftForge.EVENT_BUS.register(new MaidInteractionEvent());
+            NeoForge.EVENT_BUS.register(new MaidInteractionEvent());
         }
     }
 

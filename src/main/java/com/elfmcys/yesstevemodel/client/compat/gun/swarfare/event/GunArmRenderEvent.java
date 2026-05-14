@@ -13,7 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import software.bernie.geckolib.cache.object.GeoBone;
 
 public class GunArmRenderEvent {
@@ -24,7 +24,8 @@ public class GunArmRenderEvent {
             return;
         }
         event.setCanceled(true);
-        player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        var cap = player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        if (cap != null) {
             HumanoidArm arm = event.getArm();
             ModelAssembly modelAssembly = cap.getModelAssembly();
             if (modelAssembly == null || !hasCustomArmModel(arm, modelAssembly.getAnimationBundle().getArmModel())) {
@@ -34,7 +35,7 @@ public class GunArmRenderEvent {
             boolean zIsUseOldHandRender = event.isUseOldHandRender();
             GeoBone bone = event.getBone();
             MultiBufferSource currentBuffer = event.getCurrentBuffer();
-            float partialTick = Minecraft.getInstance().getPartialTick();
+            float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
             HandItemRenderer renderer = RendererManager.getHandRenderer();
             if (arm == HumanoidArm.LEFT) {
                 stack.translate(-0.0625f, 0.125f, 0.0f);
@@ -51,7 +52,7 @@ public class GunArmRenderEvent {
                 stack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180.0f));
             }
             renderer.renderHandItem(player, modelAssembly, cap, arm, stack, currentBuffer, event.getPackedLightIn(), partialTick);
-        });
+        }
     }
 
     private boolean hasCustomArmModel(HumanoidArm arm, GeoModel model) {

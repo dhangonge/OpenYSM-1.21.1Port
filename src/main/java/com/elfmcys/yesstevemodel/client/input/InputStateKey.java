@@ -2,12 +2,12 @@ package com.elfmcys.yesstevemodel.client.input;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.util.InputUtil;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber(value = {Dist.CLIENT}, modid = YesSteveModel.MOD_ID)
+@EventBusSubscriber(value = {Dist.CLIENT}, modid = YesSteveModel.MOD_ID)
 public class InputStateKey {
 
     public static volatile boolean[] keyStates = new boolean[349];

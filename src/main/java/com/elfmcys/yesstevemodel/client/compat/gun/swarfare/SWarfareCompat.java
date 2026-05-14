@@ -11,10 +11,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.loading.LoadingModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +30,7 @@ public class SWarfareCompat {
             IS_LOADED = new DefaultArtifactVersion(modFileById.versionString()).compareTo(new DefaultArtifactVersion("0.8.7.1")) >= 0;
         }
         if (IS_LOADED) {
-            MinecraftForge.EVENT_BUS.register(new GunArmRenderEvent());
+            NeoForge.EVENT_BUS.register(new GunArmRenderEvent());
         }
     }
 
@@ -83,7 +83,7 @@ public class SWarfareCompat {
     @Nullable
     public static ResourceLocation getGunTexture(ItemStack stack) {
         if (IS_LOADED) {
-            return ForgeRegistries.ITEMS.getKey(stack.getItem());
+            return BuiltInRegistries.ITEM.getKey(stack.getItem());
         }
         return null;
     }

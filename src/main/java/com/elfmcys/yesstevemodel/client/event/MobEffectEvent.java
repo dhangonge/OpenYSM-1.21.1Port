@@ -6,13 +6,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber
+@EventBusSubscriber
 public class MobEffectEvent {
     @SubscribeEvent
-    public static void onEffectAdded(net.minecraftforge.event.entity.living.MobEffectEvent.Added event) {
+    public static void onEffectAdded(net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added event) {
         if (!YesSteveModel.isAvailable() || event.getEntity().level().isClientSide()) {
             return;
         }
@@ -28,7 +28,7 @@ public class MobEffectEvent {
     }
 
     @SubscribeEvent
-    public static void onEffectRemoved(net.minecraftforge.event.entity.living.MobEffectEvent.Remove event) {
+    public static void onEffectRemoved(net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove event) {
         if (!YesSteveModel.isAvailable() || event.getEntity().level().isClientSide()) {
             return;
         }
@@ -43,7 +43,7 @@ public class MobEffectEvent {
     }
 
     @SubscribeEvent
-    public static void onEffectExpired(net.minecraftforge.event.entity.living.MobEffectEvent.Expired event) {
+    public static void onEffectExpired(net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired event) {
         if (!YesSteveModel.isAvailable() || event.getEntity().level().isClientSide()) {
             return;
         }

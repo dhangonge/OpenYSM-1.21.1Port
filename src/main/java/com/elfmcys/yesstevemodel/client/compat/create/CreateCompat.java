@@ -2,8 +2,8 @@ package com.elfmcys.yesstevemodel.client.compat.create;
 
 import com.elfmcys.yesstevemodel.client.animation.molang.CtrlBinding;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.fml.loading.LoadingModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
+import net.neoforged.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 public class CreateCompat {

@@ -4,7 +4,7 @@ import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.geckolib3.core.processor.IBone;
 import com.elfmcys.yesstevemodel.geckolib3.util.RenderUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
-import mods.flammpfeil.slashblade.capability.slashblade.CapabilitySlashBlade;
+import mods.flammpfeil.slashblade.capability.slashblade.BladeStateAccess;
 import mods.flammpfeil.slashblade.capability.slashblade.ISlashBladeState;
 import mods.flammpfeil.slashblade.client.renderer.model.BladeModelManager;
 import mods.flammpfeil.slashblade.client.renderer.model.obj.WavefrontObject;
@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class SlashBladeRenderer {
         if (stack.isEmpty()) {
             return;
         }
-        stack.getCapability(CapabilitySlashBlade.BLADESTATE).ifPresent(bladeState -> {
+        BladeStateAccess.of(stack).ifPresent(bladeState -> {
             String str;
             ResourceLocation resourceLocation = bladeState.getTexture().orElse(BLADE_TEXTURE);
             WavefrontObject model = BladeModelManager.getInstance().getModel(bladeState.getModel().orElse(BLADE_OBJ));
@@ -57,7 +57,7 @@ public class SlashBladeRenderer {
             if (bladeBones.isEmpty() || sheathBones.isEmpty() || leftWaistBones.isEmpty()) {
                 renderBladeOnWaist(entity, model, poseStack, bufferSource, packedLight, stack, partialTick, leftWaistBones);
             } else {
-                stack.getCapability(CapabilitySlashBlade.BLADESTATE).ifPresent(bladeState -> renderBladeWithBones(bladeState, poseStack, bufferSource, packedLight, stack, leftWaistBones, bladeBones, sheathBones));
+                BladeStateAccess.of(stack).ifPresent(bladeState -> renderBladeWithBones(bladeState, poseStack, bufferSource, packedLight, stack, leftWaistBones, bladeBones, sheathBones));
             }
         }
     }
@@ -133,7 +133,7 @@ public class SlashBladeRenderer {
             return;
         }
 
-        stack.getCapability(CapabilitySlashBlade.BLADESTATE).ifPresent(iSlashBladeState -> {
+        BladeStateAccess.of(stack).ifPresent(iSlashBladeState -> {
             String partName;
             ResourceLocation resourceLocation = iSlashBladeState.getTexture().orElse(BLADE_TEXTURE);
             WavefrontObject model = BladeModelManager.getInstance().getModel(iSlashBladeState.getModel().orElse(BLADE_OBJ));

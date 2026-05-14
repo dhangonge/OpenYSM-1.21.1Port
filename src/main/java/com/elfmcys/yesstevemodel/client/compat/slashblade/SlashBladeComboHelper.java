@@ -7,7 +7,6 @@ import mods.flammpfeil.slashblade.registry.ComboStateRegistry;
 import mods.flammpfeil.slashblade.registry.combo.ComboState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.registries.IForgeRegistry;
 
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public class SlashBladeComboHelper {
 
     public static String getComboState(ISlashBladeState slashBladeState, long j, LivingEntity livingEntity) {
         ResourceLocation comboSeq = slashBladeState.getComboSeq();
-        ComboState comboState = (ComboState) ((IForgeRegistry) ComboStateRegistry.REGISTRY.get()).getValue(comboSeq);
+        ComboState comboState =  ComboStateRegistry.REGISTRY.get(comboSeq);
         if (comboState == null) {
             return StringPool.EMPTY;
         }
@@ -42,7 +41,7 @@ public class SlashBladeComboHelper {
         return StringPool.EMPTY;
     }
 
-    private static String normalizeComboName(String str) {
+    protected static String normalizeComboName(String str) {
         if (comboNameAliases.containsKey(str)) {
             return comboNameAliases.get(str);
         }

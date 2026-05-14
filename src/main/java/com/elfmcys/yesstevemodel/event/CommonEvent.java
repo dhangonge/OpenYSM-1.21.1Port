@@ -5,19 +5,14 @@ import com.elfmcys.yesstevemodel.capability.*;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
-import com.elfmcys.yesstevemodel.network.NetworkHandler;
-import com.elfmcys.yesstevemodel.capability.VehicleCapability;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 import java.io.IOException;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public final class CommonEvent {
     public static Object nativeInit() {
         ClientModelManager.loadDefaultModel();
@@ -37,27 +32,9 @@ public final class CommonEvent {
             });
         } else {
             event.enqueueWork(() -> {
-                NetworkHandler.init();
                 TouhouMaidCompat.init();
                 nativeInit();
             });
-        }
-    }
-
-    @SubscribeEvent
-    public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
-        if (!YesSteveModel.isAvailable()) {
-            return;
-        }
-        event.register(ModelInfoCapability.class);
-        event.register(ProjectileModelCapability.class);
-        event.register(VehicleModelCapability.class);
-        event.register(AuthModelsCapability.class);
-        event.register(StarModelsCapability.class);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            event.register(PlayerCapability.class);
-            event.register(ProjectileCapability.class);
-            event.register(VehicleCapability.class);
         }
     }
 }

@@ -1,40 +1,42 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.core.Direction;
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import org.jetbrains.annotations.Nullable;
 
-public class ProjectileModelCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static Capability<ProjectileModelCapability> PROJECTILE_MODEL = CapabilityManager.get(new CapabilityToken<ProjectileModelCapability>() {
-    });
+public final class ProjectileModelCapabilityProvider implements ICapabilityProvider<Entity, Void, ProjectileModelCapability> {
 
-    private ProjectileModelCapability capability = null;
+    public static final EntityCapability<ProjectileModelCapability, Void> PROJECTILE_MODEL =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "projectile_model_id"), ProjectileModelCapability.class);
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return PROJECTILE_MODEL.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
+    public static final ProjectileModelCapabilityProvider INSTANCE = new ProjectileModelCapabilityProvider();
+
+    private final ConcurrentHashMap<UUID, ProjectileModelCapability> cache = new ConcurrentHashMap<>();
+
+    private ProjectileModelCapabilityProvider() {}
+
+    @Override
+    @Nullable
+    public ProjectileModelCapability getCapability(Entity entity, Void context) {
+        return cache.computeIfAbsent(entity.getUUID(), uuid -> new ProjectileModelCapability());
     }
 
-    @NotNull
-    private ProjectileModelCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new ProjectileModelCapability();
+    public CompoundTag serializeNBT(Entity entity) {
+        ProjectileModelCapability cap = getCapability(entity, null);
+        return cap != null ? cap.serializeNBT() : new CompoundTag();
+    }
+
+    public void deserializeNBT(Entity entity, CompoundTag nbt) {
+        ProjectileModelCapability cap = getCapability(entity, null);
+        if (cap != null) {
+            cap.deserializeNBT(nbt);
         }
-        return this.capability;
-    }
-
-    public CompoundTag serializeNBT() {
-        return getOrCreateCapability().serializeNBT();
-    }
-
-    public void deserializeNBT(CompoundTag compoundTag) {
-        getOrCreateCapability().deserializeNBT(compoundTag);
     }
 }

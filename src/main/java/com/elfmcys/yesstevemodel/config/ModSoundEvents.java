@@ -3,12 +3,12 @@ package com.elfmcys.yesstevemodel.config;
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class ModSoundEvents {
 
-    public static final DeferredRegister<SoundEvent> REGISTER = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, YesSteveModel.MOD_ID);
+    public static final DeferredRegister<SoundEvent> REGISTER = DeferredRegister.create(BuiltInRegistries.SOUND_EVENT, YesSteveModel.MOD_ID);
 
     public static final SoundEvent CUSTOM_SOUND = createSoundEvent("custom");
 

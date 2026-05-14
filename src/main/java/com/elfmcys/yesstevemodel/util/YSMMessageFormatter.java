@@ -6,9 +6,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class YSMMessageFormatter {
@@ -20,7 +20,7 @@ public class YSMMessageFormatter {
     }
 
     public static boolean isCurrentClientPlayer(Entity entity) {
-        return entity != null && FMLEnvironment.dist == Dist.CLIENT && entity.getUUID().equals(Minecraft.getInstance().getUser().getGameProfile().getId());
+        return entity != null && FMLEnvironment.dist == Dist.CLIENT && entity.getUUID().equals(Minecraft.getInstance().getUser().getProfileId());
     }
 
     public static boolean hasPermission(@Nullable Entity entity, int level) {

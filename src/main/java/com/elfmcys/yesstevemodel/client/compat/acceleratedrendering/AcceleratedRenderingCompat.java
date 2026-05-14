@@ -1,6 +1,6 @@
 package com.elfmcys.yesstevemodel.client.compat.acceleratedrendering;
 
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class AcceleratedRenderingCompat {
 

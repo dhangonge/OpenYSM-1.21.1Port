@@ -1,45 +1,51 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import net.minecraft.core.Direction;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 @OnlyIn(Dist.CLIENT)
-public class MaidCapabilityProvider implements ICapabilityProvider {
+public final class MaidCapabilityProvider implements ICapabilityProvider<Entity, Void, MaidCapability> {
 
-    public static final Capability<MaidCapability> MAID_CAP = CapabilityManager.get(new CapabilityToken<MaidCapability>() {
-    });
+    public static final EntityCapability<MaidCapability, Void> MAID_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_maid"), MaidCapability.class);
 
-    private MaidCapability capability;
+    public static final MaidCapabilityProvider INSTANCE = new MaidCapabilityProvider();
 
-    private final EntityMaid maid;
+    private final ConcurrentHashMap<UUID, MaidCapability> cache = new ConcurrentHashMap<>();
 
-    public MaidCapabilityProvider(EntityMaid entityMaid) {
-        this.maid = entityMaid;
-    }
+    private MaidCapabilityProvider() {}
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return getCapability(capability);
-    }
-
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability) {
-        return MAID_CAP.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
-    }
-
-    private MaidCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new MaidCapability(this.maid, true);
+    @Override
+    @Nullable
+    public MaidCapability getCapability(Entity entity, Void context) {
+        if (entity instanceof EntityMaid maid) {
+            return cache.computeIfAbsent(entity.getUUID(), uuid -> new MaidCapability(maid, true));
         }
-        return this.capability;
+        return null;
+    }
+
+    public void invalidate(UUID uuid) {
+        cache.remove(uuid);
+    }
+
+    @EventBusSubscriber(value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
+    private static class CleanupHandler {
+        @SubscribeEvent
+        public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+            INSTANCE.invalidate(event.getEntity().getUUID());
+        }
     }
 }

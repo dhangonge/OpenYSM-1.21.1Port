@@ -2,130 +2,98 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7.+'
+    id 'net.neoforged.gradle.userdev' version '7.1.27'
 }
 
-version = '2.6.5-forge+mc1.20.1'
+version = '2.6.5-NeoForge+mc1.21.1'
 group = 'com.elfmcys.yesstevemodel'
-
-java {
-    archivesBaseName = 'ysm'
-
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
-}
-
-minecraft {
-    mappings channel: 'official', version: '1.20.1'
-
-    copyIdeResources = true
-
-    runs {
-        client {
-            jvmArgs = [
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+AllowEnhancedClassRedefinition"
-            ]
-            workingDirectory project.file('run/client_a')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'yes_steve_model'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                yes_steve_model {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client2 {
-            parent minecraft.runs.client
-            workingDirectory project.file('run/client_b')
-            args '--username', 'tartaric_acid'
-            mods {
-                yes_steve_model {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        server {
-            workingDirectory project.file('run/server')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'yes_steve_model'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                yes_steve_model {
-                    source sourceSets.main
-                }
-            }
-        }
-    }
-}
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-jarJar.enable()
+base {
+    archivesName = 'ysm'
+}
 
-mixin {
-    add sourceSets.main, 'yes_steve_model.refmap.json'
-    config 'yes_steve_model.mixins.json'
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+
+    client {
+        jvmArguments '-XX:+IgnoreUnrecognizedVMOptions', '-XX:+AllowEnhancedClassRedefinition'
+        workingDirectory project.file('run/client_a')
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'yes_steve_model'
+    }
+
+    client2 {
+        runType 'client'
+        jvmArguments '-XX:+IgnoreUnrecognizedVMOptions', '-XX:+AllowEnhancedClassRedefinition'
+        workingDirectory project.file('run/client_b')
+        arguments '--username', 'tartaric_acid'
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'yes_steve_model'
+    }
+
+    server {
+        workingDirectory project.file('run/server')
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'yes_steve_model'
+    }
 }
 
 repositories {
-    flatDir {
-        dir 'libs'
-    }
-    maven { url = uri("https://jitpack.io") }
+    mavenCentral()
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    flatDir { dir 'libs' }
+    maven { url = uri('https://jitpack.io') }
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:1.20.1-47.4.0"
+    implementation "net.neoforged:neoforge:21.1.229"
 
-    compileOnly fg.deobf('libs:elytraslot-forge:6.4.4+1.20.1')
-    compileOnly fg.deobf('libs:firstperson-forge:2.7.0-mc1.20.1')
-    compileOnly fg.deobf('libs:immersive_melodies:0.6.0+1.20.1-forge')
-    compileOnly fg.deobf('libs:player-animation-lib-forge:1.0.2-rc1+1.20')
-    compileOnly fg.deobf('libs:touhoulittlemaid:1.5.0-forge+mc1.20.1-release')
-    compileOnly fg.deobf("libs:tacz:1.20.1-1.1.7-hotfix2")
-    compileOnly fg.deobf("libs:carryon-forge:1.20.1-2.1.0.1")
-    compileOnly fg.deobf("libs:theoneprobe:1.20.1-10.0.3")
-    compileOnly fg.deobf("libs:curios-forge:5.7.0+1.20.1")
-    compileOnly fg.deobf("libs:sophisticatedcore:1.20.1-1.3.13.1588")
-    compileOnly fg.deobf("libs:sophisticatedbackpacks:1.20.1-3.24.31.1628")
-    compileOnly fg.deobf("libs:cosmeticarmorreworked:1.20.1-v1a")
-    compileOnly fg.deobf("libs:swem:1.20.1-1.6.5")
-    compileOnly fg.deobf("libs:simpleplanes:1.20.1-5.3.3")
-    compileOnly fg.deobf("libs:irons_spellbooks:1.20.1-3.15.5.1")
-    compileOnly fg.deobf("libs:ParCool:1.20.1-3.4.3.2")
-    compileOnly fg.deobf("libs:immersive_aircraft:1.4.0+1.20.1-forge")
-    compileOnly fg.deobf("libs:bettercombat-forge:1.9.0+1.20.1")
-    compileOnly fg.deobf("libs:Jade:1.20.1-Forge-11.13.2")
-    compileOnly fg.deobf("libs:superbwarfare:1.20.1-0.8.8-final-6a6b54795")
-    compileOnly fg.deobf("libs:realcamera:1.20.1-forge-0.6.11a-beta")
-    compileOnly fg.deobf("libs:SlashBladeResharped:1.20.1-0.1.4")
-    compileOnly fg.deobf("libs:SlashBlade:1.20.1-0.1.2")
-    compileOnly fg.deobf("libs:oculus:mc1.20.1-1.8.0")
-    implementation fg.deobf("libs:oculus_legacy:mc1.20.1-1.6.13")
-    compileOnly fg.deobf("libs:geckolib-forge:1.20.1-4.8.3")
-    compileOnly fg.deobf("libs:create:1.20.1-6.0.8")
-    compileOnly fg.deobf("libs:simplehats-forge:1.20.1-0.4.0a")
-    compileOnly fg.deobf("libs:accessories-neoforge:1.0.0-beta.48+1.20.1")
+    // compileOnly dependencies from libs/ (optional mod compat)
+    compileOnly files('libs/elytraslot-neoforge-9.0.2+1.21.1.jar')
+    compileOnly files('libs/firstperson-neoforge-2.7.1-mc1.21.1.jar')
+    compileOnly files('libs/immersive_melodies-neoforge-0.6.4+1.21.1.jar')
+    compileOnly files('libs/player-animation-lib-2.0.4+1.21.1.jar')
+    compileOnly files('libs/touhoulittlemaid-1.5.3-neoforge+mc1.21.1.jar')
+    // TACZ: no NeoForge official 1.21.1 version
+    compileOnly files('libs/tacz-neoforge-1.21.1-1.1.8-r2.jar')
+    compileOnly files('libs/carryon-neoforge-1.21.1-2.2.4.4.jar')
+    compileOnly files('libs/theoneprobe-1.21_neo-12.0.8.jar')
+    compileOnly files('libs/curios-neoforge-9.5.1+1.21.1.jar')
+    compileOnly files('libs/sophisticatedcore-1.21.1-1.4.39.1852.jar')
+    compileOnly files('libs/sophisticatedbackpacks-1.21.1-3.25.45.1742.jar')
+    compileOnly files('libs/cosmeticarmorreworked-1.21.1-v1-neoforge.jar')
+    compileOnly files('libs/swem-1.21.1-1.6.9.jar')
+    compileOnly files('libs/simpleplanes-1.21.1-5.3.7.jar')
+    compileOnly files('libs/irons_spellbooks-1.21.1-3.15.6.jar')
+    compileOnly files('libs/ParCool-1.21.1-3.4.3.3-NF.jar')
+    compileOnly files('libs/immersive_aircraft-neoforge-1.4.3+1.21.1.jar')
+    compileOnly files('libs/bettercombat-neoforge-2.3.2+1.21.1.jar')
+    compileOnly files('libs/Jade-1.21.1-NeoForge-15.10.5.jar')
+    compileOnly files('libs/superbwarfare-1.21.1-0.8.8-final-neoforge.jar')
+    compileOnly files('libs/realcamera-1.21.1-neoforge-0.7.6-beta.jar')
+    compileOnly files('libs/SlashBladeResharped-2.0.3-1.21.1.jar')
+    // SlashBlade: no NeoForge 1.21.1 version
+    // compileOnly files('libs/SlashBlade-1.20.1-0.1.2.jar')
+    compileOnly files('libs/neoculus-mc1.21.1-1.8.7.jar')
+    compileOnly files('libs/geckolib-neoforge-1.21.1-4.8.4.jar')
+    compileOnly files('libs/create-1.21.1-6.0.10.jar')
+    compileOnly files('libs/simplehats-neoforge-1.21.1-0.4.0.jar')
+    compileOnly files('libs/accessories-neoforge-1.1.0-beta.53+1.21.1.jar')
 
-    minecraftLibrary("com.github.OpenYSM:ImageStream:-SNAPSHOT")
-    jarJar("com.github.OpenYSM:ImageStream:-SNAPSHOT") {
-        jarJar.ranged(it, "[-SNAPSHOT,)")
-    }
+    implementation "com.github.OpenYSM:ImageStream:-SNAPSHOT"
+    jarJar("com.github.OpenYSM:ImageStream:-SNAPSHOT")
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
-    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
-        jarJar.ranged(it, "[0.3.6,)")
+    implementation(jarJar("io.github.llamalad7:mixinextras-neoforge:0.3.6")) {
+        version { prefer "0.3.6" }
     }
 
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 }
 
 tasks.register('compileNative') {
@@ -200,10 +168,9 @@ tasks.named('jar', Jar).configure {
                 "Implementation-Version": "${version}"
         ])
     }
-
-    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xmaxerrs' << '500'
 }

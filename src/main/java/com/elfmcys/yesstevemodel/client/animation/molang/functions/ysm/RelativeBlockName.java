@@ -7,14 +7,14 @@ import com.elfmcys.yesstevemodel.molang.runtime.ExecutionContext;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class RelativeBlockName extends EntityFunction {
     @Override
     public Object eval(ExecutionContext<IContext<Entity>> context, ArgumentCollection arguments) {
         ResourceLocation key;
         BlockState blockState = MolangUtils.getRelativeBlockState(context, arguments);
-        if (blockState == null || (key = ForgeRegistries.BLOCKS.getKey(blockState.getBlock())) == null) {
+        if (blockState == null || (key = BuiltInRegistries.BLOCK.getKey(blockState.getBlock())) == null) {
             return null;
         }
         return key.toString();

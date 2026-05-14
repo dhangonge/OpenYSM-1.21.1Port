@@ -2,8 +2,8 @@ package com.elfmcys.yesstevemodel.util;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.settings.KeyModifier;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 
 public class InputUtil {
     @SuppressWarnings({"deprecation", "removal"})

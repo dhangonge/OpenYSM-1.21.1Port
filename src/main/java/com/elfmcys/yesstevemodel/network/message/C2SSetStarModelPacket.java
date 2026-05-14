@@ -1,13 +1,22 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class C2SSetStarModelPacket implements CustomPacketPayload, IPayloadHandler<C2SSetStarModelPacket> {
 
-public class C2SSetStarModelPacket {
+    public static final CustomPacketPayload.Type<C2SSetStarModelPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "c2s_set_star_model"));
+
+    public static final StreamCodec<FriendlyByteBuf, C2SSetStarModelPacket> STREAM_CODEC =
+            StreamCodec.of(C2SSetStarModelPacket::encode, C2SSetStarModelPacket::decode);
 
     private final String modelId;
 
@@ -26,7 +35,7 @@ public class C2SSetStarModelPacket {
         return new C2SSetStarModelPacket(modelId, false);
     }
 
-    public static void encode(C2SSetStarModelPacket message, FriendlyByteBuf buf) {
+    public static void encode(FriendlyByteBuf buf, C2SSetStarModelPacket message) {
         buf.writeUtf(message.modelId);
         buf.writeBoolean(message.isAdd);
     }
@@ -35,22 +44,26 @@ public class C2SSetStarModelPacket {
         return new C2SSetStarModelPacket(buf.readUtf(), buf.readBoolean());
     }
 
-    public static void handle(C2SSetStarModelPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isServer()) {
+    @Override
+    public Type<C2SSetStarModelPacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(C2SSetStarModelPacket payload, IPayloadContext context) {
+        if (context.flow().isServerbound()) {
             context.enqueueWork(() -> {
-                ServerPlayer sender = context.getSender();
+                ServerPlayer sender = (ServerPlayer) context.player();
                 if (sender == null) {
                     return;
                 }
-                handleCapability(message, sender);
+                handleCapability(payload, sender);
             });
         }
-        context.setPacketHandled(true);
     }
 
     private static void handleCapability(C2SSetStarModelPacket message, ServerPlayer sender) {
-        sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP).ifPresent(cap -> {
+        sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null).ifPresent(cap -> {
             if (message.isAdd) {
                 cap.addModel(message.modelId);
             } else {

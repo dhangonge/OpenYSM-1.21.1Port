@@ -49,7 +49,7 @@ public class ImmersiveMelodiesBinding {
 
     public static void updateInstrumentData(LivingEntity entity, ImmersiveMelodiesCompat.ImmersiveMelodiesData imData) {
         if (EntityModelAnimator.getInstrument(entity) != null) {
-            float frameTime = (Minecraft.getInstance().isPaused() ? 0.0f : Minecraft.getInstance().getFrameTime()) + entity.tickCount;
+            float frameTime = (Minecraft.getInstance().isPaused() ? 0.0f : Minecraft.getInstance().getTimer().getGameTimeDeltaTicks()) + entity.tickCount;
             MelodyProgress progress = MelodyProgressManager.INSTANCE.getProgress(entity);
             progress.visualTick(frameTime);
             imData.pitch = progress.getCurrentPitch();

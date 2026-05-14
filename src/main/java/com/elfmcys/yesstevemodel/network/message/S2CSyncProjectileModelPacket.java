@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.network.message;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.capability.ClientLazyCapabilityProvider;
 import com.elfmcys.yesstevemodel.capability.ProjectileCapability;
 import com.elfmcys.yesstevemodel.capability.ProjectileModelCapability;
@@ -9,14 +10,22 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
-import java.util.function.Supplier;
+public class S2CSyncProjectileModelPacket implements CustomPacketPayload, IPayloadHandler<S2CSyncProjectileModelPacket> {
 
-public class S2CSyncProjectileModelPacket {
+    public static final CustomPacketPayload.Type<S2CSyncProjectileModelPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "s2c_sync_projectile_model"));
+
+    public static final StreamCodec<FriendlyByteBuf, S2CSyncProjectileModelPacket> STREAM_CODEC =
+            StreamCodec.of(S2CSyncProjectileModelPacket::encode, S2CSyncProjectileModelPacket::decode);
 
     private final int entityId;
 
@@ -34,7 +43,7 @@ public class S2CSyncProjectileModelPacket {
         this(entityId, capability, new Int2FloatOpenHashMap());
     }
 
-    public static void encode(S2CSyncProjectileModelPacket message, FriendlyByteBuf buf) {
+    public static void encode(FriendlyByteBuf buf, S2CSyncProjectileModelPacket message) {
         buf.writeVarInt(message.entityId);
         buf.writeNbt(message.capability.serializeNBT());
     }
@@ -52,17 +61,21 @@ public class S2CSyncProjectileModelPacket {
         return new S2CSyncProjectileModelPacket(varInt, cap, floatMap);
     }
 
-    public static void handle(S2CSyncProjectileModelPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            EntityJoinCallbackEvent.addCallback(message.entityId, entity -> handleCapability(entity, message.capability, message.floatMap));
+    @Override
+    public Type<S2CSyncProjectileModelPacket> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void handle(S2CSyncProjectileModelPacket payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            EntityJoinCallbackEvent.addCallback(payload.entityId, entity -> handleCapability(entity, payload.capability, payload.floatMap));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void handleCapability(Entity entity, ProjectileModelCapability capability, Int2FloatOpenHashMap floatMap) {
-        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP).ifPresent(cap -> {
+        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null).ifPresent(cap -> {
             ProjectileCapability projectileCapability = cap.getProjectileAnimProvider().getOrCreateCapability();
             projectileCapability.updateModelId(capability.getOwnerModelId());
             projectileCapability.setFloatProperties(floatMap);

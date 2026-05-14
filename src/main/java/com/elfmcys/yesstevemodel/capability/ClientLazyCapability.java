@@ -1,25 +1,22 @@
 package com.elfmcys.yesstevemodel.capability;
 
+import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 public class ClientLazyCapability {
 
-    private final VehicleCapabilityProvider entityRenderProvider;
+    private final Entity entity;
 
-    @Nullable
-    private final ProjectileCapabilityProvider projectileAnimProvider;
-
-    public ClientLazyCapability(VehicleCapabilityProvider capabilityProvider, @Nullable ProjectileCapabilityProvider capabilityProvider2) {
-        this.entityRenderProvider = capabilityProvider;
-        this.projectileAnimProvider = capabilityProvider2;
+    public ClientLazyCapability(Entity entity) {
+        this.entity = entity;
     }
 
-    public VehicleCapabilityProvider getEntityRenderProvider() {
-        return this.entityRenderProvider;
+    public VehicleCapability getEntityRenderCapability() {
+        return entity.getCapability(VehicleCapabilityProvider.VEHICLE_CAP, null);
     }
 
     @Nullable
-    public ProjectileCapabilityProvider getProjectileAnimProvider() {
-        return this.projectileAnimProvider;
+    public ProjectileCapability getProjectileCapability() {
+        return entity.getCapability(ProjectileCapabilityProvider.PROJECTILE_CAP, null);
     }
 }

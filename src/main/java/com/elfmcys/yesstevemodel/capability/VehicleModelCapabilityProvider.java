@@ -1,40 +1,42 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.core.Direction;
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import org.jetbrains.annotations.Nullable;
 
-public class VehicleModelCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static Capability<VehicleModelCapability> VEHICLE_MODEL_CAP = CapabilityManager.get(new CapabilityToken<VehicleModelCapability>() {
-    });
+public final class VehicleModelCapabilityProvider implements ICapabilityProvider<Entity, Void, VehicleModelCapability> {
 
-    private VehicleModelCapability capability = null;
+    public static final EntityCapability<VehicleModelCapability, Void> VEHICLE_MODEL_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "vehicle_model_id"), VehicleModelCapability.class);
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return VEHICLE_MODEL_CAP.orEmpty(capability, LazyOptional.of(this::getOrCreateCapability));
+    public static final VehicleModelCapabilityProvider INSTANCE = new VehicleModelCapabilityProvider();
+
+    private final ConcurrentHashMap<UUID, VehicleModelCapability> cache = new ConcurrentHashMap<>();
+
+    private VehicleModelCapabilityProvider() {}
+
+    @Override
+    @Nullable
+    public VehicleModelCapability getCapability(Entity entity, Void context) {
+        return cache.computeIfAbsent(entity.getUUID(), uuid -> new VehicleModelCapability());
     }
 
-    @NotNull
-    private VehicleModelCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new VehicleModelCapability();
+    public CompoundTag serializeNBT(Entity entity) {
+        VehicleModelCapability cap = getCapability(entity, null);
+        return cap != null ? cap.serializeNBT() : new CompoundTag();
+    }
+
+    public void deserializeNBT(Entity entity, CompoundTag nbt) {
+        VehicleModelCapability cap = getCapability(entity, null);
+        if (cap != null) {
+            cap.deserializeNBT(nbt);
         }
-        return this.capability;
-    }
-
-    public CompoundTag serializeNBT() {
-        return getOrCreateCapability().serializeNBT();
-    }
-
-    public void deserializeNBT(CompoundTag compoundTag) {
-        getOrCreateCapability().deserializeNBT(compoundTag);
     }
 }

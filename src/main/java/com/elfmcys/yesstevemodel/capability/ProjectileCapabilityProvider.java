@@ -1,41 +1,51 @@
 package com.elfmcys.yesstevemodel.capability;
 
-import net.minecraft.core.Direction;
+import com.elfmcys.yesstevemodel.YesSteveModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 @OnlyIn(Dist.CLIENT)
-public class ProjectileCapabilityProvider implements ICapabilityProvider {
+public final class ProjectileCapabilityProvider implements ICapabilityProvider<Entity, Void, ProjectileCapability> {
 
-    public static Capability<ProjectileCapability> PROJECTILE_CAP = CapabilityManager.get(new CapabilityToken<ProjectileCapability>() {
-    });
+    public static final EntityCapability<ProjectileCapability, Void> PROJECTILE_CAP =
+            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "projectile_animatable"), ProjectileCapability.class);
 
-    private ProjectileCapability capability;
+    public static final ProjectileCapabilityProvider INSTANCE = new ProjectileCapabilityProvider();
 
-    private Projectile projectile;
+    private final ConcurrentHashMap<UUID, ProjectileCapability> cache = new ConcurrentHashMap<>();
 
-    public ProjectileCapabilityProvider(Projectile projectile) {
-        this.projectile = projectile;
-    }
+    private ProjectileCapabilityProvider() {}
 
-    public ProjectileCapability getOrCreateCapability() {
-        if (this.capability == null) {
-            this.capability = new ProjectileCapability(this.projectile);
-            this.projectile = null;
+    @Override
+    @Nullable
+    public ProjectileCapability getCapability(Entity entity, Void context) {
+        if (entity instanceof Projectile projectile) {
+            return cache.computeIfAbsent(entity.getUUID(), uuid -> new ProjectileCapability(projectile));
         }
-        return this.capability;
+        return null;
     }
 
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
-        return PROJECTILE_CAP.orEmpty(capability, this.capability == null ? LazyOptional.empty() : LazyOptional.of(() -> this.capability));
+    public void invalidate(UUID uuid) {
+        cache.remove(uuid);
+    }
+
+    @EventBusSubscriber(value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
+    private static class CleanupHandler {
+        @SubscribeEvent
+        public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+            INSTANCE.invalidate(event.getEntity().getUUID());
+        }
     }
 }

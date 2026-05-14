@@ -1,34 +1,34 @@
 package com.elfmcys.yesstevemodel.client.compat.slashblade;
 
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
-import com.elfmcys.yesstevemodel.util.UnsafeUtil;
-import mods.flammpfeil.slashblade.capability.slashblade.ComboState;
-import mods.flammpfeil.slashblade.capability.slashblade.SlashBladeState;
+import mods.flammpfeil.slashblade.capability.slashblade.ISlashBladeState;
+import mods.flammpfeil.slashblade.registry.ComboStateRegistry;
+import mods.flammpfeil.slashblade.registry.combo.ComboState;
 
 public class SlashBladeStateAccess {
 
-    private static long comboSeqFieldOffset = -1;
-
+    @Deprecated
     public static void initialize() {
-        try {
-            comboSeqFieldOffset = UnsafeUtil.getUnsafe().objectFieldOffset(SlashBladeState.class.getDeclaredField("comboSeq"));
-        } catch (NoSuchFieldException e) {
-            e.fillInStackTrace();
-        }
     }
 
-    public static String getComboState(SlashBladeState slashBladeState, long j) {
-        Object object = UnsafeUtil.getUnsafe().getObject(slashBladeState, comboSeqFieldOffset);
-        if (!(object instanceof ComboState comboState)) {
+    public static String getComboState(ISlashBladeState slashBladeState, long j) {
+
+        ComboState comboState = ComboStateRegistry.REGISTRY.get(slashBladeState.getComboSeq());
+
+        if (comboState != null && j > comboState.getTimeoutMS()) {
             return StringPool.EMPTY;
         }
-        if (j > comboState.getTimeoutMS()) {
-            return StringPool.EMPTY;
+        int timeoutMS = comboState.getTimeoutMS();
+        if ("slashblade:standby".equals(slashBladeState.getComboSeq().toString())) {
+            timeoutMS -= 553;
         }
-        String name = comboState.getName();
-        if (name.startsWith("ex_")) {
-            name = name.substring(3);
+        if (j <= timeoutMS) {
+            String name = SlashBladeComboHelper.normalizeComboName(slashBladeState.getComboSeq().toString());
+            if (name.startsWith("ex_")) {
+                name = name.substring(3);
+            }
+            return "slashblade:" + name;
         }
-        return "slashblade:" + name;
+        return StringPool.EMPTY;
     }
 }
