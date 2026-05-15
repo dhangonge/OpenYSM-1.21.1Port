@@ -136,9 +136,9 @@ public class ClientSetupEvent {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_debug_info"), AnimationDebugOverlay.createOverlay());
-        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_extra_player"), new LoadingStateOverlay());
-        event.registerAbove(net.minecraft.resources.ResourceLocation.parse("debug"), net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_loading_state"), new ModelSyncStateOverlay());
+        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_debug_info"), AnimationDebugOverlay.createOverlay());
+        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_extra_player"), new LoadingStateOverlay());
+        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_loading_state"), new ModelSyncStateOverlay());
     }
 
     private static void checkNativeInitialization() {

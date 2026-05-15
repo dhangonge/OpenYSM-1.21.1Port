@@ -84,11 +84,18 @@ dependencies {
     compileOnly files('libs/create-1.21.1-6.0.10.jar')
     compileOnly files('libs/simplehats-neoforge-1.21.1-0.4.0.jar')
     compileOnly files('libs/accessories-neoforge-1.1.0-beta.53+1.21.1.jar')
-
-    implementation "com.github.OpenYSM:ImageStream:-SNAPSHOT"
-    jarJar("com.github.OpenYSM:ImageStream:-SNAPSHOT")
-
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
+
+    /*
+    // cannot implementation due to unknown reason.
+    implementation (jarJar("com.github.OpenYSM:ImageStream:-SNAPSHOT")){
+        version { prefer "-SNAPSHOT" }
+    }
+     */
+    // using local jar instead.
+    implementation(files("libs/ImageStream--SNAPSHOT.jar"))
+
+
     implementation(jarJar("io.github.llamalad7:mixinextras-neoforge:0.3.6")) {
         version { prefer "0.3.6" }
     }
