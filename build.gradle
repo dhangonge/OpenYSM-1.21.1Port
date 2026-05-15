@@ -94,6 +94,10 @@ dependencies {
      */
     // using local jar instead.
     implementation(files("libs/ImageStream--SNAPSHOT.jar"))
+    localRunRuntime(files("libs/ImageStream--SNAPSHOT.jar"))
+    jarJar(files("libs/ImageStream--SNAPSHOT.jar"))
+
+
 
 
     implementation(jarJar("io.github.llamalad7:mixinextras-neoforge:0.3.6")) {

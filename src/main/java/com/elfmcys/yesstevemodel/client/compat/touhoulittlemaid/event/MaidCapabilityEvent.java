@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.world.entity.EntityType;
@@ -16,7 +17,7 @@ public final class MaidCapabilityEvent {
 
     @SubscribeEvent
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        if (!YesSteveModel.isAvailable()) {
+        if (!YesSteveModel.isAvailable()||!TouhouMaidCompat.isLoaded()) {
             return;
         }
         event.registerEntity(MaidCapabilityProvider.MAID_CAP, EntityType.PLAYER, MaidCapabilityProvider.INSTANCE);

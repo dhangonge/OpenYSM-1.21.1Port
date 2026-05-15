@@ -29,7 +29,7 @@ public class SBackpackCompat {
 
     public static void init() {
         ModFileInfo modFileById;
-        if (!GeneralConfig.SOPHISTICATEDBACKPACK.get() && (modFileById = LoadingModList.get().getModFileById(MOD_ID)) != null) {
+        if (GeneralConfig.SOPHISTICATEDBACKPACK!=null&&!GeneralConfig.SOPHISTICATEDBACKPACK.get() && (modFileById = LoadingModList.get().getModFileById(MOD_ID)) != null) {
             if (modFileById.getMods().get(0).getVersion().compareTo(MIN_VERSION) >= 0) {
                 IS_LOADED = true;
             } else {
