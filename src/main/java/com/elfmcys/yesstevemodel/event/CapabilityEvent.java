@@ -145,7 +145,7 @@ public final class CapabilityEvent {
             return;
         }
         List<ServerPlayer> players = event.getServer().getPlayerList().getPlayers();
-        Boolean lowBandwidth = ServerConfig.LOW_BANDWIDTH_USAGE!=null?ServerConfig.LOW_BANDWIDTH_USAGE.get():false;
+        Boolean lowBandwidth = ServerConfig.LOW_BANDWIDTH_USAGE!=null?ServerConfig.LOW_BANDWIDTH_USAGE.get():Boolean.FALSE;
         for (ServerPlayer serverPlayer : players) {
             ModelInfoCapability cap = getModelInfoCap(serverPlayer);
             if (cap == null) {
