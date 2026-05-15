@@ -38,7 +38,7 @@ public class ExtraAnimationKey {
             return;
         }
         for (int i = 0; i <= 7; i++) {
-            KeyMapping eventMapping = new KeyMapping(String.format("key.yes_steve_model.extra_animation.%d.desc", Integer.valueOf(i)), KeyConflictContext.IN_GAME, KeyModifier.NONE, InputConstants.Type.KEYSYM, -1, "key.category.yes_steve_model");
+            KeyMapping eventMapping = new KeyMapping(String.format("key.yes_steve_model.extra_animation.%d.desc", i), KeyConflictContext.IN_GAME, KeyModifier.NONE, InputConstants.Type.KEYSYM, -1, "key.category.yes_steve_model");
             event.register(eventMapping);
             KEY_MAPPINGS.add(eventMapping);
         }
