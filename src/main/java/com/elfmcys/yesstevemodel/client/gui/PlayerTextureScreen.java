@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.gui;
 
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.gui.button.FlatColorButton;
 import com.elfmcys.yesstevemodel.client.gui.button.IconButton;
@@ -208,7 +209,7 @@ public class PlayerTextureScreen extends Screen {
         if (getMinecraft().player == null) {
             return;
         }
-        renderBackground(guiGraphics);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fillGradient(this.guiLeft, this.guiTop + 22, this.guiLeft + 90, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 93, this.guiTop, this.guiLeft + 299, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 302, this.guiTop, this.guiLeft + 420, this.guiTop + 235, -14540254, -14540254);
@@ -220,7 +221,7 @@ public class PlayerTextureScreen extends Screen {
         if (!this.modelHolder.getAnimationStateMachine().isCurrentAnimation(this.currentAnimation)) {
             this.modelHolder.getAnimationStateMachine().setCurrentAnimation(this.currentAnimation);
         }
-        renderTexturePreview(guiGraphics, scissorX, height, scissorWidth, scissorHeight, this.minecraft.getFrameTime());
+        renderTexturePreview(guiGraphics, scissorX, height, scissorWidth, scissorHeight, this.minecraft.getTimer().getGameTimeDeltaTicks());
         String str = String.format("%d/%d", this.textureCurrentPage + 1, this.textureMaxPage + 1);
         Font font = this.font;
         int iWidth = this.guiLeft + 302 + ((118 - this.font.width(str)) / 2);
@@ -239,10 +240,11 @@ public class PlayerTextureScreen extends Screen {
 
     public void renderTexturePreview(GuiGraphics guiGraphics, int scissorX, int scissorY, int scissorWidth, int scissorHeight, float partialTick) {
         RenderSystem.enableScissor(scissorX, scissorY, scissorWidth, scissorHeight);
-        this.minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        PlayerCapability cap = this.minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        if (cap != null) {
             this.modelHolder.initModelWithTexture(this.modelId, cap.getCurrentTextureName());
             ModelPreviewRenderer.renderEntityPreview(this.guiLeft + 149.5f + 40.0f + this.offsetX, this.guiTop + 117.5f + 80.0f + this.offsetY, this.zoom, this.pitch, this.yaw, partialTick, this.modelHolder, RendererManager.getPlayerRenderer(), this.showGround);
-        });
+        }
         RenderSystem.disableScissor();
     }
 
@@ -262,23 +264,23 @@ public class PlayerTextureScreen extends Screen {
         return true;
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.minecraft == null) {
             return false;
         }
-        if (delta != 0.0d) {
+        if (scrollY != 0.0d) {
             if (isInPreviewArea(mouseX, mouseY)) {
-                adjustZoom(((float) delta) * 0.07f);
+                adjustZoom(((float) scrollY) * 0.07f);
                 return true;
             }
             if (isInAnimationArea(mouseX, mouseY)) {
-                return scrollAnimationPage(delta);
+                return scrollAnimationPage(scrollY);
             }
             if (isInTextureArea(mouseX, mouseY)) {
-                return scrollTexturePage(delta);
+                return scrollTexturePage(scrollY);
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private boolean scrollTexturePage(double delta) {

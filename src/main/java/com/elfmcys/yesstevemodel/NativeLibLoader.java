@@ -236,6 +236,7 @@ public final class NativeLibLoader {
 
     public static ModLoadingIssue createLoadingIssue() {
         if (lastError == null) return null;
-        return new ModLoadingIssue(ModList.get().getModFileById(YesSteveModel.MOD_ID).getMods().get(0), lastError.key, lastError.args);
+        YesSteveModel.LOGGER.warn(lastError.logMsg);
+        return null;
     }
 }

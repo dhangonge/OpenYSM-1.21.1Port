@@ -3,8 +3,8 @@ package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid;
 import com.elfmcys.yesstevemodel.capability.VehicleCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
-import com.elfmcys.yesstevemodel.geckolib3.geo.GeoReplacedEntityRenderer;
 import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
+import com.elfmcys.yesstevemodel.geckolib3.geo.GeoReplacedEntityRenderer;
 import com.elfmcys.yesstevemodel.geckolib3.model.provider.data.EntityModelData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.GeoLayerRenderer;
@@ -35,7 +35,7 @@ public class MaidEntityRenderer extends GeoReplacedEntityRenderer<EntityMaid, Ma
     }
 
     public MaidCapability getMaidCapability(EntityMaid maid) {
-        return maid.getCapability(MaidCapabilityProvider.MAID_CAP).map(cap -> cap).orElseGet(() -> new MaidCapability(maid, true));
+        return maid.getCapability(MaidCapabilityProvider.MAID_CAP) == null ? new MaidCapability(maid, true) : maid.getCapability(MaidCapabilityProvider.MAID_CAP);
     }
 
     public IGeoEntity getGeoEntity(EntityMaid maid) {
@@ -48,12 +48,14 @@ public class MaidEntityRenderer extends GeoReplacedEntityRenderer<EntityMaid, Ma
     }
 
     public void geoRender(EntityMaid entityMaid, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP).ifPresent(cap -> renderEntity(cap, entityYaw, partialTick, poseStack, bufferSource, packedLight));
+        MaidCapability cap = entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        if (cap != null) renderEntity(cap, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 
     @NotNull
     public ResourceLocation getTextureLocation(EntityMaid maid) {
-        return maid.getCapability(MaidCapabilityProvider.MAID_CAP).map((cap) -> cap.getTextureLocation()).orElse(MissingTextureAtlasSprite.getLocation());
+        MaidCapability cap = maid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        return cap != null ? cap.getTextureLocation() : MissingTextureAtlasSprite.getLocation();
     }
 
     public void render(MaidCapability entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLightIn, AnimationEvent<?> event, EntityModelData modelData) {
@@ -73,7 +75,7 @@ public class MaidEntityRenderer extends GeoReplacedEntityRenderer<EntityMaid, Ma
         Entity entity = maid.getVehicle();
         if (entity instanceof Player) {
             poseStack.translate(-0.05d, 0.19d, 0.24d);
-        } else if (entity != null && CUSTOM_RIDERS.contains(entity.getType()) && !entity.getCapability(VehicleCapabilityProvider.VEHICLE_CAP).isPresent()) {
+        } else if (entity != null && CUSTOM_RIDERS.contains(entity.getType()) && entity.getCapability(VehicleCapabilityProvider.VEHICLE_CAP) == null) {
             poseStack.translate(0.0d, -0.5d, 0.0d);
         }
     }

@@ -6,7 +6,6 @@ import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
@@ -28,7 +27,7 @@ public final class CommonEvent {
     public static void onCommonSetup(FMLCommonSetupEvent event) {
         if (!YesSteveModel.isAvailable()) {
             event.enqueueWork(() -> {
-                ModLoader.get().addWarning(YesSteveModel.getLoadingWarning());
+                YesSteveModel.LOGGER.warn(YesSteveModel.getErrorMessage());
             });
         } else {
             event.enqueueWork(() -> {

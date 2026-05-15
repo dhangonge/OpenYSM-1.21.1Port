@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoModel;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
@@ -26,7 +27,8 @@ public class ReplacePlayerHandRenderEvent {
         if (!(player instanceof LocalPlayer localPlayer)) {
             return;
         }
-        localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        if (cap != null) {
             if (!cap.isModelActive()) {
                 return;
             }
@@ -35,9 +37,9 @@ public class ReplacePlayerHandRenderEvent {
             if (context == null || !hasArmBone(arm, context.getAnimationBundle().getArmModel())) {
                 return;
             }
-            RendererManager.getHandRenderer().renderHandItem(localPlayer, context, cap, arm, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(), Minecraft.getInstance().getPartialTick());
+            RendererManager.getHandRenderer().renderHandItem(localPlayer, context, cap, arm, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(), Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
             event.setCanceled(true);
-        });
+        }
     }
 
     private static boolean hasArmBone(HumanoidArm humanoidArm, GeoModel meshData) {

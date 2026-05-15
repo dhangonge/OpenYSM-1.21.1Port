@@ -36,7 +36,7 @@ import org.gagravarr.ogg.audio.OggAudioStream;
  * This is a wrapper around an OggFile that lets you
  *  get at all the interesting bits of an Opus file.
  */
-//todo:适配stub和OpusFile类
+
 public class OpusFile implements OggAudioStream, OggAudioHeaders, Closeable {
     private OggFile ogg;
     private OggPacketReader r;

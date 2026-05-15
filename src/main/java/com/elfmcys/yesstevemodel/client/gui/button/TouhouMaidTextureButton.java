@@ -42,6 +42,6 @@ public class TouhouMaidTextureButton extends TextureButton {
     @Override
     public void onPress() {
         this.maid.setYsmModel(this.textureId, this.textureName, this.displayComponent);
-        NetworkHandler.CHANNEL.sendToServer(new YsmMaidModelPackage(this.index, this.textureId, this.textureName, this.displayComponent));
+        // NetworkHandler.CHANNEL.sendToServer(new YsmMaidModelPackage(this.index, this.textureId, this.textureName, this.displayComponent));
     }
 }

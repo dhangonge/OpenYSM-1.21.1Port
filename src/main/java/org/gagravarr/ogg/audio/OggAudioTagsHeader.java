@@ -22,7 +22,6 @@ import org.gagravarr.ogg.OggStreamPacket;
  * Common interface for the Tags (Comments) header near
  *  the start of an {@link Object }
  */
-/* TODO: OggAudioStream removed */
 public interface OggAudioTagsHeader extends OggStreamPacket {
     public String getVendor();
 

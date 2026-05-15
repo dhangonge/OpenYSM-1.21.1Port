@@ -19,8 +19,8 @@ public class ClientTickEvent {
     private static int refreshRate = 60;
 
     @SubscribeEvent
-    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent event) {
-        if (!YesSteveModel.isAvailable() || event.phase == net.neoforged.neoforge.client.event.ClientTickEvent.Phase.END) {
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Pre event) {
+        if (!YesSteveModel.isAvailable()) {
             return;
         }
         tickCount++;

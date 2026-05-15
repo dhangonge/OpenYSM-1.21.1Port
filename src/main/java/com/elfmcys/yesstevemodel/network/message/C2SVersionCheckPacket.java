@@ -2,8 +2,11 @@ package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.StarModelsCapability;
 import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import net.minecraft.network.FriendlyByteBuf;
@@ -50,16 +53,19 @@ public class C2SVersionCheckPacket implements CustomPacketPayload, IPayloadHandl
         ServerPlayer sender = (ServerPlayer) context.player();
         if (sender != null && NetworkHandler.setChannelVersion(sender.connection.getConnection(), payload.version)) {
             ServerModelManager.validatePlayerModel(sender);
-            sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null).ifPresent(cap -> {
+            ModelInfoCapability cap = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+            if (cap != null) {
                 cap.setMandatory(false);
                 cap.stopAnimation(sender);
-            });
-            sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null).ifPresent(cap -> {
-                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(cap.getAuthModels()), sender);
-            });
-            sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null).ifPresent(cap -> {
-                NetworkHandler.sendToClientPlayer(new S2CSyncStarModelsPacket(cap.getStarModels()), sender);
-            });
+            }
+            AuthModelsCapability authCap = sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (authCap != null) {
+                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(authCap.getAuthModels()), sender);
+            }
+            StarModelsCapability starCap = sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null);
+            if (starCap != null) {
+                NetworkHandler.sendToClientPlayer(new S2CSyncStarModelsPacket(starCap.getStarModels()), sender);
+            }
             ServerModelManager.requestPlayerAuth(sender, null);
         }
     }

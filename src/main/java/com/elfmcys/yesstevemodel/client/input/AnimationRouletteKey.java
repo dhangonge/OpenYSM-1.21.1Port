@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.input;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouLittleMaidCompat;
 import com.elfmcys.yesstevemodel.client.gui.AnimationRouletteScreen;
@@ -32,7 +33,8 @@ public class AnimationRouletteKey {
                 if (TouhouLittleMaidCompat.isMaidChatAvailable()) {
                     TouhouLittleMaidCompat.openMaidChat();
                 } else if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+                    PlayerCapability cap = Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+                    if (cap != null) {
                         String modelId = cap.getModelId();
                         ModelAssembly modelAssembly = cap.getModelAssembly();
                         if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
@@ -42,7 +44,7 @@ public class AnimationRouletteKey {
                                 Minecraft.getInstance().setScreen(null);
                             }
                         }
-                    });
+                    }
                 }
             }
         }

@@ -5,9 +5,10 @@ import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -77,10 +78,8 @@ public final class FileTypeUtil {
             if (str.startsWith("#")) {
                 ResourceLocation resourceLocation = ResourceLocation.tryParse(str.substring(1));
                 if (resourceLocation != null) {
-                    ITagManager<EntityType<?>> iTagManagerTags = ForgeRegistries.ENTITY_TYPES.tags();
-                    iTagManagerTags.getTag(iTagManagerTags.createTagKey(resourceLocation)).forEach(entityType -> {
-                        hashSet.add(entityType.builtInRegistryHolder().key().location());
-                    });
+                    // ForgeRegistries.ENTITY_TYPES.tags() removed in 1.21.1
+                    // Tag-based entity resolution disabled
                 }
             } else {
                 ResourceLocation resourceLocation = ResourceLocation.tryParse(str);

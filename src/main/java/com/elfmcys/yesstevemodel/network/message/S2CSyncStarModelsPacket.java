@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.StarModelsCapability;
 import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
 import com.google.common.collect.Sets;
 import net.minecraft.client.Minecraft;
@@ -62,7 +63,10 @@ public class S2CSyncStarModelsPacket implements CustomPacketPayload, IPayloadHan
     public static void handleCapability(S2CSyncStarModelsPacket message) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null) {
-            minecraft.player.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null).ifPresent(cap -> cap.setStarModels(message.starModels));
+            StarModelsCapability cap = minecraft.player.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null);
+            if (cap != null) {
+                cap.setStarModels(message.starModels);
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.yesstevemodel.resource.models.ModelProperties;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
@@ -89,7 +90,8 @@ public class C2SPlayAnimationPacket implements CustomPacketPayload, IPayloadHand
             return;
         }
 
-        sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null).ifPresent(modelInfoCap -> {
+        ModelInfoCapability modelInfoCap = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+        if (modelInfoCap != null) {
             if (message.animationIndex == -1) {
                 modelInfoCap.stopAnimation(sender);
             } else {
@@ -107,6 +109,6 @@ public class C2SPlayAnimationPacket implements CustomPacketPayload, IPayloadHand
                     }
                 });
             }
-        });
+        }
     }
 }

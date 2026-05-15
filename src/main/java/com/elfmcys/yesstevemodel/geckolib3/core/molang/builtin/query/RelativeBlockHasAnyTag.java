@@ -5,9 +5,11 @@ import com.elfmcys.yesstevemodel.geckolib3.util.MolangUtils;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.funciton.entity.EntityFunction;
 import com.elfmcys.yesstevemodel.molang.runtime.ExecutionContext;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 public class RelativeBlockHasAnyTag extends EntityFunction {
     @Override
@@ -21,7 +23,7 @@ public class RelativeBlockHasAnyTag extends EntityFunction {
             if (key == null) {
                 return null;
             }
-            if (block.is(BuiltInRegistries.BLOCK.tags().createTagKey(key))) {
+            if (block.is(TagKey.create(Registries.BLOCK, key))) {
                 return true;
             }
         }

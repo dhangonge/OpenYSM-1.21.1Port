@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.StateSwitchingButton;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -25,7 +26,8 @@ public class ConfigCheckBox extends StateSwitchingButton implements ISpecialWidg
         super(x, y, width, 12, false);
         this.component2 = component;
         this.consumer2 = consumer;
-        initTextureValues(0, 0, 128, 12, location);
+        // initTextureValues replaced by WidgetSprites in 1.21.1
+        // initTextureValues(0, 0, 128, 12, location);
     }
 
     public ConfigCheckBox(int x, int y, Component component, Consumer<Boolean> consumer) {

@@ -58,8 +58,8 @@ public class YesSteveModel {
                 oldConfig.delete();
             }
         }
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
+        // ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
+        // ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModSoundEvents.REGISTER.register(modEventBus);
         }

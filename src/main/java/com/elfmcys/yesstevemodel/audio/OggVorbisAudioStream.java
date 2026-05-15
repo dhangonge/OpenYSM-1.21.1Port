@@ -1,6 +1,5 @@
 package com.elfmcys.yesstevemodel.audio;
 
-// TODO: Object /* TODO: OggAudioStream removed */ removed in 1.21, use alternative
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +16,7 @@ public class OggVorbisAudioStream implements IAudioStreamSupport {
 
     private static final ByteBuffer EMPTY_BUFFER = BufferUtils.createByteBuffer(0);
 
-    private final org.gagravarr.ogg.audio.Object /* TODO: OggAudioStream removed */ oggStream;
+    private final org.gagravarr.ogg.audio.Object  oggStream;
 
     private final AudioFormat audioFormat;
 

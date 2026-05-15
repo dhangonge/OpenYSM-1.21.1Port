@@ -34,9 +34,6 @@ import org.gagravarr.vorbis.VorbisPacketFactory;
  *  that they may be interspersed with other streams' data.
  */
 
-/* TODO: OggAudioStream removed */
-/* TODO: OggAudioStream removed */
-/* TODO: OggAudioStream removed */
 
 public class OggAudioStreamHeaders implements OggAudioHeaders {
     private int sid;

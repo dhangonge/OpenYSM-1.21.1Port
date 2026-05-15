@@ -2,7 +2,9 @@ package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import net.minecraft.network.FriendlyByteBuf;
@@ -57,8 +59,10 @@ public class C2SRequestSwitchModelPacket implements CustomPacketPayload, IPayloa
     }
 
     private static void handleCapability(C2SRequestSwitchModelPacket message, ServerPlayer sender) {
-        sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null).ifPresent(cap -> {
-            sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null).ifPresent(cap2 -> {
+        ModelInfoCapability cap = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+        if (cap != null) {
+            AuthModelsCapability cap2 = sender.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap2 != null) {
                 String str = message.modelId;
                 if (!ServerModelManager.getServerModelInfo().containsKey(str) || ((ServerModelManager.getAuthModels().contains(str) && !cap2.containsModel(message.modelId)) || !ServerModelManager.getServerModelInfo().get(str).getModelInfo().getTextures().contains(message.textureId))) {
                     cap.resetToDefault();
@@ -66,7 +70,7 @@ public class C2SRequestSwitchModelPacket implements CustomPacketPayload, IPayloa
                     cap.setModelAndTexture(message.modelId, message.textureId);
                 }
                 cap.stopAnimation(sender);
-            });
-        });
+            }
+        }
     }
 }

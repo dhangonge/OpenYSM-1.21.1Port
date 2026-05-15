@@ -66,9 +66,7 @@ public class MoLangCommand {
         try {
             IValue value = GeckoLibCache.parseSimpleExpression(StringArgumentType.getString(context, EXP_NAME));
             Minecraft.getInstance().execute(() -> {
-                Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                    AnimationDebugOverlay.getMolangWatch().addWatch(watchRegistry, string, value);
-                });
+                AnimationDebugOverlay.getMolangWatch().addWatch(watchRegistry, string, value);
             });
             return Command.SINGLE_SUCCESS;
         } catch (ParseException e) {
@@ -83,9 +81,7 @@ public class MoLangCommand {
         }
         String string = StringArgumentType.getString(context, EXP_NAME_NAME);
         Minecraft.getInstance().execute(() -> {
-            Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                AnimationDebugOverlay.getMolangWatch().removeWatch(string);
-            });
+            AnimationDebugOverlay.getMolangWatch().removeWatch(string);
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -95,9 +91,7 @@ public class MoLangCommand {
             return Command.SINGLE_SUCCESS;
         }
         Minecraft.getInstance().execute(() -> {
-            Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                AnimationDebugOverlay.getMolangWatch().clearAll();
-            });
+            AnimationDebugOverlay.getMolangWatch().clearAll();
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -110,7 +104,7 @@ public class MoLangCommand {
             IValue value = GeckoLibCache.parseSimpleExpression(StringArgumentType.getString(context, EXP_NAME));
             GeoEntity<?> geoEntity = AnimationDebugOverlay.getActiveModel();
             if (geoEntity == null) {
-                geoEntity = Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).orElse(null);
+                geoEntity = Minecraft.getInstance().player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
             }
             if (geoEntity != null) {
                 geoEntity.executeExpression(value, true, false, str -> Minecraft.getInstance().player.sendSystemMessage(Component.translatable("message.yes_steve_model.model.debug_animation.result", str)));

@@ -2,6 +2,7 @@ package com.elfmcys.yesstevemodel.client.event;
 
 import com.elfmcys.yesstevemodel.geckolib3.geo.NativeModelRenderer;
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.client.renderer.CustomEntityTranslucentRenderType;
@@ -53,7 +54,8 @@ public class RenderFirstPlayerBackground {
             return;
         }
         currentFrameRendered = true;
-        player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+        PlayerCapability cap = player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        if (cap != null) {
             if (!cap.isModelActive()) {
                 return;
             }
@@ -65,7 +67,9 @@ public class RenderFirstPlayerBackground {
             CustomPlayerRenderer instance = RendererManager.getPlayerRenderer();
             PoseStack poseStack = event.getPoseStack();
             MultiBufferSource multiBufferSource = event.getMultiBufferSource();
-            if (NeoForge.EVENT_BUS.post(new SpecialPlayerRenderEvent(player, cap,  modelId))) {
+            SpecialPlayerRenderEvent renderEvent = new SpecialPlayerRenderEvent(player, cap, modelId);
+            NeoForge.EVENT_BUS.post(renderEvent);
+            if (renderEvent.isCanceled()) {
                 return;
             }
             ResourceLocation resourceLocationB_ = cap.getTextureLocation();
@@ -80,7 +84,7 @@ public class RenderFirstPlayerBackground {
                 NativeModelRenderer.renderMesh(buffer, poseStack.last(), modelAssembly.getAnimationBundle().getArmModel(), modelAssembly.getAnimationBundle().getArmModel().getBoneTransformData(), null, textureIndex, 3, event.getPackedLight(), OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();
             }
-        });
+        }
     }
 
     private static void applyHandTransform(PoseStack poseStack, float partialTick, Player player) {

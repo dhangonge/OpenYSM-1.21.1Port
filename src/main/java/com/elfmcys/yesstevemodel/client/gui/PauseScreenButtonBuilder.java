@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.gui;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.config.GeneralConfig;
@@ -36,13 +37,14 @@ public class PauseScreenButtonBuilder {
             buttonBuild2.setTooltip(Tooltip.create(Component.translatable("key.yes_steve_model.open_extra_player_render.desc")));
             Button buttonBuild3 = Button.builder(Component.literal("😄"), button3 -> {
                 if (minecraft.player != null) {
-                    minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+                    PlayerCapability cap = minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+                    if (cap != null) {
                         String str = cap.getModelId();
                         ModelAssembly modelAssembly = cap.getModelAssembly();
                         if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
                             minecraft.setScreen(new AnimationRouletteScreen(str, modelAssembly, cap));
                         }
-                    });
+                    }
                 }
             }).bounds((pauseScreen.width / 2) + 69, pauseScreen.height - 35, 50, 30).build();
             buttonBuild3.setTooltip(Tooltip.create(Component.translatable("key.yes_steve_model.animation_roulette.desc")));

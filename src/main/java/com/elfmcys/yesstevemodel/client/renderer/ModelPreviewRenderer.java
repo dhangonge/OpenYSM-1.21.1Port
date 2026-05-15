@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.renderer;
 
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.VehicleCapability;
 import com.elfmcys.yesstevemodel.capability.VehicleCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.firstperson.FirstPersonCompat;
 import com.elfmcys.yesstevemodel.client.compat.oculus.OculusCompat;
@@ -74,7 +75,8 @@ public final class ModelPreviewRenderer {
     public static void renderVehicleModel(Entity entity, PoseStack poseStack, float partialTick) {
         Entity vehicle = entity.getVehicle();
         if (vehicle != null) {
-            vehicle.getCapability(VehicleCapabilityProvider.VEHICLE_CAP).ifPresent(cap -> {
+            VehicleCapability cap = vehicle.getCapability(VehicleCapabilityProvider.VEHICLE_CAP);
+            if (cap != null) {
                 int index;
                 AnimatedGeoModel model;
                 List<IBone> list;
@@ -85,12 +87,12 @@ public final class ModelPreviewRenderer {
                 poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180.0f - bodyRotation));
                 RenderUtils.prepMatrixForLocator(poseStack, list);
                 poseStack.mulPose(com.mojang.math.Axis.YN.rotationDegrees(180.0f - bodyRotation));
-                double myRidingOffset = (-vehicle.getPassengersRidingOffset()) - entity.getMyRidingOffset();
-                if (((entity instanceof Player) && entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP).isPresent()) || TouhouLittleMaidCompat.isMaidRideable(entity)) {
+                double myRidingOffset = 0.0d;
+                if (((entity instanceof Player) && entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP) != null) || TouhouLittleMaidCompat.isMaidRideable(entity)) {
                     myRidingOffset -= 0.5d;
                 }
                 poseStack.translate(0.0d, myRidingOffset, 0.0d);
-            });
+            }
         }
     }
 
@@ -98,11 +100,11 @@ public final class ModelPreviewRenderer {
     public static void renderEntityPreview(float x, float y, float scale, float pitch, float yaw, float partialTick, AnimatableEntity animatableEntity, GeoReplacedEntityRenderer renderer, boolean renderGround) {
         setPreviewMode(true);
         LivingEntity livingEntity = (LivingEntity) animatableEntity.getEntity();
-        PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        modelViewStack.pushPose();
-        modelViewStack.translate(x, y, 1250.0d);
-        modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        RenderSystem.applyModelViewMatrix();
+        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
+        // modelViewStack.pushPose();
+        // modelViewStack.translate(x, y, 1250.0d);
+        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
+        // RenderSystem.applyModelViewMatrix();
 
         PoseStack poseStack = new PoseStack();
         poseStack.translate(0.0d, 0.0d, 1000.0d);
@@ -191,8 +193,8 @@ public final class ModelPreviewRenderer {
         livingEntity.yHeadRot = oldHeadRot;
         livingEntity.setPose(oldPose);
 
-        modelViewStack.popPose();
-        RenderSystem.applyModelViewMatrix();
+        // modelViewStack.popPose();
+        // RenderSystem.applyModelViewMatrix();
         Lighting.setupFor3DItems();
         setPreviewMode(false);
     }
@@ -230,7 +232,7 @@ public final class ModelPreviewRenderer {
         }
 
         poseStack.translate(-1.0f, 1.0f, 1.0f);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
         poseStack.translate(0.0f, 0.0f, 1.0f);
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_TULIP.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
     }
@@ -251,7 +253,7 @@ public final class ModelPreviewRenderer {
     private static void renderVehicleEntity(float yaw, Entity riderEntity, PoseStack poseStack, EntityRenderDispatcher entityRenderDispatcher, MultiBufferSource.BufferSource bufferSource, Entity vehicleEntity, float partialTick) {
         poseStack.pushPose();
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
-        entityRenderDispatcher.render(vehicleEntity, 0.0d, (-vehicleEntity.getPassengersRidingOffset()) - riderEntity.getMyRidingOffset(), 0.0d, 0.0f, partialTick, poseStack, bufferSource, 15728880);
+        entityRenderDispatcher.render(vehicleEntity, 0.0d, 0.0d, 0.0d, 0.0f, partialTick, poseStack, bufferSource, 15728880);
         poseStack.popPose();
     }
 
@@ -260,11 +262,11 @@ public final class ModelPreviewRenderer {
         ItemStack[] savedEquipment;
         setPreviewMode(true);
         LivingEntity livingEntity = animatable.getEntity();
-        PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        modelViewStack.pushPose();
-        modelViewStack.translate(x, y, 1050.0d);
-        modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        RenderSystem.applyModelViewMatrix();
+        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
+        // modelViewStack.pushPose();
+        // modelViewStack.translate(x, y, 1050.0d);
+        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
+        // RenderSystem.applyModelViewMatrix();
 
         PoseStack poseStack = new PoseStack();
         poseStack.translate(0.0d, disablePreviewRotation ? 5.5d : 0.0d, 1000.0d);
@@ -361,8 +363,8 @@ public final class ModelPreviewRenderer {
             }
         }
 
-        modelViewStack.popPose();
-        RenderSystem.applyModelViewMatrix();
+        // modelViewStack.popPose();
+        // RenderSystem.applyModelViewMatrix();
         Lighting.setupFor3DItems();
         setPreviewMode(false);
     }
@@ -370,11 +372,11 @@ public final class ModelPreviewRenderer {
     // 纸娃娃
     public static void renderPlayerOverlay(GuiGraphics guiGraphics, LocalPlayer localPlayer, double x, double y, float scale, float yawOffset, int zDepth, float partialTick) {
         setExtraPlayerMode(true);
-        PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        modelViewStack.pushPose();
-        modelViewStack.translate(x + (scale * 0.5d), y + (scale * 2.0f), 0.0d);
-        modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        RenderSystem.applyModelViewMatrix();
+        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
+        // modelViewStack.pushPose();
+        // modelViewStack.translate(x + (scale * 0.5d), y + (scale * 2.0f), 0.0d);
+        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
+        // RenderSystem.applyModelViewMatrix();
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0f, 0.0f, -zDepth);
@@ -398,8 +400,8 @@ public final class ModelPreviewRenderer {
         guiGraphics.flush();
         entityRenderDispatcher.setRenderShadow(true);
         guiGraphics.pose().popPose();
-        modelViewStack.popPose();
-        RenderSystem.applyModelViewMatrix();
+        // modelViewStack.popPose();
+        // RenderSystem.applyModelViewMatrix();
         Lighting.setupFor3DItems();
         setExtraPlayerMode(false);
     }

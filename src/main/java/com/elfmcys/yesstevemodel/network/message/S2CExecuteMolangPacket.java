@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import com.elfmcys.yesstevemodel.geckolib3.resource.GeckoLibCache;
@@ -69,13 +70,14 @@ public class S2CExecuteMolangPacket implements CustomPacketPayload, IPayloadHand
         for (int i : message.entityIds) {
             Entity entity = minecraft.level.getEntity(i);
             if (entity instanceof Player) {
-                entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP, null).ifPresent(cap -> {
+                PlayerCapability cap = entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP, null);
+                if (cap != null) {
                     try {
                         cap.executeExpression(GeckoLibCache.parseSimpleExpression(message.expression), true, false, null);
                     } catch (ParseException e) {
                         YesSteveModel.LOGGER.error("Failed to execute molang " + message.expression, e);
                     }
-                });
+                }
             } else if (TouhouMaidCompat.isMaidEntity(entity)) {
                 TouhouMaidCompat.playMaidAnimation(entity, message.expression);
             }

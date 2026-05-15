@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.renderer;
 
+import com.elfmcys.yesstevemodel.capability.VehicleCapability;
 import com.elfmcys.yesstevemodel.capability.VehicleCapabilityProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -11,13 +12,12 @@ import net.minecraft.world.phys.Vec3;
 
 public class CustomVehicleRenderer {
     public static boolean renderVehicle(Entity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        return entity.getCapability(VehicleCapabilityProvider.VEHICLE_CAP).map(cap -> {
-            if (cap.isModelInitialized() && cap.isModelReady()) {
-                RendererManager.getVehicleRenderer().renderEntity(cap, getBodyRotation(entity, entityYaw, partialTick), partialTick, poseStack, bufferSource, packedLight);
-                return false;
-            }
-            return true;
-        }).orElse(true);
+        VehicleCapability cap = entity.getCapability(VehicleCapabilityProvider.VEHICLE_CAP);
+        if (cap != null && cap.isModelInitialized() && cap.isModelReady()) {
+            RendererManager.getVehicleRenderer().renderEntity(cap, getBodyRotation(entity, entityYaw, partialTick), partialTick, poseStack, bufferSource, packedLight);
+            return false;
+        }
+        return true;
     }
 
     public static float getBodyRotation(Entity entity, float entityYaw, float partialTick) {

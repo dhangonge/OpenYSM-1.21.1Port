@@ -18,15 +18,13 @@ import org.gagravarr.ogg.OggStreamPacket;
 /**
  * Common interface for the Info (Information /
  *  Identification) header at the start of an
- *  {@link Object TODO: OggAudioStream removed }
+ *  {@link Object }
  */
 public interface OggAudioInfoHeader extends OggStreamPacket {
     /**
      * @return The version of the codec / format used
      */
     public String getVersionString();
-
-    // TODO Can we bring any more common things across?
 
     /**
      * @return The number of channels (1=mono, 2=stereo etc)

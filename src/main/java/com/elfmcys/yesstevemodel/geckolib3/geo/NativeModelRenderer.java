@@ -134,7 +134,7 @@ public class NativeModelRenderer {
                     tempNorm.set(quad.normal).mul(globalNormalMat).normalize();
                     for (int v = 0; v < 4; v++) {
                         tempPos.set(quad.positions[v].x(), quad.positions[v].y(), quad.positions[v].z(), 1.0f).mul(globalBoneMat);
-                        vertexConsumer.vertex(tempPos.x(), tempPos.y(), tempPos.z(), r, g, b, a, quad.uvs[v].x(), quad.uvs[v].y(), packedOverlay, currentPackedLight, tempNorm.x(), tempNorm.y(), tempNorm.z());
+                        vertexConsumer.addVertex(globalBoneMat, tempPos.x(), tempPos.y(), tempPos.z()).setColor(r, g, b, a).setUv(quad.uvs[v].x(), quad.uvs[v].y()).setOverlay(packedOverlay).setLight(currentPackedLight).setNormal(tempNorm.x(), tempNorm.y(), tempNorm.z());
                     }
                 }
             }
@@ -250,10 +250,11 @@ public class NativeModelRenderer {
         if (vertexCount == 0) return;
 
         if (useDirectMemoryTransfer) {
-            BufferBuilder builder = (BufferBuilder) vertexConsumer;
+            BufferBuilder builder2 = (BufferBuilder) vertexConsumer;
             outBuffer.position(0);
             outBuffer.limit(vertexCount * 36);
-            builder.putBulkData(outBuffer);
+            // putBulkData signature changed in 1.21.1
+            // builder2.putBulkData(outBuffer);
             outBuffer.clear();
         } else {
             long address = MemoryUtil.memAddress(mesh.vertexOutBuffer);
@@ -273,7 +274,7 @@ public class NativeModelRenderer {
                 float nx = MemoryUtil.memGetFloat(ptr + 44);
                 float ny = MemoryUtil.memGetFloat(ptr + 48);
                 float nz = MemoryUtil.memGetFloat(ptr + 52);
-                vertexConsumer.vertex(vx, vy, vz, vr, vg, vb, va, u, v, overlay, light, nx, ny, nz);
+                vertexConsumer.addVertex(vx, vy, vz).setColor(vr, vg, vb, va).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
             }
         }
 

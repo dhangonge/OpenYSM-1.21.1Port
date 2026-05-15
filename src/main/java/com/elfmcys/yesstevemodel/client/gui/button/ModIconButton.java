@@ -1,7 +1,9 @@
 package com.elfmcys.yesstevemodel.client.gui.button;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.StarModelsCapability;
 import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import com.elfmcys.yesstevemodel.network.message.C2SSetStarModelPacket;
@@ -27,23 +29,27 @@ public class ModIconButton extends FlatColorButton {
         int iconOffsetY = (this.height - 16) / 2;
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         if (localPlayer != null) {
-            localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                localPlayer.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP).ifPresent(cap2 -> {
+            PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+            if (cap != null) {
+                StarModelsCapability cap2 = localPlayer.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP);
+                if (cap2 != null) {
                     if (cap2.containsModel(cap.getModelId())) {
                         guiGraphics.blit(ICON_TEXTURE, getX() + iconOffsetX, getY() + iconOffsetY, 16, 16, 16.0f, 0.0f, 16, 16, 256, 256);
                     } else {
                         guiGraphics.blit(ICON_TEXTURE, getX() + iconOffsetX, getY() + iconOffsetY, 16, 16, 0.0f, 0.0f, 16, 16, 256, 256);
                     }
-                });
-            });
+                }
+            }
         }
     }
 
     public void onPress() {
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         if (localPlayer != null) {
-            localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                localPlayer.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP).ifPresent(cap2 -> {
+            PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+            if (cap != null) {
+                StarModelsCapability cap2 = localPlayer.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP);
+                if (cap2 != null) {
                     String str = cap.getModelId();
                     if (cap2.containsModel(str)) {
                         cap2.removeModel(str);
@@ -52,8 +58,8 @@ public class ModIconButton extends FlatColorButton {
                         cap2.addModel(str);
                         NetworkHandler.sendToServer(C2SSetStarModelPacket.add(str));
                     }
-                });
-            });
+                }
+            }
         }
     }
 }

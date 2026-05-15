@@ -89,7 +89,7 @@ public class RootClientCommand {
         LocalPlayer localPlayer;
         GeoEntity<?> geoEntity = AnimationDebugOverlay.getActiveModel();
         if (geoEntity == null && (localPlayer = Minecraft.getInstance().player) != null) {
-            geoEntity = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).orElse(null);
+            geoEntity = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
         }
         return Optional.ofNullable(geoEntity);
     }

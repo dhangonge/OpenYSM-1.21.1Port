@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid;
 
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.ClientDistChecker;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.MaidCapabilityEvent;
@@ -46,7 +47,7 @@ public class MaidEventHandler {
         if (!(entity instanceof EntityMaid entityMaid)) {
             return false;
         }
-        return entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP).isPresent() && entityMaid.isYsmModel();
+        return entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP) != null && entityMaid.isYsmModel();
     }
 
     public static boolean isChair(Entity entity) {
@@ -69,9 +70,10 @@ public class MaidEventHandler {
     }
 
     public static void setExtraRenderFlag(LivingEntity livingEntity) {
-        livingEntity.getCapability(MaidCapabilityProvider.MAID_CAP).ifPresent(cap -> {
+        MaidCapability cap = livingEntity.getCapability(MaidCapabilityProvider.MAID_CAP);
+        if (cap != null)
             cap.setExtraRenderFlag(true);
-        });
+
     }
 
     public static boolean isGohei(Item item) {

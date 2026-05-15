@@ -43,7 +43,7 @@ public class S2CModelSyncPayload implements CustomPacketPayload, IPayloadHandler
     @Override
     public void handle(S2CModelSyncPayload payload, IPayloadContext context) {
         if (context.flow().isClientbound()) {
-            ClientModelManager.startSync(context.player().connection.getConnection(), payload.data);
+            ClientModelManager.startSync(context.connection(), payload.data);
         }
     }
 }

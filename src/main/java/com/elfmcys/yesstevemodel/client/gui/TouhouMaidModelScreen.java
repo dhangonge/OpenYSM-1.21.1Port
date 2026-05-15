@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.gui;
 
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.elfmcys.yesstevemodel.resource.models.Metadata;
 import com.elfmcys.yesstevemodel.client.gui.button.ModelButton;
@@ -36,25 +37,24 @@ public class TouhouMaidModelScreen extends PlayerModelScreen {
 
     @Override
     public PlayerTextureScreen createTextureScreen(PlayerModelScreen modelScreen, String str, ModelAssembly modelAssembly) {
-        return new TouhouMaidTextureScreen(modelScreen, str, Objects.requireNonNullElse(this.maid.getCapability(MaidCapabilityProvider.MAID_CAP).map((v0) -> {
-            return v0.getModelAssembly();
-        }).orElse(null), modelAssembly), this.maid);
+        MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        return new TouhouMaidTextureScreen(modelScreen, str, Objects.requireNonNullElse(cap != null ? cap.getModelAssembly() : null, modelAssembly), this.maid);
     }
 
     @Override
     public ModelInfoScreen createModelInfoScreen(PlayerModelScreen modelScreen, ModelAssembly modelAssembly) {
-        return new ModelInfoScreen(modelScreen, Objects.requireNonNullElse(this.maid.getCapability(MaidCapabilityProvider.MAID_CAP).map((v0) -> {
-            return v0.getModelAssembly();
-        }).orElse(null), modelAssembly));
+        MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        return new ModelInfoScreen(modelScreen, Objects.requireNonNullElse(cap != null ? cap.getModelAssembly() : null, modelAssembly));
     }
 
     @Override
     public void renderModelPreview(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
         RenderSystem.enableScissor((int) ((this.guiLeft + 5) * guiScale), (int) (Minecraft.getInstance().getWindow().getHeight() - ((this.guiTop + 200) * guiScale)), (int) (125.0d * guiScale), (int) (171.0d * guiScale));
-        InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, (this.guiLeft + 67) - mouseX, ((this.guiTop + 180) - 95) - mouseY, this.maid);
+        InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float)((this.guiLeft + 67) - mouseX), (float)(((this.guiTop + 180) - 95) - mouseY), partialTick, this.maid);
         RenderSystem.disableScissor();
-        this.maid.getCapability(MaidCapabilityProvider.MAID_CAP).ifPresent(cap -> {
+        MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
+        if (cap != null) {
             List<FormattedCharSequence> listSplit = this.font.split(FormattedText.of(ClientModelManager.getModelContext(cap.getModelId()).map(it -> {
                 Metadata metadata2 = it.getModelData().getExtraInfo();
                 if (metadata2 != null) {
@@ -69,6 +69,6 @@ public class TouhouMaidModelScreen extends PlayerModelScreen {
                 guiGraphics.drawString(this.font, formattedCharSequence, this.guiLeft + ((135 - this.font.width(formattedCharSequence)) / 2), lineY, 15986656);
                 lineY += 10;
             }
-        });
+        }
     }
 }

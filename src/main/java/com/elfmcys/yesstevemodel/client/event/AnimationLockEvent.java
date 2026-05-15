@@ -26,9 +26,9 @@ public class AnimationLockEvent {
     }
 
     @SubscribeEvent
-    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent event) {
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         LocalPlayer localPlayer;
-        if (YesSteveModel.isAvailable() && event.phase == net.neoforged.neoforge.client.event.ClientTickEvent.Phase.END && !animationLocked && (localPlayer = Minecraft.getInstance().player) != null && isPlayerMoving(localPlayer)) {
+        if (YesSteveModel.isAvailable() && !animationLocked && (localPlayer = Minecraft.getInstance().player) != null && isPlayerMoving(localPlayer)) {
             var cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
             if (cap != null) {
                 if (cap.isModelSwitching()) {

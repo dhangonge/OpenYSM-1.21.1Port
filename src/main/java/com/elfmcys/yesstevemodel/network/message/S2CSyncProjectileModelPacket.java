@@ -75,10 +75,11 @@ public class S2CSyncProjectileModelPacket implements CustomPacketPayload, IPaylo
 
     @OnlyIn(Dist.CLIENT)
     public static void handleCapability(Entity entity, ProjectileModelCapability capability, Int2FloatOpenHashMap floatMap) {
-        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null).ifPresent(cap -> {
-            ProjectileCapability projectileCapability = cap.getProjectileAnimProvider().getOrCreateCapability();
+        var cap = entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null);
+        if (cap != null) {
+            ProjectileCapability projectileCapability = cap.getProjectileCapability();
             projectileCapability.updateModelId(capability.getOwnerModelId());
             projectileCapability.setFloatProperties(floatMap);
-        });
+        }
     }
 }

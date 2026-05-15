@@ -55,12 +55,10 @@ public class WatchCommand {
         try {
             IValue value = GeckoLibCache.parseSimpleExpression(string);
             minecraft.execute(() -> {
-                minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
-                    AnimationDebugOverlay.getMolangWatch().addWatch(MolangWatchRegistry.EvaluationPhase.POST_ANIMATION, string, value);
-                    if (!AnimationDebugOverlay.isDebugActive()) {
-                        AnimationDebugOverlay.tryUpdateFromLocalPlayer();
-                    }
-                });
+                AnimationDebugOverlay.getMolangWatch().addWatch(MolangWatchRegistry.EvaluationPhase.POST_ANIMATION, string, value);
+                if (!AnimationDebugOverlay.isDebugActive()) {
+                    AnimationDebugOverlay.tryUpdateFromLocalPlayer();
+                }
             });
             return Command.SINGLE_SUCCESS;
         } catch (ParseException e) {
@@ -75,7 +73,7 @@ public class WatchCommand {
         }
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.execute(() -> {
-            minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> AnimationDebugOverlay.getMolangWatch().clearAll());
+            AnimationDebugOverlay.getMolangWatch().clearAll();
         });
         AnimationDebugOverlay.clearDebugLines();
         return Command.SINGLE_SUCCESS;

@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import net.minecraft.client.Minecraft;
@@ -55,7 +56,10 @@ public class S2CSyncAnimationExpressionPacket implements CustomPacketPayload, IP
     public void handle(S2CSyncAnimationExpressionPacket payload, IPayloadContext context) {
         if (context.flow().isClientbound()) {
             context.enqueueWork(() -> {
-                Minecraft.getInstance().level.getEntity(payload.entityId).getCapability(PlayerCapabilityProvider.PLAYER_CAP, null).ifPresent(cap -> cap.executeAnimationExpression(payload.floatData));
+                PlayerCapability cap = Minecraft.getInstance().level.getEntity(payload.entityId).getCapability(PlayerCapabilityProvider.PLAYER_CAP, null);
+                if (cap != null) {
+                    cap.executeAnimationExpression(payload.floatData);
+                }
             });
         }
     }

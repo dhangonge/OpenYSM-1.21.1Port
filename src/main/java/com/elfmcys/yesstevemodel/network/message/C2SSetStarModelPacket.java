@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.StarModelsCapability;
 import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -63,12 +64,13 @@ public class C2SSetStarModelPacket implements CustomPacketPayload, IPayloadHandl
     }
 
     private static void handleCapability(C2SSetStarModelPacket message, ServerPlayer sender) {
-        sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null).ifPresent(cap -> {
+        StarModelsCapability cap = sender.getCapability(StarModelsCapabilityProvider.STAR_MODELS_CAP, null);
+        if (cap != null) {
             if (message.isAdd) {
                 cap.addModel(message.modelId);
             } else {
                 cap.removeModel(message.modelId);
             }
-        });
+        }
     }
 }

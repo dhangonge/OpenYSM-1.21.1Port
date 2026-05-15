@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.input;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.resource.models.ModelProperties;
 import com.elfmcys.yesstevemodel.client.event.AnimationLockEvent;
@@ -51,7 +52,8 @@ public class ExtraAnimationKey {
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         for (KeyMapping eventMapping : KEY_MAPPINGS) {
             if (event.getAction() == 1 && InputUtil.isKeyPressed(event, eventMapping) && localPlayer != null && !AnimationLockEvent.isPlayerMoving(localPlayer)) {
-                localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> {
+                PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+                if (cap != null) {
                     ModelAssembly modelAssembly = cap.getModelAssembly();
                     int index = KEY_MAPPINGS.indexOf(eventMapping);
                     ModelProperties modelProperties = modelAssembly.getModelData().getModelProperties();
@@ -69,7 +71,7 @@ public class ExtraAnimationKey {
                         }
                         NetworkHandler.sendToServer(new C2SPlayAnimationPacket(index, StringPool.EMPTY));
                     }
-                });
+                }
                 return;
             }
         }

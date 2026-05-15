@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
 import com.google.common.collect.Sets;
 import net.minecraft.client.Minecraft;
@@ -62,9 +63,10 @@ public class S2CSyncAuthModelsPacket implements CustomPacketPayload, IPayloadHan
     public static void handleCapability(S2CSyncAuthModelsPacket message) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null) {
-            minecraft.player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null).ifPresent(cap -> {
+            AuthModelsCapability cap = minecraft.player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP, null);
+            if (cap != null) {
                 cap.setAuthModels(message.authModels);
-            });
+            }
         }
     }
 }

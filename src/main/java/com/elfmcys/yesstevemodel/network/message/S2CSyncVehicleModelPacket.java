@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.ClientLazyCapability;
 import com.elfmcys.yesstevemodel.capability.ClientLazyCapabilityProvider;
 import com.elfmcys.yesstevemodel.capability.VehicleModelCapability;
 import com.elfmcys.yesstevemodel.event.EntityJoinCallbackEvent;
@@ -75,10 +76,11 @@ public class S2CSyncVehicleModelPacket implements CustomPacketPayload, IPayloadH
 
     @OnlyIn(Dist.CLIENT)
     public static void handleCapability(Entity entity, VehicleModelCapability capability, Int2FloatOpenHashMap floatMap) {
-        entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null).ifPresent(cap -> {
-            VehicleCapability vehicleCapability = cap.getEntityRenderProvider().getOrCreateCapability();
+        ClientLazyCapability cap = entity.getCapability(ClientLazyCapabilityProvider.CLIENT_LAZY_CAP, null);
+        if (cap != null) {
+            VehicleCapability vehicleCapability = cap.getEntityRenderCapability();
             vehicleCapability.setOwnerModelId(capability.getOwnerModelId());
             vehicleCapability.setFloatMap(floatMap);
-        });
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.client.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import net.neoforged.api.distmarker.Dist;
@@ -15,8 +16,10 @@ public class ClientPlayerCloneEvent {
         if (!YesSteveModel.isAvailable() || !NetworkHandler.isClientConnected()) {
             return;
         }
-        event.getOldPlayer().reviveCaps();
-        event.getOldPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap -> event.getNewPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP).ifPresent(cap2 -> cap2.copyFrom(cap)));
-        event.getOldPlayer().invalidateCaps();
+        PlayerCapability cap = event.getOldPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        PlayerCapability cap2 = event.getNewPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        if (cap != null && cap2 != null) {
+            cap2.copyFrom(cap);
+        }
     }
 }

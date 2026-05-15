@@ -1,7 +1,9 @@
 package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.VehicleModelCapability;
 import com.elfmcys.yesstevemodel.capability.VehicleModelCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import net.minecraft.network.FriendlyByteBuf;
@@ -58,14 +60,16 @@ public class C2SCompleteFeedbackPacket implements CustomPacketPayload, IPayloadH
         if (TouhouMaidCompat.isMaidEntity(entity)) {
             TouhouMaidCompat.applyFeedback(entity, message.feedbackData);
         } else if (entity instanceof ServerPlayer serverPlayer) {
-            serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null).ifPresent(cap -> {
+            ModelInfoCapability cap = serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
+            if (cap != null) {
                 cap.applyFeedback(serverPlayer, message.feedbackData);
                 if (serverPlayer.getVehicle() != null && serverPlayer.getVehicle().getFirstPassenger() == serverPlayer) {
-                    serverPlayer.getVehicle().getCapability(VehicleModelCapabilityProvider.VEHICLE_MODEL_CAP, null).ifPresent(vehicleCap -> {
+                    VehicleModelCapability vehicleCap = serverPlayer.getVehicle().getCapability(VehicleModelCapabilityProvider.VEHICLE_MODEL_CAP, null);
+                    if (vehicleCap != null) {
                         cap.getMolangVars().ifPresent(map -> vehicleCap.setModel(cap.getModelId(), map));
-                    });
+                    }
                 }
-            });
+            }
         }
     }
 }

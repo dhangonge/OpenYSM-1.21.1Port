@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.renderer;
 
+import com.elfmcys.yesstevemodel.capability.ProjectileCapability;
 import com.elfmcys.yesstevemodel.capability.ProjectileCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.oculus.OculusCompat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -19,21 +20,20 @@ import org.spongepowered.asm.mixin.Unique;
 
 public class CustomFishingHookRenderer {
     public static boolean tryRenderCustomHook(FishingHook fishingHook, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        return fishingHook.getCapability(ProjectileCapabilityProvider.PROJECTILE_CAP).map(cap -> {
-            if (cap.isModelInitialized() && cap.isModelReady()) {
-                fishingHook.setXRot(0.0f);
-                fishingHook.xRotO = 0.0f;
-                RendererManager.getProjectileRenderer().render(cap, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-                Player playerOwner = fishingHook.getPlayerOwner();
-                if (playerOwner != null) {
-                    poseStack.pushPose();
-                    renderFishingLine(fishingHook, partialTick, poseStack, bufferSource, playerOwner);
-                    poseStack.popPose();
-                }
-                return false;
+        ProjectileCapability cap = fishingHook.getCapability(ProjectileCapabilityProvider.PROJECTILE_CAP);
+        if (cap != null && cap.isModelInitialized() && cap.isModelReady()) {
+            fishingHook.setXRot(0.0f);
+            fishingHook.xRotO = 0.0f;
+            RendererManager.getProjectileRenderer().render(cap, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            Player playerOwner = fishingHook.getPlayerOwner();
+            if (playerOwner != null) {
+                poseStack.pushPose();
+                renderFishingLine(fishingHook, partialTick, poseStack, bufferSource, playerOwner);
+                poseStack.popPose();
             }
-            return true;
-        }).orElse(true);
+            return false;
+        }
+        return true;
     }
 
     private static void renderFishingLine(FishingHook fishingHook, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, Player player) {
@@ -74,7 +74,7 @@ public class CustomFishingHookRenderer {
             stringVertex(startX, startY, startZ, buffer, poseLast, fraction(size), fraction(size + 1), color[0], color[1], color[2]);
         }
         if (OculusCompat.isLoaded()) {
-            buffer.vertex(0.0d, 0.0d, 0.0d).color(0, 0, 0, 255).normal(0.0f, 0.0f, 0.0f).endVertex();
+            buffer.addVertex(poseLast.pose(), 0.0f, 0.0f, 0.0f).setColor(0, 0, 0, 255).setNormal(poseLast, 0.0f, 0.0f, 0.0f);
         }
     }
 
@@ -97,6 +97,6 @@ public class CustomFishingHookRenderer {
         float dy = (((y * ((endFrac * endFrac) + endFrac)) * 0.5f) + 0.25f) - vy;
         float dz = (z * endFrac) - vz;
         float length = Mth.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-        vertexConsumer.vertex(pose.pose(), vx, vy, vz).color(red, green, blue, 1.0f).normal(pose.normal(), dx / length, dy / length, dz / length).endVertex();
+        vertexConsumer.addVertex(pose.pose(), vx, vy, vz).setColor(red, green, blue, 1.0f).setNormal(pose, dx / length, dy / length, dz / length);
     }
 }

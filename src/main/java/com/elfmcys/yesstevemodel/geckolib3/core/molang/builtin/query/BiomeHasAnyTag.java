@@ -4,8 +4,9 @@ import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.IContext;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.funciton.entity.EntityFunction;
 import com.elfmcys.yesstevemodel.molang.runtime.ExecutionContext;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,7 +22,7 @@ public class BiomeHasAnyTag extends EntityFunction {
             if (id == null) {
                 return null;
             }
-            TagKey<Biome> tag = BuiltInRegistries.BIOME.tags().createTagKey(id);
+            TagKey<Biome> tag = TagKey.create(Registries.BIOME, id);
             if (biome.is(tag)) {
                 return true;
             }

@@ -76,7 +76,8 @@ public class ParticleEffectUtil {
 
     private static void spawnParticles(Entity entity, String particleId, Vector3d offset, Vector3d delta, double speed, int count, int lifetime, boolean isAbsolute, RandomSource random) throws ExecutionException, CommandSyntaxException {
         ParticleOptions particleOptions = particleCache.get(particleId, () -> {
-            return ParticleArgument.readParticle(new StringReader(particleId), BuiltInRegistries.PARTICLE_TYPE.asLookup());
+            // ParticleArgument.readParticle signature changed in 1.21.1
+            return null; // return ParticleArgument.readParticle(new StringReader(particleId), BuiltInRegistries.PARTICLE_TYPE.asLookup());
         });
 
         if (particleOptions == null) {

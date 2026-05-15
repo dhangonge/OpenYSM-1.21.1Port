@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import rip.ysm.security.YsmCrypt;
 import rip.ysm.security.YSMByteBuf;
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
@@ -883,7 +884,10 @@ public final class ServerModelManager {
     }
 
     private static String[] collectPlayerModelIds(Collection<ServerPlayer> collection) {
-        return collection.stream().filter(NetworkHandler::isPlayerConnected).map(serverPlayer -> serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).map(ModelInfoCapability::getModelId)).filter(Optional::isPresent).map(Optional::get).distinct().toArray(String[]::new);
+        return collection.stream().filter(NetworkHandler::isPlayerConnected).map(serverPlayer -> {
+            ModelInfoCapability cap = serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+            return cap != null ? cap.getModelId() : null;
+        }).filter(Objects::nonNull).distinct().toArray(String[]::new);
     }
 
     private static void onModelLoadComplete(ModelLoadResult modelLoadResult, @Nullable Object obj) {
@@ -930,7 +934,7 @@ public final class ServerModelManager {
         if (!serverGamePacketListenerImpl.isAcceptingMessages() || !serverGamePacketListenerImpl.getClass().equals(ServerGamePacketListenerImpl.class)) {
             return null;
         }
-        return serverGamePacketListenerImpl.connection;
+        return serverGamePacketListenerImpl.getConnection();
     }
 
     private static boolean sendModelData(UUID uuid, ByteBuffer byteBuffer, PendingTransfer pendingTransfer) {
@@ -1032,8 +1036,10 @@ public final class ServerModelManager {
 
     public static void validatePlayerModel(ServerPlayer serverPlayer) {
         if (!CACHE_NAME_INFO.isEmpty()) {
-            serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(modelInfoCap -> {
-                serverPlayer.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(authModelsCap -> {
+            ModelInfoCapability modelInfoCap = serverPlayer.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+            if (modelInfoCap != null) {
+                AuthModelsCapability authModelsCap = serverPlayer.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP);
+                if (authModelsCap != null) {
                     if (authModelsCap.getAuthModels().removeIf(str -> !CACHE_NAME_INFO.containsKey(str))) {
                         NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(authModelsCap.getAuthModels()), serverPlayer);
                     }
@@ -1042,8 +1048,8 @@ public final class ServerModelManager {
                         modelInfoCap.resetToDefault();
                     }
                     modelInfoCap.retainAnimationKeys(modelHashSet);
-                });
-            });
+                }
+            }
         }
     }
 

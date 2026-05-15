@@ -29,7 +29,7 @@ public final class NetworkHandler {
     }
 
     public static boolean isPlayerConnected(ServerPlayer serverPlayer) {
-        return serverPlayer.connection != null && isConnectionValid(serverPlayer.connection.connection);
+        return serverPlayer.connection != null && isConnectionValid(serverPlayer.connection.getConnection());
     }
 
     public static boolean isClientConnected() {
@@ -47,25 +47,25 @@ public final class NetworkHandler {
     @SubscribeEvent
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar(YesSteveModel.MOD_ID).versioned(VERSION);
-        registrar.playToClient(S2CModelSyncPayload.TYPE, S2CModelSyncPayload.STREAM_CODEC, S2CModelSyncPayload::handle);
-        registrar.playToServer(C2SModelSyncPayload.TYPE, C2SModelSyncPayload.STREAM_CODEC, C2SModelSyncPayload::handle);
-        registrar.playToClient(S2CExecuteMolangPacket.TYPE, S2CExecuteMolangPacket.STREAM_CODEC, S2CExecuteMolangPacket::handle);
-        registrar.playToClient(S2CSetModelAndTexturePacket.TYPE, S2CSetModelAndTexturePacket.STREAM_CODEC, S2CSetModelAndTexturePacket::handle);
-        registrar.playToServer(C2SRequestSwitchModelPacket.TYPE, C2SRequestSwitchModelPacket.STREAM_CODEC, C2SRequestSwitchModelPacket::handle);
-        registrar.playToClient(S2CSyncAuthModelsPacket.TYPE, S2CSyncAuthModelsPacket.STREAM_CODEC, S2CSyncAuthModelsPacket::handle);
-        registrar.playToServer(C2SPlayAnimationPacket.TYPE, C2SPlayAnimationPacket.STREAM_CODEC, C2SPlayAnimationPacket::handle);
-        registrar.playToClient(S2CSyncStarModelsPacket.TYPE, S2CSyncStarModelsPacket.STREAM_CODEC, S2CSyncStarModelsPacket::handle);
-        registrar.playToServer(C2SSetStarModelPacket.TYPE, C2SSetStarModelPacket.STREAM_CODEC, C2SSetStarModelPacket::handle);
-        registrar.playToServer(C2SCompleteFeedbackPacket.TYPE, C2SCompleteFeedbackPacket.STREAM_CODEC, C2SCompleteFeedbackPacket::handle);
-        registrar.playToClient(S2CSyncProjectileModelPacket.TYPE, S2CSyncProjectileModelPacket.STREAM_CODEC, S2CSyncProjectileModelPacket::handle);
-        registrar.playToServer(C2SRequestExecuteMolangPacket.TYPE, C2SRequestExecuteMolangPacket.STREAM_CODEC, C2SRequestExecuteMolangPacket::handle);
-        registrar.playToServer(C2SSyncAnimationExpressionPacket.TYPE, C2SSyncAnimationExpressionPacket.STREAM_CODEC, C2SSyncAnimationExpressionPacket::handle);
-        registrar.playToClient(S2CSyncAnimationExpressionPacket.TYPE, S2CSyncAnimationExpressionPacket.STREAM_CODEC, S2CSyncAnimationExpressionPacket::handle);
-        registrar.playToClient(S2CSyncPlayerStatePacket.TYPE, S2CSyncPlayerStatePacket.STREAM_CODEC, S2CSyncPlayerStatePacket::handle);
-        registrar.playToClient(S2CSyncVehicleModelPacket.TYPE, S2CSyncVehicleModelPacket.STREAM_CODEC, S2CSyncVehicleModelPacket::handle);
-        registrar.playToServer(C2SSwingArmPacket.TYPE, C2SSwingArmPacket.STREAM_CODEC, C2SSwingArmPacket::handle);
-        registrar.playToClient(S2CVersionCheckPacket.TYPE, S2CVersionCheckPacket.STREAM_CODEC, S2CVersionCheckPacket::handle);
-        registrar.playToServer(C2SVersionCheckPacket.TYPE, C2SVersionCheckPacket.STREAM_CODEC, C2SVersionCheckPacket::handle);
+        registrar.playToClient(S2CModelSyncPayload.TYPE, S2CModelSyncPayload.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SModelSyncPayload.TYPE, C2SModelSyncPayload.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CExecuteMolangPacket.TYPE, S2CExecuteMolangPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSetModelAndTexturePacket.TYPE, S2CSetModelAndTexturePacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SRequestSwitchModelPacket.TYPE, C2SRequestSwitchModelPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncAuthModelsPacket.TYPE, S2CSyncAuthModelsPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SPlayAnimationPacket.TYPE, C2SPlayAnimationPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncStarModelsPacket.TYPE, S2CSyncStarModelsPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SSetStarModelPacket.TYPE, C2SSetStarModelPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SCompleteFeedbackPacket.TYPE, C2SCompleteFeedbackPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncProjectileModelPacket.TYPE, S2CSyncProjectileModelPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SRequestExecuteMolangPacket.TYPE, C2SRequestExecuteMolangPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SSyncAnimationExpressionPacket.TYPE, C2SSyncAnimationExpressionPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncAnimationExpressionPacket.TYPE, S2CSyncAnimationExpressionPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncPlayerStatePacket.TYPE, S2CSyncPlayerStatePacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CSyncVehicleModelPacket.TYPE, S2CSyncVehicleModelPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SSwingArmPacket.TYPE, C2SSwingArmPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CVersionCheckPacket.TYPE, S2CVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SVersionCheckPacket.TYPE, C2SVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
     }
 
     public static void sendToServer(CustomPacketPayload payload) {

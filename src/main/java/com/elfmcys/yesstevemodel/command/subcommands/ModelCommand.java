@@ -2,7 +2,9 @@ package com.elfmcys.yesstevemodel.command.subcommands;
 
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.event.CommandRegistry;
+import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.yesstevemodel.model.format.ServerModelData;
 import com.elfmcys.yesstevemodel.util.YSMMessageFormatter;
@@ -92,24 +94,31 @@ public class ModelCommand {
         }
         String finalTextureName = textureName;
         if (ignoreAuth) {
-            targets.forEach(player -> player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
-                cap.setModelAndTexture(modelName, finalTextureName);
-                cap.setMandatory(true);
-                context.getSource().sendSuccess(() -> Component.translatable("message.yes_steve_model.model.set.success", modelName, player.getScoreboardName()), true);
-            }));
-            return Command.SINGLE_SUCCESS;
-        }
-        targets.forEach(player -> player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
-            player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(authCap -> {
-                if (!ServerModelManager.getAuthModels().contains(modelName) || authCap.containsModel(modelName)) {
+            targets.forEach(player -> {
+                ModelInfoCapability cap = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+                if (cap != null) {
                     cap.setModelAndTexture(modelName, finalTextureName);
                     cap.setMandatory(true);
                     context.getSource().sendSuccess(() -> Component.translatable("message.yes_steve_model.model.set.success", modelName, player.getScoreboardName()), true);
-                    return;
                 }
-                context.getSource().sendSuccess(() -> Component.translatable("message.yes_steve_model.model.set.need_auth", modelName, player.getScoreboardName()), true);
             });
-        }));
+            return Command.SINGLE_SUCCESS;
+        }
+        targets.forEach(player -> {
+            ModelInfoCapability cap = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+            if (cap != null) {
+                AuthModelsCapability authCap = player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP);
+                if (authCap != null) {
+                    if (!ServerModelManager.getAuthModels().contains(modelName) || authCap.containsModel(modelName)) {
+                        cap.setModelAndTexture(modelName, finalTextureName);
+                        cap.setMandatory(true);
+                        context.getSource().sendSuccess(() -> Component.translatable("message.yes_steve_model.model.set.success", modelName, player.getScoreboardName()), true);
+                        return;
+                    }
+                    context.getSource().sendSuccess(() -> Component.translatable("message.yes_steve_model.model.set.need_auth", modelName, player.getScoreboardName()), true);
+                }
+            }
+        });
         return Command.SINGLE_SUCCESS;
     }
 
@@ -156,10 +165,13 @@ public class ModelCommand {
             str = "message.yes_steve_model.model.disable.false";
         }
         String str2 = str;
-        targets.forEach(player -> player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
-            cap.setDisabled(bool);
-            context.getSource().sendSuccess(() -> Component.translatable(str2, player.getScoreboardName()), true);
-        }));
+        targets.forEach(player -> {
+            ModelInfoCapability cap = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+            if (cap != null) {
+                cap.setDisabled(bool);
+                context.getSource().sendSuccess(() -> Component.translatable(str2, player.getScoreboardName()), true);
+            }
+        });
         return Command.SINGLE_SUCCESS;
     }
 }
