@@ -126,6 +126,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
 
     @Override
     public void tlm$renderNameTag(LivingEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
-        renderNameTag( (Player) pEntity,  pEntity.getName(),  pPoseStack,  pBuffer,  pPackedLight,  pPartialTick);
+        if(pEntity instanceof Player player && !player.isLocalPlayer())
+            renderNameTag(  player,  player.getName(),  pPoseStack,  pBuffer,  pPackedLight,  pPartialTick);
     }
 }

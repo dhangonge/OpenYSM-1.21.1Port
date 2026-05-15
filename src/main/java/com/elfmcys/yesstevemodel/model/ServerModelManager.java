@@ -601,7 +601,10 @@ public final class ServerModelManager {
         YSMThreadPool.submit(() -> {
             try {
                 MinecraftServer currentServer = ServerLifecycleHooks.getCurrentServer();
-                if (currentServer == null) return;
+                if (currentServer == null) {
+                    YesSteveModel.LOGGER.warn("[YSM] nativeSyncModels: currentServer is null, aborting");
+                    return;
+                }
 
                 for (UUID uuid : uuids) {
                     PlayerSyncState state = syncStates.computeIfAbsent(uuid, k -> new PlayerSyncState());
@@ -609,19 +612,6 @@ public final class ServerModelManager {
                     state.allowedModels.addAll(CACHE_NAME_INFO.values());
                     state.step = 1;
 
-                    // HandshakePing
-//                    byte[] garbage = new byte[16 + SECURE_RANDOM_S.nextInt(48)];
-//                    SECURE_RANDOM_S.nextBytes(garbage);
-//                    byte[] payload = new byte[2 + garbage.length + 1];
-//                    payload[0] = (byte)(garbage.length & 0xFF);
-//                    payload[1] = (byte)((garbage.length >> 8) & 0xFF);
-//                    System.arraycopy(garbage, 0, payload, 2, garbage.length);
-//                    payload[2 + garbage.length] = 0x01;
-//
-//                    var result = YsmCrypt.encrypt(payload, K0_SERVER, true);
-//                    state.key1 = result.nextKey();
-//
-//                    sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
                     int garbageLen = 16 + theRandom.nextInt(48);
                     byte[] garbage = new byte[garbageLen];
                     theRandom.nextBytes(garbage);
@@ -632,7 +622,8 @@ public final class ServerModelManager {
                         YsmCrypt.EncryptedPacket result = YsmCrypt.encrypt(outBuf.toArray(), YsmCrypt.publicKey, true);
                         state.key1 = result.nextKey();
 
-                        sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
+                        boolean sent = sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
+                        YesSteveModel.LOGGER.info("[YSM] nativeSyncModels: Packet01 sent={} for uuid={}", sent, uuid);
                     }
                 }
 //                if (callback != null) onAuthDataReceived(null, callback);
@@ -931,7 +922,7 @@ public final class ServerModelManager {
             return null;
         }
         ServerGamePacketListenerImpl serverGamePacketListenerImpl = player.connection;
-        if (!serverGamePacketListenerImpl.isAcceptingMessages() || !serverGamePacketListenerImpl.getClass().equals(ServerGamePacketListenerImpl.class)) {
+        if (!serverGamePacketListenerImpl.isAcceptingMessages() || !(serverGamePacketListenerImpl instanceof ServerGamePacketListenerImpl)) {
             return null;
         }
         return serverGamePacketListenerImpl.getConnection();
@@ -940,13 +931,18 @@ public final class ServerModelManager {
     private static boolean sendModelData(UUID uuid, ByteBuffer byteBuffer, PendingTransfer pendingTransfer) {
         Connection connection = getPlayerConnection(uuid);
         if (connection != null) {
-            return sendPacketReliably(connection, new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(byteBuffer)), pendingTransfer);
+            byte[] data = new byte[byteBuffer.remaining()];
+            byteBuffer.get(data);
+            return sendPacketReliably(connection, new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(data)), pendingTransfer);
         }
+        YesSteveModel.LOGGER.warn("[YSM] sendModelData: no connection for uuid={}", uuid);
         return false;
     }
 
     private static Object createModelPacket(ByteBuffer byteBuffer) {
-        return new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(byteBuffer));
+        byte[] data = new byte[byteBuffer.remaining()];
+        byteBuffer.get(data);
+        return new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(data));
     }
 
     private static boolean sendPacketToPlayer(UUID uuid, Object obj, PendingTransfer pendingTransfer) {
@@ -996,7 +992,7 @@ public final class ServerModelManager {
                     }
                     atomicInteger.set(0);
                 } catch (Throwable th) {
-                    th.printStackTrace();
+                    YesSteveModel.LOGGER.error("[YSM] sendPacketReliably failed", th);
                     return false;
                 }
             }

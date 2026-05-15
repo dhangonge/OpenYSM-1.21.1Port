@@ -145,16 +145,21 @@ public class ClientModelManager {
             if (!data.hasRemaining() && data.position() > 0) {
                 data.flip();
             }
-            if (!data.hasRemaining()) return;
+            if (!data.hasRemaining()) {
+                YesSteveModel.LOGGER.warn("[YSM] processServerData: empty buffer, syncStep={}", syncStep);
+                return;
+            }
 
             byte[] packetBytes = new byte[data.remaining()];
             data.get(packetBytes);
 
             byte[] decrypted;
             if (syncStep == 1) {
+                YesSteveModel.LOGGER.info("[YSM] processServerData: step1, packetLen={}", packetBytes.length);
                 decrypted = YsmCrypt.decrypt(packetBytes, YsmCrypt.publicKey);
                 System.out.println(Arrays.toString(decrypted));
                 if (decrypted != null) handlePacket01(decrypted);
+                else YesSteveModel.LOGGER.warn("[YSM] processServerData: decrypt returned null at step1");
             } else if (syncStep == 2) {
                 decrypted = YsmCrypt.decrypt(packetBytes, lastKey);
                 if (decrypted != null) {
@@ -573,9 +578,11 @@ public class ClientModelManager {
     }
 
     private static void sendModelFile(ByteBuffer byteBuffer) {
+        byte[] data = new byte[byteBuffer.remaining()];
+        byteBuffer.get(data);
         if (Minecraft.getInstance().player != null) {
             try {
-                NetworkHandler.sendToServer(new C2SModelSyncPayload(byteBuffer));
+                NetworkHandler.sendToServer(new C2SModelSyncPayload(data));
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -587,18 +594,20 @@ public class ClientModelManager {
             return;
         }
         try {
-            connection.send(new ServerboundCustomPayloadPacket(new C2SModelSyncPayload(byteBuffer)));
+            connection.send(new ServerboundCustomPayloadPacket(new C2SModelSyncPayload(data)));
         } catch (Exception e2) {
             e2.printStackTrace();
         }
     }
 
     public static void startSync(Connection connection, ByteBuffer byteBuffer) {
+        YesSteveModel.LOGGER.info("[YSM] startSync called, syncStep={}", syncStep);
         serverConnection = connection;
         processServerData(byteBuffer);
     }
 
     public static void onSyncConnected() {
+        YesSteveModel.LOGGER.info("[YSM] onSyncConnected: isLocalServer={}", Minecraft.getInstance().isLocalServer());
         if (Minecraft.getInstance().isLocalServer()) {
             syncState.setState(SyncState.LOADING);
         } else {

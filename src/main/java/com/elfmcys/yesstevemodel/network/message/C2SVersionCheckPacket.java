@@ -52,6 +52,7 @@ public class C2SVersionCheckPacket implements CustomPacketPayload, IPayloadHandl
     public void handle(C2SVersionCheckPacket payload, IPayloadContext context) {
         ServerPlayer sender = (ServerPlayer) context.player();
         if (sender != null && NetworkHandler.setChannelVersion(sender.connection.getConnection(), payload.version)) {
+            YesSteveModel.LOGGER.info("[YSM] C2SVersionCheck: channel set, starting model sync for {}", sender.getGameProfile().getName());
             ServerModelManager.validatePlayerModel(sender);
             ModelInfoCapability cap = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP, null);
             if (cap != null) {

@@ -19,20 +19,18 @@ public class S2CModelSyncPayload implements CustomPacketPayload, IPayloadHandler
     public static final StreamCodec<FriendlyByteBuf, S2CModelSyncPayload> STREAM_CODEC =
             StreamCodec.of(S2CModelSyncPayload::encode, S2CModelSyncPayload::decode);
 
-    private final ByteBuffer data;
+    private final byte[] data;
 
-    public S2CModelSyncPayload(ByteBuffer data) {
+    public S2CModelSyncPayload(byte[] data) {
         this.data = data;
     }
 
     public static void encode(FriendlyByteBuf buf, S2CModelSyncPayload message) {
-        buf.writeBytes(message.data);
+        buf.writeByteArray(message.data);
     }
 
     public static S2CModelSyncPayload decode(FriendlyByteBuf buf) {
-        ByteBuffer data = ByteBuffer.allocateDirect(buf.readableBytes());
-        buf.readBytes(data);
-        return new S2CModelSyncPayload(data);
+        return new S2CModelSyncPayload(buf.readByteArray());
     }
 
     @Override
@@ -43,7 +41,7 @@ public class S2CModelSyncPayload implements CustomPacketPayload, IPayloadHandler
     @Override
     public void handle(S2CModelSyncPayload payload, IPayloadContext context) {
         if (context.flow().isClientbound()) {
-            ClientModelManager.startSync(context.connection(), payload.data);
+            ClientModelManager.startSync(context.connection(), ByteBuffer.wrap(payload.data));
         }
     }
 }
