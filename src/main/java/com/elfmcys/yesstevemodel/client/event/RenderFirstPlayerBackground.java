@@ -43,10 +43,10 @@ public class RenderFirstPlayerBackground {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        if (GeneralConfig.DISABLE_SELF_MODEL.get()) {
+        if (GeneralConfig.DISABLE_SELF_MODEL!=null&&GeneralConfig.DISABLE_SELF_MODEL.get()) {
             return;
         }
-        if (GeneralConfig.DISABLE_SELF_HANDS.get()) {
+        if (GeneralConfig.DISABLE_SELF_HANDS!=null&&GeneralConfig.DISABLE_SELF_HANDS.get()) {
             return;
         }
         LocalPlayer player = Minecraft.getInstance().player;

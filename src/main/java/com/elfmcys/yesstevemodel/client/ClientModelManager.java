@@ -536,8 +536,13 @@ public class ClientModelManager {
         return null;
     }
 
+    private static final ResourceLocation MISSING_DEFAULT_TEXTURE = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "textures/missing_default");
+
     public static ResourceLocation getDefaultTexture() {
-        return defaultTexture.getResourceLocation().get();
+        if (defaultTexture != null) {
+            return defaultTexture.getResourceLocation().orElse(MISSING_DEFAULT_TEXTURE);
+        }
+        return MISSING_DEFAULT_TEXTURE;
     }
 
     public static <T extends IGuiWidget> T registerGuiWidget(T t) {
@@ -717,10 +722,16 @@ public class ClientModelManager {
                 pendingModelQueue.add(Pair.of(runtimeModel, modelId));
                 if (isPrimary) {
                     localModelContext = runtimeModel;
-
-                    Minecraft.getInstance().execute(() -> {
-                        defaultTexture = UploadManager.getOrCreateLocatable(runtimeModel.getAnimationBundle().getTextures().getValueAt(0), true);
-                    });
+                    if (runtimeModel.getAnimationBundle().getTextures().size() > 0) {
+                        Runnable registerTexture = () -> {
+                            defaultTexture = UploadManager.getOrCreateLocatable(runtimeModel.getAnimationBundle().getTextures().getValueAt(0), true);
+                        };
+                        if (RenderSystem.isOnRenderThread()) {
+                            registerTexture.run();
+                        } else {
+                            Minecraft.getInstance().execute(registerTexture);
+                        }
+                    }
                     return;
                 }
             } catch (Exception e) {

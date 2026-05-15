@@ -14,8 +14,10 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.Nullable;
 
+@EventBusSubscriber(modid = YesSteveModel.MOD_ID)
 public final class NetworkHandler {
 
     public static final String VERSION = "2.6.0";

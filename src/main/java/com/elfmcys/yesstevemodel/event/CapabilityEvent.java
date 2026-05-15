@@ -130,11 +130,15 @@ public final class CapabilityEvent {
                 for (String modelId : ServerModelManager.getAuthModels()) {
                     authModelsCap.addModel(modelId);
                 }
-                NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(authModelsCap.getAuthModels()), player);
+                if (NetworkHandler.isPlayerConnected(player)) {
+                    NetworkHandler.sendToClientPlayer(new S2CSyncAuthModelsPacket(authModelsCap.getAuthModels()), player);
+                }
             }
             StarModelsCapability starModelsCap = getStarModelsCap(player);
             if (starModelsCap != null) {
-                NetworkHandler.sendToClientPlayer(new S2CSyncStarModelsPacket(starModelsCap.getStarModels()), player);
+                if (NetworkHandler.isPlayerConnected(player)) {
+                    NetworkHandler.sendToClientPlayer(new S2CSyncStarModelsPacket(starModelsCap.getStarModels()), player);
+                }
             }
         }
     }
@@ -152,7 +156,7 @@ public final class CapabilityEvent {
                 continue;
             }
             if (!NetworkHandler.isPlayerConnected(serverPlayer) && !cap.isMandatory()) {
-                if (serverPlayer.tickCount == 200 || serverPlayer.tickCount == 600 || serverPlayer.tickCount == 1800) {
+                if (serverPlayer.tickCount <= 2 || serverPlayer.tickCount == 200 || serverPlayer.tickCount == 600 || serverPlayer.tickCount == 1800) {
                     NetworkHandler.sendToClientPlayer(new S2CVersionCheckPacket(), serverPlayer);
                 }
                 continue;

@@ -1,6 +1,9 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
+import com.elfmcys.yesstevemodel.client.entity.LivingAnimatable;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -19,8 +22,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @OnlyIn(Dist.CLIENT)
 public final class MaidCapabilityProvider implements ICapabilityProvider<Entity, Void, MaidCapability> {
 
+    private static final class MaidCapHolder {
+        static final EntityCapability<MaidCapability, Void> CAP =
+                EntityCapability.createVoid(
+                        ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_maid"),
+                        MaidCapability.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static EntityCapability<MaidCapability, Void> createDummyCap() {
+        return (EntityCapability<MaidCapability, Void>) (Object)
+                EntityCapability.createVoid(
+                        ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_maid_dummy"),
+                        Void.class);
+    }
+
     public static final EntityCapability<MaidCapability, Void> MAID_CAP =
-            EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "ysm_maid"), MaidCapability.class);
+            TouhouMaidCompat.isLoaded() ? MaidCapHolder.CAP : createDummyCap();
 
     public static final MaidCapabilityProvider INSTANCE = new MaidCapabilityProvider();
 

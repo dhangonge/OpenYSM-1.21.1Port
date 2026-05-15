@@ -11,6 +11,7 @@ import com.elfmcys.yesstevemodel.client.renderer.layer.CustomPlayerElytraLayer;
 import com.elfmcys.yesstevemodel.client.renderer.layer.CustomPlayerItemInHandLayer;
 import com.elfmcys.yesstevemodel.client.renderer.layer.CustomPlayerParrotLayer;
 import com.elfmcys.yesstevemodel.event.api.SpecialPlayerRenderEvent;
+import com.elfmcys.yesstevemodel.geckolib3.extended.LivingEntityRendererAccessor;
 import com.elfmcys.yesstevemodel.geckolib3.geo.GeoReplacedEntityRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
@@ -30,7 +32,7 @@ import net.minecraft.world.scores.Team;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.NotNull;
 
-public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, CustomPlayerEntity> {
+public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, CustomPlayerEntity> implements LivingEntityRendererAccessor {
 
     private ResourceLocation currentTexture;
 
@@ -120,5 +122,10 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
         if (TouhouLittleMaidCompat.isSimplePlanesEntity(vehicle) || TouhouLittleMaidCompat.isImmersiveAircraftEntity(vehicle)) {
             poseStack.translate(0.0d, 0.5d, 0.0d);
         }
+    }
+
+    @Override
+    public void tlm$renderNameTag(LivingEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+        renderNameTag( (Player) pEntity,  pEntity.getName(),  pPoseStack,  pBuffer,  pPackedLight,  pPartialTick);
     }
 }

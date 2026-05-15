@@ -11,7 +11,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
@@ -38,11 +38,13 @@ public class YesSteveModel {
 
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
-    public YesSteveModel(IEventBus modEventBus) throws IOException {
+    public YesSteveModel(IEventBus modEventBus, ModContainer modContainer) throws IOException {
         NativeLibLoader.init();
         if (!NativeLibLoader.isAvailable()) {
             LOGGER.error(getErrorMessage());
         } else {
+            modContainer.registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
+            modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
             initConfig(modEventBus);
         }
     }
@@ -58,8 +60,6 @@ public class YesSteveModel {
                 oldConfig.delete();
             }
         }
-        // ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
-        // ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModSoundEvents.REGISTER.register(modEventBus);
         }

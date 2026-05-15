@@ -1,10 +1,6 @@
 package com.elfmcys.yesstevemodel.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
-import com.elfmcys.yesstevemodel.network.NetworkHandler;
-import com.elfmcys.yesstevemodel.network.message.S2CVersionCheckPacket;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -16,9 +12,7 @@ public final class EnterServerEvent {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        Player entity = event.getEntity();
-        if (entity instanceof ServerPlayer) {
-            NetworkHandler.sendToClientPlayer(new S2CVersionCheckPacket(), entity);
-        }
+        // Version check is now sent from CapabilityEvent.onServerTick
+        // at the first PLAY-phase tick instead of here (CONFIGURATION phase)
     }
 }
