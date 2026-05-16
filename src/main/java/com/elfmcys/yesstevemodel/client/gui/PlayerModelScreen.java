@@ -8,8 +8,6 @@ import com.elfmcys.yesstevemodel.client.event.ModScreenEvent;
 import com.elfmcys.yesstevemodel.client.gui.button.*;
 import com.elfmcys.yesstevemodel.client.input.PlayerModelToggleKey;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
-import com.elfmcys.yesstevemodel.client.renderer.ModelPreviewRenderer;
-import com.elfmcys.yesstevemodel.client.renderer.RendererManager;
 import com.elfmcys.yesstevemodel.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
@@ -450,7 +448,7 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
         for (Renderable renderable : this.renderables) {
             renderable.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
+        //renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
         this.searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
         renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
         if (this.searchBox.getValue().isEmpty() && !this.searchBox.isFocused()) {
@@ -543,11 +541,9 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
         if (localPlayer != null) {
             guiGraphics.enableScissor(this.guiLeft, this.guiTop, this.guiLeft + 135, this.guiTop + 235);
             PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
-            if (cap != null && cap.isModelInitialized()) {
-                ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70.0f, partialTick, cap, RendererManager.getPlayerRenderer(), false, true);
-            } else {
-                InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float) ((this.guiLeft + 67) - mouseX), (float) (((this.guiTop + 180) - 95) - mouseY), partialTick, localPlayer);
-            }
+
+                InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft , this.guiTop, this.guiLeft + 135, this.guiTop + 235,  70,0, mouseX, mouseY, localPlayer);
+//  1.20.1      InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, (this.guiLeft + 67) - mouseX, ((this.guiTop + 180) - 95) - mouseY, localPlayer);
             guiGraphics.flush();
             guiGraphics.disableScissor();
             if (cap != null) {
