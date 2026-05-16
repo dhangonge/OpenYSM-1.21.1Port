@@ -22,6 +22,13 @@ public final class MolangLexerImpl implements MolangLexer {
     private Token lastToken = null;
     private Token token = null;
 
+    // context tracking for annotation detection
+    private int parenDepth = 0;
+    private boolean seenEquals = false;
+
+    // pushback buffer for unreading characters
+    private final StringBuilder pushback = new StringBuilder();
+
     public MolangLexerImpl(@NotNull Reader reader) throws IOException {
         this.reader = requireNonNull(reader, "reader");
         this.next = reader.read();
@@ -61,6 +68,9 @@ public final class MolangLexerImpl implements MolangLexer {
 
         // skip whitespace (including tabs and newlines)
         while (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            if (c == '\n' || c == '\r') {
+                seenEquals = false;
+            }
             c = read();
         }
 
@@ -124,18 +134,57 @@ public final class MolangLexerImpl implements MolangLexer {
                     cursor.index()
             );
         } else if (c == '\'') { // single quote means string start
+            if (parenDepth == 0 && !seenEquals) {
+                // annotation string: count quotes on this line, skip to last quote
+                StringBuilder lineBuf = new StringBuilder();
+                while (c != -1 && c != '\r' && c != '\n') {
+                    lineBuf.appendCodePoint(c);
+                    c = read();
+                }
+                // unread the line terminator (or eof)
+                if (c != -1) {
+                    unread(String.valueOf((char) c));
+                }
+
+                int quoteCount = 0;
+                for (int i = 0; i < lineBuf.length(); i++) {
+                    if (lineBuf.charAt(i) == '\'') quoteCount++;
+                }
+
+                if (quoteCount % 2 != 0) {
+                    // malformed: unread everything, fall through to normal string handling
+                    unread(lineBuf.toString());
+                    c = read(); // re-read the opening quote
+                } else {
+                    // find last quote position and unread everything after it
+                    int lastQuote = lineBuf.length() - 1;
+                    while (lastQuote >= 0 && lineBuf.charAt(lastQuote) != '\'') {
+                        lastQuote--;
+                    }
+                    if (lastQuote + 1 < lineBuf.length()) {
+                        unread(lineBuf.substring(lastQuote + 1));
+                    }
+                    // skip annotation entirely, return next real token
+                    return next0();
+                }
+            }
+            // normal string processing
             StringBuilder value = new StringBuilder(16);
             while (true) {
                 c = read();
                 if (c == -1) {
                     // the heck? you didn't close the string
                     return new Token(TokenKind.ERROR, "Found end-of-file before closing quote", start, cursor.index());
+                } else if (c == '\\') {
+                    c = read();
+                    if (c == -1) {
+                        return new Token(TokenKind.ERROR, "Found end-of-file before closing quote", start, cursor.index());
+                    }
+                    value.appendCodePoint(c);
                 } else if (c == '\'') {
                     // string was closed!
                     break;
                 } else {
-                    // TODO: should we allow escaping quotes? should we disallow line breaks?
-                    // not end of file nor quote, this is inside the string literal
                     value.appendCodePoint(c);
                 }
             }
@@ -158,6 +207,7 @@ public final class MolangLexerImpl implements MolangLexer {
                     if (c1 == '=') {
                         read();
                         tokenKind = TokenKind.BANGEQ;
+                        seenEquals = true;
                     } else {
                         tokenKind = TokenKind.BANG;
                     }
@@ -190,6 +240,7 @@ public final class MolangLexerImpl implements MolangLexer {
                     if (c1 == '=') {
                         read();
                         tokenKind = TokenKind.LTE;
+                        seenEquals = true;
                     } else {
                         tokenKind = TokenKind.LT;
                     }
@@ -200,6 +251,7 @@ public final class MolangLexerImpl implements MolangLexer {
                     if (c1 == '=') {
                         read();
                         tokenKind = TokenKind.GTE;
+                        seenEquals = true;
                     } else {
                         tokenKind = TokenKind.GT;
                     }
@@ -213,6 +265,7 @@ public final class MolangLexerImpl implements MolangLexer {
                     } else {
                         tokenKind = TokenKind.EQ;
                     }
+                    seenEquals = true;
                     break;
                 }
                 case '-': {
@@ -241,14 +294,14 @@ public final class MolangLexerImpl implements MolangLexer {
                 case '+': tokenKind = TokenKind.PLUS; break;
                 case ',': tokenKind = TokenKind.COMMA; break;
                 case '.': tokenKind = TokenKind.DOT; break;
-                case '(': tokenKind = TokenKind.LPAREN; break;
-                case ')': tokenKind = TokenKind.RPAREN; break;
+                case '(': tokenKind = TokenKind.LPAREN; parenDepth++; break;
+                case ')': tokenKind = TokenKind.RPAREN; if (parenDepth > 0) parenDepth--; break;
                 case '{': tokenKind = TokenKind.LBRACE; break;
                 case '}': tokenKind = TokenKind.RBRACE; break;
                 case ':': tokenKind = TokenKind.COLON; break;
                 case '[': tokenKind = TokenKind.LBRACKET; break;
                 case ']': tokenKind = TokenKind.RBRACKET; break;
-                case ';': tokenKind = TokenKind.SEMICOLON; break;
+                case ';': tokenKind = TokenKind.SEMICOLON; seenEquals = false; break;
                 //@formatter:on
                 default: {
                     // "c" is something we don't know about!
@@ -269,9 +322,20 @@ public final class MolangLexerImpl implements MolangLexer {
     }
 
     private int read() throws IOException {
+        if (pushback.length() > 0) {
+            char c = pushback.charAt(0);
+            pushback.deleteCharAt(0);
+            cursor.push(c);
+            next = c;
+            return c;
+        }
         int c = reader.read();
         cursor.push(c);
         next = c;
         return c;
+    }
+
+    private void unread(String s) {
+        pushback.insert(0, s);
     }
 }

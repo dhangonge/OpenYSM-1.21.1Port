@@ -50,6 +50,8 @@ public class MolangParser {
         boolean inBlockComment = false;
         boolean inLineComment = false;
         boolean inStringLiteral = false;
+        int parenDepth = 0;
+        boolean seenEqualsOnLine = false;
 
         for (int i = 0; i < input.length(); i++) {
             char currentChar = input.charAt(i);
@@ -59,14 +61,19 @@ public class MolangParser {
                     inStringLiteral = false;
                 }
                 resultBuilder.append(currentChar);
+                continue;
+            }
 
-            } else if (inLineComment) {
+            if (inLineComment) {
                 if (currentChar == '\r' || currentChar == '\n') {
                     inLineComment = false;
+                    seenEqualsOnLine = false;
                     resultBuilder.append('\n');
                 }
+                continue;
+            }
 
-            } else if (inBlockComment) {
+            if (inBlockComment) {
                 if (currentChar == '*' && i + 1 < input.length()) {
                     char nextChar = input.charAt(i + 1);
                     if (nextChar == '/') {
@@ -74,30 +81,74 @@ public class MolangParser {
                         i++;
                     }
                 }
+                continue;
+            }
 
-            } else if (currentChar == '\'') {
-                inStringLiteral = true;
-                resultBuilder.append('\'');
+            if (currentChar == '\r' || currentChar == '\n') {
+                seenEqualsOnLine = false;
+                resultBuilder.append('\n');
+                continue;
+            }
 
-            } else {
-                if (currentChar == '/' && i + 1 < input.length()) {
-                    char nextChar = input.charAt(i + 1);
+            if (currentChar == '(') {
+                parenDepth++;
+            } else if (currentChar == ')') {
+                if (parenDepth > 0) parenDepth--;
+            }
 
-                    if (nextChar == '/') {
-                        inLineComment = true;
-                        i++;
-                        continue;
+            if (currentChar == '=') {
+                seenEqualsOnLine = true;
+            }
+
+            if (currentChar == '\'') {
+                if (parenDepth > 0 || seenEqualsOnLine) {
+                    // normal string: inside function call or after assignment/comparison
+                    inStringLiteral = true;
+                    resultBuilder.append('\'');
+                } else {
+                    // annotation string: find matching last quote on the same line
+                    int lineEnd = i;
+                    while (lineEnd < input.length() && input.charAt(lineEnd) != '\r' && input.charAt(lineEnd) != '\n') {
+                        lineEnd++;
                     }
 
-                    if (nextChar == '*') {
-                        inBlockComment = true;
-                        i++;
-                        continue;
+                    int quoteCount = 1;
+                    for (int j = i + 1; j < lineEnd; j++) {
+                        if (input.charAt(j) == '\'') quoteCount++;
+                    }
+
+                    if (quoteCount % 2 != 0) {
+                        // odd quotes: malformed, treat as normal string
+                        inStringLiteral = true;
+                        resultBuilder.append('\'');
+                    } else {
+                        int lastQuote = lineEnd - 1;
+                        while (lastQuote > i && input.charAt(lastQuote) != '\'') {
+                            lastQuote--;
+                        }
+                        i = lastQuote;
                     }
                 }
-
-                resultBuilder.append(currentChar);
+                continue;
             }
+
+            if (currentChar == '/' && i + 1 < input.length()) {
+                char nextChar = input.charAt(i + 1);
+
+                if (nextChar == '/') {
+                    inLineComment = true;
+                    i++;
+                    continue;
+                }
+
+                if (nextChar == '*') {
+                    inBlockComment = true;
+                    i++;
+                    continue;
+                }
+            }
+
+            resultBuilder.append(currentChar);
         }
 
         return resultBuilder.toString();
