@@ -1,20 +1,19 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.processor;
 
-import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.audio.AudioPlayerManager;
-import com.elfmcys.yesstevemodel.geckolib3.core.manager.AnimationData;
-import com.elfmcys.yesstevemodel.geckolib3.core.controller.IAnimationController;
-import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
+import com.elfmcys.yesstevemodel.geckolib3.core.controller.BoneTransformProvider;
+import com.elfmcys.yesstevemodel.geckolib3.core.controller.IAnimationController;
 import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
+import com.elfmcys.yesstevemodel.geckolib3.core.manager.AnimationData;
+import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.storage.IForeignVariableStorage;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.storage.VariableStorage;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.value.IValue;
 import com.elfmcys.yesstevemodel.geckolib3.core.snapshot.BoneTopLevelSnapshot;
 import com.elfmcys.yesstevemodel.geckolib3.core.util.MathUtil;
-import com.elfmcys.yesstevemodel.geckolib3.core.controller.BoneTransformProvider;
-import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
+import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.molang.runtime.ExpressionEvaluator;
 import com.elfmcys.yesstevemodel.molang.runtime.Struct;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceMaps;
@@ -130,73 +129,66 @@ public class AnimationProcessor<TEntity extends Entity> {
             });
             boneTransformCount++;
         }
-        if (z) {
-            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=true, controllers={}, boneTransforms={}", controllerCount, boneTransformCount);
-        } else {
-            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=false");
-        }
         this.needsInit = false;
         if (z) {
             Iterator<BoneTopLevelSnapshot> iterator = this.modelRendererList.iterator();
             while (iterator.hasNext()) {
-            BoneTopLevelSnapshot topLevelSnapshot = iterator.next();
-            boolean runningAnimation = false;
-            if (topLevelSnapshot.isCurrentlyRunningRotationAnimation) {
-                runningAnimation = true;
-                topLevelSnapshot.isCurrentlyRunningRotationAnimation = false;
-                topLevelSnapshot.prevRotation = null;
-            } else {
-                if (topLevelSnapshot.prevRotation == null) {
-                    topLevelSnapshot.prevRotation = new Vector3f(topLevelSnapshot.rotation);
-                }
-                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetRotationTick) / manager.getResetSpeed();
-                if (percentageReset < 1.0f) {
+                BoneTopLevelSnapshot topLevelSnapshot = iterator.next();
+                boolean runningAnimation = false;
+                if (topLevelSnapshot.isCurrentlyRunningRotationAnimation) {
                     runningAnimation = true;
-                    MathUtil.nlerpEulerAngles(percentageReset, topLevelSnapshot.prevRotation, MathUtil.ZERO, topLevelSnapshot.bone.getInitialRotation(), topLevelSnapshot.rotation);
+                    topLevelSnapshot.isCurrentlyRunningRotationAnimation = false;
+                    topLevelSnapshot.prevRotation = null;
                 } else {
-                    topLevelSnapshot.rotation.set(MathUtil.ZERO);
+                    if (topLevelSnapshot.prevRotation == null) {
+                        topLevelSnapshot.prevRotation = new Vector3f(topLevelSnapshot.rotation);
+                    }
+                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetRotationTick) / manager.getResetSpeed();
+                    if (percentageReset < 1.0f) {
+                        runningAnimation = true;
+                        MathUtil.nlerpEulerAngles(percentageReset, topLevelSnapshot.prevRotation, MathUtil.ZERO, topLevelSnapshot.bone.getInitialRotation(), topLevelSnapshot.rotation);
+                    } else {
+                        topLevelSnapshot.rotation.set(MathUtil.ZERO);
+                    }
                 }
-            }
-            if (topLevelSnapshot.isCurrentlyRunningPositionAnimation) {
-                runningAnimation = true;
-                topLevelSnapshot.isCurrentlyRunningPositionAnimation = false;
-                topLevelSnapshot.prevPosition = null;
-            } else {
-                if (topLevelSnapshot.prevPosition == null) {
-                    topLevelSnapshot.prevPosition = new Vector3f(topLevelSnapshot.position);
-                }
-                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetPositionTick) / manager.getResetSpeed();
-                if (percentageReset < 1.0f) {
+                if (topLevelSnapshot.isCurrentlyRunningPositionAnimation) {
                     runningAnimation = true;
-                    MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevPosition, MathUtil.ZERO, topLevelSnapshot.position);
+                    topLevelSnapshot.isCurrentlyRunningPositionAnimation = false;
+                    topLevelSnapshot.prevPosition = null;
                 } else {
-                    topLevelSnapshot.position.set(0.0f, 0.0f, 0.0f);
+                    if (topLevelSnapshot.prevPosition == null) {
+                        topLevelSnapshot.prevPosition = new Vector3f(topLevelSnapshot.position);
+                    }
+                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetPositionTick) / manager.getResetSpeed();
+                    if (percentageReset < 1.0f) {
+                        runningAnimation = true;
+                        MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevPosition, MathUtil.ZERO, topLevelSnapshot.position);
+                    } else {
+                        topLevelSnapshot.position.set(0.0f, 0.0f, 0.0f);
+                    }
                 }
-            }
-            if (topLevelSnapshot.isCurrentlyRunningScaleAnimation) {
-                runningAnimation = true;
-                topLevelSnapshot.isCurrentlyRunningScaleAnimation = false;
-                topLevelSnapshot.prevScale = null;
-            } else {
-                if (topLevelSnapshot.prevScale == null) {
-                    topLevelSnapshot.prevScale = new Vector3f(topLevelSnapshot.scale);
-                }
-                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetScaleTick) / manager.getResetSpeed();
-                if (percentageReset < 1.0f) {
+                if (topLevelSnapshot.isCurrentlyRunningScaleAnimation) {
                     runningAnimation = true;
-                    MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevScale, MathUtil.ONE, topLevelSnapshot.scale);
+                    topLevelSnapshot.isCurrentlyRunningScaleAnimation = false;
+                    topLevelSnapshot.prevScale = null;
                 } else {
-                    topLevelSnapshot.scale.set(1.0f, 1.0f, 1.0f);
+                    if (topLevelSnapshot.prevScale == null) {
+                        topLevelSnapshot.prevScale = new Vector3f(topLevelSnapshot.scale);
+                    }
+                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetScaleTick) / manager.getResetSpeed();
+                    if (percentageReset < 1.0f) {
+                        runningAnimation = true;
+                        MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevScale, MathUtil.ONE, topLevelSnapshot.scale);
+                    } else {
+                        topLevelSnapshot.scale.set(1.0f, 1.0f, 1.0f);
+                    }
+                }
+                topLevelSnapshot.reset();
+                if (!runningAnimation) {
+                    topLevelSnapshot.isCurrentlyRunningAnimation = false;
+                    iterator.remove();
                 }
             }
-            topLevelSnapshot.reset();
-            if (!runningAnimation) {
-                topLevelSnapshot.isCurrentlyRunningAnimation = false;
-                iterator.remove();
-            }
-        }
-        } else {
-            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=false, skipping cleanup loop");
         }
         context.setPlaybackFlags(null);
         context.setAnimationControllerContext(null);
@@ -307,6 +299,7 @@ public class AnimationProcessor<TEntity extends Entity> {
         this.animationStorage.forEachPropertyName(consumer);
     }
 
-    private record PendingExpression(IValue IValue, boolean isClientPlayer, boolean executeBeforeAnimation, Consumer<String> callback) {
+    private record PendingExpression(IValue IValue, boolean isClientPlayer, boolean executeBeforeAnimation,
+                                     Consumer<String> callback) {
     }
 }

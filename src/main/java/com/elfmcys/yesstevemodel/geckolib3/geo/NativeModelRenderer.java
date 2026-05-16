@@ -162,13 +162,6 @@ public class NativeModelRenderer {
         float animRx = boneParams[pOffset];
         float animRy = boneParams[pOffset + 1];
         float animRz = boneParams[pOffset + 2];
-
-        if (animRx != 0 || animRy != 0 || animRz != 0
-            || boneParams[pOffset + 3] != 0 || boneParams[pOffset + 4] != 0 || boneParams[pOffset + 5] != 0) {
-            YesSteveModel.LOGGER.info("[YSM] calculateBoneMatrix: idx={}, bone={}, animRot=({}, {}, {}), animPos=({}, {}, {})",
-                idx, bone.name, animRx, animRy, animRz,
-                boneParams[pOffset + 3], boneParams[pOffset + 4], boneParams[pOffset + 5]);
-        }
         float animTx = boneParams[pOffset + 3];
         float animTy = boneParams[pOffset + 4];
         float animTz = boneParams[pOffset + 5];
