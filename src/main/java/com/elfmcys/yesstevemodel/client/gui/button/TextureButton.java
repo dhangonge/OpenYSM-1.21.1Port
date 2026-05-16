@@ -68,9 +68,8 @@ public class TextureButton extends Button {
     }
 
     public void renderPlayerPreview(GuiGraphics guiGraphics, float partialTick) {
-        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-        RenderSystem.enableScissor((int) (getX() * guiScale), (int) (Minecraft.getInstance().getWindow().getHeight() - (((getY() + this.height) - 20) * guiScale)), (int) (this.width * guiScale), (int) ((this.height - 20) * guiScale));
-        ModelPreviewRenderer.renderLivingEntityPreview(getX() + (this.width / 2.0f), getY() + (this.height / 2.0f) + 24.0f, 35.0f, partialTick, this.previewEntity, RendererManager.getPlayerRenderer(), false, true);
-        RenderSystem.disableScissor();
+        guiGraphics.enableScissor(getX(), getY(), getX() + this.width, getY() + this.height - 20);
+        ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, getX() + (this.width / 2.0f), getY() + (this.height / 2.0f) + 24.0f, 35.0f, partialTick, this.previewEntity, RendererManager.getPlayerRenderer(), false, true);
+        guiGraphics.disableScissor();
     }
 }

@@ -49,10 +49,9 @@ public class TouhouMaidModelScreen extends PlayerModelScreen {
 
     @Override
     public void renderModelPreview(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-        RenderSystem.enableScissor((int) ((this.guiLeft + 5) * guiScale), (int) (Minecraft.getInstance().getWindow().getHeight() - ((this.guiTop + 200) * guiScale)), (int) (125.0d * guiScale), (int) (171.0d * guiScale));
+        guiGraphics.enableScissor(this.guiLeft + 5, this.guiTop + 200, this.guiLeft + 130, this.guiTop + 371);
         InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float)((this.guiLeft + 67) - mouseX), (float)(((this.guiTop + 180) - 95) - mouseY), partialTick, this.maid);
-        RenderSystem.disableScissor();
+        guiGraphics.disableScissor();
         MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
         if (cap != null) {
             List<FormattedCharSequence> listSplit = this.font.split(FormattedText.of(ClientModelManager.getModelContext(cap.getModelId()).map(it -> {

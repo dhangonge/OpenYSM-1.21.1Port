@@ -177,10 +177,9 @@ public class ModelButton extends Button {
             guiGraphics.blit(this.backgroundTexture.getResourceLocation().get(), x, y, 0.0f, 0.0f, this.width, this.height, this.width, this.height);
             RenderSystem.disableBlend();
         }
-        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-        RenderSystem.enableScissor((int) (x * guiScale), (int) (Minecraft.getInstance().getWindow().getHeight() - (((y + this.height) - 20) * guiScale)), (int) (this.width * guiScale), (int) ((this.height - 20) * guiScale));
-        ModelPreviewRenderer.renderLivingEntityPreview(x + (this.width / 2.0f), y + (this.height / 2.0f) + 20.0f, 30.0f, minecraft.getTimer().getGameTimeDeltaTicks(), this.modelIdHolder, RendererManager.getPlayerRenderer(), this.disablePreviewRotation, true);
-        RenderSystem.disableScissor();
+        guiGraphics.enableScissor(x, y, x + this.width, y + this.height - 20);
+        ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, x + (this.width / 2.0f), y + (this.height / 2.0f) + 20.0f, 30.0f, minecraft.getTimer().getGameTimeDeltaTicks(), this.modelIdHolder, RendererManager.getPlayerRenderer(), this.disablePreviewRotation, true);
+        guiGraphics.disableScissor();
         int starZ = 3500;
         if (this.foregroundTexture != null) {
             RenderSystem.enableBlend();

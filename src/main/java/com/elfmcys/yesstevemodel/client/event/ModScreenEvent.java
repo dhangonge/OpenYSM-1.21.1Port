@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, modid = YesSteveModel.MOD_ID, value = {Dist.CLIENT})
+@EventBusSubscriber
 public class ModScreenEvent {
 
     private static final String IMC_METHOD = "DownloadScreen";

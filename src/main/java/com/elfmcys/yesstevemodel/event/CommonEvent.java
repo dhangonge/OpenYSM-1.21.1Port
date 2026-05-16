@@ -11,7 +11,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 import java.io.IOException;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public final class CommonEvent {
     public static Object nativeInit() {
         ClientModelManager.loadDefaultModel();

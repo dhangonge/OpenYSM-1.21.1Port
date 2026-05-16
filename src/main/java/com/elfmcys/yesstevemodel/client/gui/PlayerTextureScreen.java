@@ -209,19 +209,14 @@ public class PlayerTextureScreen extends Screen {
         if (getMinecraft().player == null) {
             return;
         }
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        //renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fillGradient(this.guiLeft, this.guiTop + 22, this.guiLeft + 90, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 93, this.guiTop, this.guiLeft + 299, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 302, this.guiTop, this.guiLeft + 420, this.guiTop + 235, -14540254, -14540254);
-        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-        int scissorX = (int) ((this.guiLeft + 93) * guiScale);
-        int height = (int) (Minecraft.getInstance().getWindow().getHeight() - ((this.guiTop + 235) * guiScale));
-        int scissorWidth = (int) (206.0d * guiScale);
-        int scissorHeight = (int) (235.0d * guiScale);
         if (!this.modelHolder.getAnimationStateMachine().isCurrentAnimation(this.currentAnimation)) {
             this.modelHolder.getAnimationStateMachine().setCurrentAnimation(this.currentAnimation);
         }
-        renderTexturePreview(guiGraphics, scissorX, height, scissorWidth, scissorHeight, this.minecraft.getTimer().getGameTimeDeltaTicks());
+        renderTexturePreview(guiGraphics, this.minecraft.getTimer().getGameTimeDeltaTicks());
         String str = String.format("%d/%d", this.textureCurrentPage + 1, this.textureMaxPage + 1);
         Font font = this.font;
         int iWidth = this.guiLeft + 302 + ((118 - this.font.width(str)) / 2);
@@ -238,14 +233,14 @@ public class PlayerTextureScreen extends Screen {
         });
     }
 
-    public void renderTexturePreview(GuiGraphics guiGraphics, int scissorX, int scissorY, int scissorWidth, int scissorHeight, float partialTick) {
-        RenderSystem.enableScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+    public void renderTexturePreview(GuiGraphics guiGraphics, float partialTick) {
+        guiGraphics.enableScissor(this.guiLeft + 93, this.guiTop, this.guiLeft + 299, this.guiTop + 235);
         PlayerCapability cap = this.minecraft.player.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
         if (cap != null) {
             this.modelHolder.initModelWithTexture(this.modelId, cap.getCurrentTextureName());
-            ModelPreviewRenderer.renderEntityPreview(this.guiLeft + 149.5f + 40.0f + this.offsetX, this.guiTop + 117.5f + 80.0f + this.offsetY, this.zoom, this.pitch, this.yaw, partialTick, this.modelHolder, RendererManager.getPlayerRenderer(), this.showGround);
+            ModelPreviewRenderer.renderEntityPreview(guiGraphics, this.guiLeft + 149.5f + 40.0f + this.offsetX, this.guiTop + 117.5f + 80.0f + this.offsetY, this.zoom, this.pitch, this.yaw, partialTick, this.modelHolder, RendererManager.getPlayerRenderer(), this.showGround);
         }
-        RenderSystem.disableScissor();
+        guiGraphics.disableScissor();
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {

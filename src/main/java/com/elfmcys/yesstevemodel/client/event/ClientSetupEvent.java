@@ -42,7 +42,7 @@ import org.lwjgl.opengl.GL20;
 
 import java.util.Optional;
 
-@EventBusSubscriber(value = {Dist.CLIENT}, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public class ClientSetupEvent {
     public static Object nativeClientInit() {
         try {

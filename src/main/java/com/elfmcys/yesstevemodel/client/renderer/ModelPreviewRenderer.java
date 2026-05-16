@@ -97,24 +97,21 @@ public final class ModelPreviewRenderer {
     }
 
     // 动画测试界面的模型
-    public static void renderEntityPreview(float x, float y, float scale, float pitch, float yaw, float partialTick, AnimatableEntity animatableEntity, GeoReplacedEntityRenderer renderer, boolean renderGround) {
+    public static void renderEntityPreview(GuiGraphics guiGraphics, float x, float y, float scale, float pitch, float yaw, float partialTick, AnimatableEntity animatableEntity, GeoReplacedEntityRenderer renderer, boolean renderGround) {
         setPreviewMode(true);
         LivingEntity livingEntity = (LivingEntity) animatableEntity.getEntity();
-        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        // modelViewStack.pushPose();
-        // modelViewStack.translate(x, y, 1250.0d);
-        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        // RenderSystem.applyModelViewMatrix();
 
-        PoseStack poseStack = new PoseStack();
-        poseStack.translate(0.0d, 0.0d, 1000.0d);
-        poseStack.scale(scale, scale, scale);
-        poseStack.translate(0.0d, 0.8d, 0.0d);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(x, y, 1050.0d);
+        guiGraphics.pose().scale(1.0f, 1.0f, -1.0f);
+        guiGraphics.pose().translate(0.0d, 0.0d, 1000.0d);
+        guiGraphics.pose().scale(scale, scale, scale);
+        guiGraphics.pose().translate(0.0d, 0.8d, 0.0d);
 
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
         Quaternionf rotationX = com.mojang.math.Axis.XP.rotationDegrees((-10.0f) + pitch);
         rotationZ.mul(rotationX);
-        poseStack.mulPose(rotationZ);
+        guiGraphics.pose().mulPose(rotationZ);
 
         float oldBodyRot = livingEntity.yBodyRot;
         float oldBodyRotO = livingEntity.yBodyRotO;
@@ -139,13 +136,12 @@ public final class ModelPreviewRenderer {
         rotationX.conjugate();
         entityRenderDispatcher.overrideCameraOrientation(rotationX);
         entityRenderDispatcher.setRenderShadow(false);
-        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
         RenderSystem.runAsFancy(() -> {
             AnimationTracker animationTracker = ((IPreviewAnimatable) animatableEntity).getAnimationStateMachine();
             if (animationTracker.isCurrentAnimation("sleep")) {
-                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw - 90.0f));
-                poseStack.translate(0.5d, 0.5625d, 0.0d);
+                guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw - 90.0f));
+                guiGraphics.pose().translate(0.5d, 0.5625d, 0.0d);
                 livingEntity.setPose(Pose.SLEEPING);
             }
             if (animationTracker.isCurrentAnimation("swim") || animationTracker.isCurrentAnimation("swim_stand")) {
@@ -155,33 +151,33 @@ public final class ModelPreviewRenderer {
                 livingEntity.setPose(Pose.CROUCHING);
             }
             if (animationTracker.isCurrentAnimation("sit")) {
-                poseStack.translate(0.0d, -0.5d, 0.0d);
+                guiGraphics.pose().translate(0.0d, -0.5d, 0.0d);
             }
             if (animationTracker.isCurrentAnimation("ride")) {
-                poseStack.translate(0.0d, 0.85d, 0.0d);
+                guiGraphics.pose().translate(0.0d, 0.85d, 0.0d);
             }
             if (animationTracker.isCurrentAnimation("ride_pig")) {
-                poseStack.translate(0.0d, 0.3125d, 0.0d);
+                guiGraphics.pose().translate(0.0d, 0.3125d, 0.0d);
             }
             if (animationTracker.isCurrentAnimation("boat")) {
-                poseStack.translate(0.0d, -0.45d, 0.0d);
+                guiGraphics.pose().translate(0.0d, -0.45d, 0.0d);
             }
             try {
-                renderVehicleForAnimation(yaw, animatableEntity, partialTick, poseStack, entityRenderDispatcher, bufferSource);
+                renderVehicleForAnimation(guiGraphics, yaw, animatableEntity, partialTick, entityRenderDispatcher);
                 if (animationTracker.isCurrentAnimation("sleep")) {
-                    renderBedPreview(scale, pitch, yaw, bufferSource);
+                    renderBedPreview(guiGraphics, scale, pitch, yaw);
                 }
                 if (renderGround) {
-                    renderGroundPreview(scale, pitch, yaw, bufferSource);
+                    renderGroundPreview(guiGraphics, scale, pitch, yaw);
                 }
-                bufferSource.endBatch();
-                renderer.renderEntity((LivingAnimatable) animatableEntity, 0.0f, partialTick, poseStack, bufferSource, 15728880);
+                guiGraphics.flush();
+                renderer.renderEntity((LivingAnimatable) animatableEntity, 0.0f, partialTick, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             }
         });
 
-        bufferSource.endBatch();
+        guiGraphics.flush();
         entityRenderDispatcher.setRenderShadow(true);
         livingEntity.yBodyRot = oldBodyRot;
         livingEntity.yBodyRotO = oldBodyRotO;
@@ -193,88 +189,86 @@ public final class ModelPreviewRenderer {
         livingEntity.yHeadRot = oldHeadRot;
         livingEntity.setPose(oldPose);
 
-        // modelViewStack.popPose();
-        // RenderSystem.applyModelViewMatrix();
+        guiGraphics.pose().popPose();
         Lighting.setupFor3DItems();
         setPreviewMode(false);
     }
 
-    private static void renderBedPreview(float scale, float pitch, float yaw, MultiBufferSource.BufferSource bufferSource) {
-        PoseStack poseStack = new PoseStack();
-        poseStack.translate(0.0d, 0.0d, 1000.0d);
-        poseStack.scale(scale, scale, scale);
-        poseStack.translate(0.0d, 0.8d, 0.0d);
+    private static void renderBedPreview(GuiGraphics guiGraphics, float scale, float pitch, float yaw) {
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(0.0d, 0.0d, 1000.0d);
+        guiGraphics.pose().scale(scale, scale, scale);
+        guiGraphics.pose().translate(0.0d, 0.8d, 0.0d);
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
         rotationZ.mul(com.mojang.math.Axis.XP.rotationDegrees((-10.0f) + pitch));
-        poseStack.mulPose(rotationZ);
-        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw + 180.0f));
-        poseStack.translate(-0.5d, 0.0d, 0.5d);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_BED.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
+        guiGraphics.pose().mulPose(rotationZ);
+        guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw + 180.0f));
+        guiGraphics.pose().translate(-0.5d, 0.0d, 0.5d);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_BED.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+        guiGraphics.pose().popPose();
     }
 
-    private static void renderGroundPreview(float scale, float pitch, float yaw, MultiBufferSource.BufferSource bufferSource) {
-        PoseStack poseStack = new PoseStack();
-        poseStack.translate(0.0d, 0.0d, 1000.0d);
-        poseStack.scale(scale, scale, scale);
-        poseStack.translate(0.0d, 0.8d, 0.0d);
+    private static void renderGroundPreview(GuiGraphics guiGraphics, float scale, float pitch, float yaw) {
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(0.0d, 0.0d, 1000.0d);
+        guiGraphics.pose().scale(scale, scale, scale);
+        guiGraphics.pose().translate(0.0d, 0.8d, 0.0d);
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
         rotationZ.mul(com.mojang.math.Axis.XP.rotationDegrees((-10.0f) + pitch));
-        poseStack.mulPose(rotationZ);
-        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
-        poseStack.translate(-1.5d, -1.0d, -2.5d);
+        guiGraphics.pose().mulPose(rotationZ);
+        guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
+        guiGraphics.pose().translate(-1.5d, -1.0d, -2.5d);
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                poseStack.translate(0.0f, 0.0f, 1.0f);
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
+                guiGraphics.pose().translate(0.0f, 0.0f, 1.0f);
+                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
             }
-            poseStack.translate(1.0f, 0.0f, -3.0f);
+            guiGraphics.pose().translate(1.0f, 0.0f, -3.0f);
         }
 
-        poseStack.translate(-1.0f, 1.0f, 1.0f);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
-        poseStack.translate(0.0f, 0.0f, 1.0f);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_TULIP.defaultBlockState(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY);
+        guiGraphics.pose().translate(-1.0f, 1.0f, 1.0f);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+        guiGraphics.pose().translate(0.0f, 0.0f, 1.0f);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_TULIP.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+        guiGraphics.pose().popPose();
     }
 
-    private static void renderVehicleForAnimation(float yaw, AnimatableEntity animatableEntity, float partialTick, PoseStack poseStack, EntityRenderDispatcher entityRenderDispatcher, MultiBufferSource.BufferSource bufferSource) throws ExecutionException {
+    private static void renderVehicleForAnimation(GuiGraphics guiGraphics, float yaw, AnimatableEntity animatableEntity, float partialTick, EntityRenderDispatcher entityRenderDispatcher) throws ExecutionException {
         Entity entity = animatableEntity.getEntity();
         AnimationTracker animationTracker = ((IPreviewAnimatable) animatableEntity).getAnimationStateMachine();
 
         if (animationTracker.isCurrentAnimation("ride")) {
-            renderVehicleEntity(yaw, entity, poseStack, entityRenderDispatcher, bufferSource, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.HORSE), () -> EntityType.HORSE.create(entity.level())), partialTick);
+            renderVehicleEntity(guiGraphics, yaw, entity, entityRenderDispatcher, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.HORSE), () -> EntityType.HORSE.create(entity.level())), partialTick);
         } else if (animationTracker.isCurrentAnimation("ride_pig")) {
-            renderVehicleEntity(yaw, entity, poseStack, entityRenderDispatcher, bufferSource, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.PIG), () -> EntityType.PIG.create(entity.level())), partialTick);
+            renderVehicleEntity(guiGraphics, yaw, entity, entityRenderDispatcher, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.PIG), () -> EntityType.PIG.create(entity.level())), partialTick);
         } else if (animationTracker.isCurrentAnimation("boat")) {
-            renderVehicleEntity(yaw, entity, poseStack, entityRenderDispatcher, bufferSource, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.BOAT), () -> EntityType.BOAT.create(entity.level())), partialTick);
+            renderVehicleEntity(guiGraphics, yaw, entity, entityRenderDispatcher, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.BOAT), () -> EntityType.BOAT.create(entity.level())), partialTick);
         }
     }
 
-    private static void renderVehicleEntity(float yaw, Entity riderEntity, PoseStack poseStack, EntityRenderDispatcher entityRenderDispatcher, MultiBufferSource.BufferSource bufferSource, Entity vehicleEntity, float partialTick) {
-        poseStack.pushPose();
-        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
-        entityRenderDispatcher.render(vehicleEntity, 0.0d, 0.0d, 0.0d, 0.0f, partialTick, poseStack, bufferSource, 15728880);
-        poseStack.popPose();
+    private static void renderVehicleEntity(GuiGraphics guiGraphics, float yaw, Entity riderEntity, EntityRenderDispatcher entityRenderDispatcher, Entity vehicleEntity, float partialTick) {
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
+        entityRenderDispatcher.render(vehicleEntity, 0.0d, 0.0d, 0.0d, 0.0f, partialTick, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
+        guiGraphics.pose().popPose();
     }
 
     // 模型预览页面
-    public static <T extends LivingEntity, TAnimatable extends LivingAnimatable<T>> void renderLivingEntityPreview(float x, float y, float scale, float partialTick, TAnimatable animatable, GeoReplacedEntityRenderer<T, TAnimatable> renderer, boolean disablePreviewRotation, boolean hideEquipment) {
+    public static <T extends LivingEntity, TAnimatable extends LivingAnimatable<T>> void renderLivingEntityPreview(GuiGraphics guiGraphics, float x, float y, float scale, float partialTick, TAnimatable animatable, GeoReplacedEntityRenderer<T, TAnimatable> renderer, boolean disablePreviewRotation, boolean hideEquipment) {
         ItemStack[] savedEquipment;
         setPreviewMode(true);
         LivingEntity livingEntity = animatable.getEntity();
-        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        // modelViewStack.pushPose();
-        // modelViewStack.translate(x, y, 1050.0d);
-        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        // RenderSystem.applyModelViewMatrix();
 
-        PoseStack poseStack = new PoseStack();
-        poseStack.translate(0.0d, disablePreviewRotation ? 5.5d : 0.0d, 1000.0d);
-        poseStack.scale(scale, scale, scale);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(x, y, 1050.0d);
+        guiGraphics.pose().scale(1.0f, 1.0f, -1.0f);
+        guiGraphics.pose().translate(0.0d, disablePreviewRotation ? 5.5d : 0.0d, 1000.0d);
+        guiGraphics.pose().scale(scale, scale, scale);
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
         Quaternionf rotationX = com.mojang.math.Axis.XP.rotationDegrees(disablePreviewRotation ? 0.0f : -10.0f);
         rotationZ.mul(rotationX);
-        poseStack.mulPose(rotationZ);
+        guiGraphics.pose().mulPose(rotationZ);
 
         float oldBodyRot = livingEntity.yBodyRot;
         float oldBodyRotO = livingEntity.yBodyRotO;
@@ -318,7 +312,7 @@ public final class ModelPreviewRenderer {
         Entity vehicle = livingEntity.getVehicle();
         if (vehicle instanceof LivingEntity) {
             float vehicleYaw = vehicle.getYRot();
-            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(vehicleYaw - previewYaw));
+            guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(vehicleYaw - previewYaw));
             livingEntity.yHeadRot = vehicleYaw;
             livingEntity.yHeadRotO = vehicleYaw;
         }
@@ -328,13 +322,12 @@ public final class ModelPreviewRenderer {
         rotationX.conjugate();
         entityRenderDispatcher.overrideCameraOrientation(rotationX);
         entityRenderDispatcher.setRenderShadow(false);
-        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
         RenderSystem.runAsFancy(() -> {
-            renderer.renderEntity(animatable, 0.0f, partialTick, poseStack, bufferSource, 15728880);
+            renderer.renderEntity(animatable, 0.0f, partialTick, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
         });
 
-        bufferSource.endBatch();
+        guiGraphics.flush();
         entityRenderDispatcher.setRenderShadow(true);
         livingEntity.yBodyRot = oldBodyRot;
         livingEntity.yBodyRotO = oldBodyRotO;
@@ -363,8 +356,7 @@ public final class ModelPreviewRenderer {
             }
         }
 
-        // modelViewStack.popPose();
-        // RenderSystem.applyModelViewMatrix();
+        guiGraphics.pose().popPose();
         Lighting.setupFor3DItems();
         setPreviewMode(false);
     }

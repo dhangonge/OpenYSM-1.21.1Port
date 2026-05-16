@@ -27,13 +27,13 @@ public class TouhouMaidTextureScreen extends PlayerTextureScreen {
     }
 
     @Override
-    public void renderTexturePreview(GuiGraphics guiGraphics, int scissorX, int scissorY, int scissorWidth, int scissorHeight, float partialTick) {
-        RenderSystem.enableScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+    public void renderTexturePreview(GuiGraphics guiGraphics, float partialTick) {
+        guiGraphics.enableScissor(this.guiLeft + 93, this.guiTop, this.guiLeft + 299, this.guiTop + 235);
         MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
         if (cap != null) {
             this.modelHolder.initModelWithTexture(cap.getModelId(), cap.getCurrentTextureName());
-            ModelPreviewRenderer.renderEntityPreview(this.guiLeft + 149.5f + 40.0f + this.offsetX, this.guiTop + 117.5f + 80.0f + this.offsetY, this.zoom, this.pitch, this.yaw, partialTick, this.modelHolder, RendererManager.getPlayerRenderer(), this.showGround);
+            ModelPreviewRenderer.renderEntityPreview(guiGraphics, this.guiLeft + 149.5f + 40.0f + this.offsetX, this.guiTop + 117.5f + 80.0f + this.offsetY, this.zoom, this.pitch, this.yaw, partialTick, this.modelHolder, RendererManager.getPlayerRenderer(), this.showGround);
         }
-        RenderSystem.disableScissor();
+        guiGraphics.disableScissor();
     }
 }
