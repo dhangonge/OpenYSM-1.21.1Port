@@ -273,7 +273,7 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
     }
 
     public void setCustomAnimations(AnimationContext<?> ctx, @NotNull AnimationEvent<AnimatableEntity<TEntity>> event) {
-        float currentTick = event.currentTick + event.getFrameTime();
+        float currentTick = event.currentTick;
         boolean z = !shouldSkipAnimation(event);
         if (currentTick > this.lastTick) {
             this.hasUpdatedThisTick = false;
