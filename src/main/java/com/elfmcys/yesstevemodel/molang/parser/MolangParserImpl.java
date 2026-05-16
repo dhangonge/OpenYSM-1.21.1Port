@@ -111,6 +111,7 @@ public final class MolangParserImpl implements MolangParser {
             case IDENTIFIER:
                 Object lastTarget = binding.getProperty(token.value());
                 if (lastTarget == null) {
+                    lexer.next();
                     return FloatExpression.ZERO;
                 }
                 Expression expr = IdentifierExpression.get(token.value(), lastTarget);

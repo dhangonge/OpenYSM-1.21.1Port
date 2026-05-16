@@ -132,7 +132,7 @@ public class AnimationRouletteScreen extends Screen {
         }
         this.currentProperties = this.timingConfig.getExtraAnimation();
         navigationStack.clear();
-        navigationStack.add(MutablePair.of(StringPool.EMPTY, Integer.valueOf(this.currentNavEntry == null ? 0 : this.currentNavEntry.getRight().intValue())));
+        navigationStack.add(MutablePair.of(StringPool.EMPTY, this.currentNavEntry == null ? 0 : this.currentNavEntry.getRight()));
         this.currentNavEntry = navigationStack.peekLast();
     }
 
@@ -170,7 +170,7 @@ public class AnimationRouletteScreen extends Screen {
         clearWidgets();
         this.centerX = (this.width / 2) - 70;
         this.centerY = (this.height / 2) - 8;
-        if (this.currentProperties.size() < (this.currentNavEntry.getRight().intValue() * 8) + 1) {
+        if (this.currentProperties.size() < (this.currentNavEntry.getRight() * 8) + 1) {
             this.currentNavEntry.setValue(0);
         }
         if (this.currentProperties.size() <= this.hoveredIndex) {
@@ -235,29 +235,35 @@ public class AnimationRouletteScreen extends Screen {
     private void renderConfigFormItem(AbstractConfig abstractConfig, int[] iArr, int[] iArr2) {
         if (abstractConfig instanceof CheckboxConfig config) {
             executeExpression(abstractConfig.getValue(), str -> {
-                this.minecraft.execute(() -> {
-                    addRenderableWidget(createCheckbox(config, str, iArr, iArr2));
-                    iArr[0] = iArr[0] + 14;
-                    iArr2[0] = iArr2[0] + 1;
-                    this.maxConfigScroll = Math.max(0, iArr[0] - 110);
-                });
+                if (this.minecraft != null) {
+                    this.minecraft.execute(() -> {
+                        addRenderableWidget(createCheckbox(config, str, iArr, iArr2));
+                        iArr[0] = iArr[0] + 14;
+                        iArr2[0] = iArr2[0] + 1;
+                        this.maxConfigScroll = Math.max(0, iArr[0] - 110);
+                    });
+                }
             });
         }
         if (abstractConfig instanceof RangeConfig config) {
             executeExpression(abstractConfig.getValue(), str2 -> {
-                this.minecraft.execute(() -> {
-                    addRenderableWidget(createSlider(config, str2, iArr, iArr2));
-                    iArr[0] = iArr[0] + 17;
-                    iArr2[0] = iArr2[0] + 1;
-                    this.maxConfigScroll = Math.max(0, iArr[0] - 110);
-                });
+                if (this.minecraft != null) {
+                    this.minecraft.execute(() -> {
+                        addRenderableWidget(createSlider(config, str2, iArr, iArr2));
+                        iArr[0] = iArr[0] + 17;
+                        iArr2[0] = iArr2[0] + 1;
+                        this.maxConfigScroll = Math.max(0, iArr[0] - 110);
+                    });
+                }
             });
         }
         if (abstractConfig instanceof RadioConfig config) {
             executeExpression(abstractConfig.getValue(), str3 -> {
-                this.minecraft.execute(() -> {
-                    renderRadioGroup(config, str3, iArr, iArr2);
-                });
+                if (this.minecraft != null) {
+                    this.minecraft.execute(() -> {
+                        renderRadioGroup(config, str3, iArr, iArr2);
+                    });
+                }
             });
         }
     }
@@ -270,17 +276,16 @@ public class AnimationRouletteScreen extends Screen {
         }
         int iMax = 0;
         int i = 0;
-        Iterator<String> it = orderedStringMap.getKeys().iterator();
-        while (it.hasNext()) {
-            iMax = Math.max(iMax, this.font.width(ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_LABEL_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0]), Integer.valueOf(i)), it.next())) + 16);
+        for (String s : orderedStringMap.getKeys()) {
+            iMax = Math.max(iMax, this.font.width(ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_LABEL_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0], i), s)) + 16);
             i++;
         }
         if (iMax == 0) {
             iMax = 115;
         }
         int iMax2 = Math.max(1, 115 / iMax);
-        String str2 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), radioConfig.getTitle());
-        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), radioConfig.getDescription());
+        String str2 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), radioConfig.getTitle());
+        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), radioConfig.getDescription());
         MutableComponent mutableComponentLiteral = Component.literal(str2);
         Tooltip tooltipCreate = Tooltip.create(Component.literal(str3));
         int size = ((((orderedStringMap.size() - 1) / iMax2) + 1) * 14) + 14;
@@ -290,13 +295,13 @@ public class AnimationRouletteScreen extends Screen {
         int rowY = iArr[0] + 14;
         int idx = 0;
         while (idx < orderedStringMap.size()) {
-            MutableComponent mutableComponentLiteral2 = Component.literal(ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_LABEL_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0]), Integer.valueOf(idx)), orderedStringMap.getKeyAt(idx)));
+            MutableComponent mutableComponentLiteral2 = Component.literal(ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_LABEL_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0], idx), orderedStringMap.getKeyAt(idx)));
             String str4 = orderedStringMap.getValueAt(idx);
             boolean isSelected = iRound == idx;
             int iRound2 = Math.round(110.0f / iMax2);
             ConfigCheckBox configCheckBox = new ConfigCheckBox(this.centerX + 127 + (iRound2 * (idx % iMax2)), this.centerY + rowY, iRound2, mutableComponentLiteral2, bool -> {
                 executeExpression(str4, null);
-                if (!GeckoLibCache.isRoamingVariableAssignment(str4) && NetworkHandler.isClientConnected() && !ServerConfig.LOW_BANDWIDTH_USAGE.get().booleanValue()) {
+                if (!GeckoLibCache.isRoamingVariableAssignment(str4) && NetworkHandler.isClientConnected() && !ServerConfig.LOW_BANDWIDTH_USAGE.get()) {
                     NetworkHandler.sendToServer(new C2SRequestExecuteMolangPacket(str4, this.animatableModel.getEntity().getId()));
                 }
                 init();
@@ -315,8 +320,8 @@ public class AnimationRouletteScreen extends Screen {
 
     @NotNull
     private AnimationSlider createSlider(RangeConfig rangeConfig, String str, int[] iArr, int[] iArr2) {
-        String str2 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), rangeConfig.getTitle());
-        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), rangeConfig.getDescription());
+        String str2 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), rangeConfig.getTitle());
+        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), rangeConfig.getDescription());
         MutableComponent mutableComponentLiteral = Component.literal(str2);
         Tooltip tooltipCreate = Tooltip.create(Component.literal(str3));
         AnimationSlider animationSlider = new AnimationSlider(this.centerX + 125, this.centerY + iArr[0], mutableComponentLiteral, parseFloatValue(str), this.animatableModel, rangeConfig.getValue(), rangeConfig.getStep(), rangeConfig.getMin(), rangeConfig.getMax());
@@ -326,15 +331,15 @@ public class AnimationRouletteScreen extends Screen {
 
     @NotNull
     private ConfigCheckBox createCheckbox(CheckboxConfig checkboxConfig, String str, int[] iArr, int[] iArr2) throws NumberFormatException {
-        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), checkboxConfig.getTitle());
-        String str4 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), Integer.valueOf(iArr2[0])), checkboxConfig.getDescription());
+        String str3 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_TITLE_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), checkboxConfig.getTitle());
+        String str4 = ModelMetadataPresenter.getLocalizedModelString(this.renderContext, CONFIG_DESC_FORMAT.formatted(this.currentConfigGroup.getId(), iArr2[0]), checkboxConfig.getDescription());
         MutableComponent mutableComponentLiteral = Component.literal(str3);
         Tooltip tooltipCreate = Tooltip.create(Component.literal(str4));
         float parsedValue = parseFloatValue(str);
         ConfigCheckBox configCheckBox = new ConfigCheckBox(this.centerX + 125, this.centerY + iArr[0], mutableComponentLiteral, bool -> {
-            String str2 = checkboxConfig.getValue() + "=" + (bool.booleanValue() ? "1" : "0");
+            String str2 = checkboxConfig.getValue() + "=" + (bool ? "1" : "0");
             executeExpression(str2, null);
-            if (!GeckoLibCache.isRoamingVariableAssignment(str2) && NetworkHandler.isClientConnected() && !ServerConfig.LOW_BANDWIDTH_USAGE.get().booleanValue()) {
+            if (!GeckoLibCache.isRoamingVariableAssignment(str2) && NetworkHandler.isClientConnected() && !ServerConfig.LOW_BANDWIDTH_USAGE.get()) {
                 NetworkHandler.sendToServer(new C2SRequestExecuteMolangPacket(str2, this.animatableModel.getEntity().getId()));
             }
         }) {
@@ -366,9 +371,7 @@ public class AnimationRouletteScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderRadialBackground(guiGraphics.pose(), mouseX, mouseY);
         int scrolledMouseY;
-        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.yes_steve_model.roulette.path", StringUtils.joinWith(" > ", navigationStack.stream().map((v0) -> {
-            return v0.getLeft();
-        }).toArray())), this.centerX + 195, this.centerY - 100, 16777215);
+        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.yes_steve_model.roulette.path", StringUtils.joinWith(" > ", navigationStack.stream().map(Pair::getLeft).toArray())), this.centerX + 195, this.centerY - 100, 16777215);
         renderRadialButtons(guiGraphics);
         renderPageInfo(guiGraphics);
         for (Renderable renderable : this.renderables) {
@@ -413,7 +416,9 @@ public class AnimationRouletteScreen extends Screen {
 
     private void renderPageInfo(GuiGraphics guiGraphics) {
         guiGraphics.fill(this.centerX + 157, this.centerY - 87, this.centerX + 238, this.centerY - 72, 0, -822083584);
-        guiGraphics.drawCenteredString(this.font, String.format("%d/%d", Integer.valueOf(this.currentNavEntry.getRight().intValue() + 1), Integer.valueOf(((this.currentProperties.size() - 1) / 8) + 1)), this.centerX + 197, this.centerY - 83, ChatFormatting.AQUA.getColor().intValue());
+        if (ChatFormatting.AQUA.getColor() != null) {
+            guiGraphics.drawCenteredString(this.font, String.format("%d/%d", this.currentNavEntry.getRight() + 1, ((this.currentProperties.size() - 1) / 8) + 1), this.centerX + 197, this.centerY - 83, ChatFormatting.AQUA.getColor());
+        }
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
@@ -437,12 +442,12 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     private void previousPage() {
-        this.currentNavEntry.setValue(Integer.valueOf(Math.max(0, this.currentNavEntry.getRight().intValue() - 1)));
+        this.currentNavEntry.setValue(Math.max(0, this.currentNavEntry.getRight() - 1));
     }
 
     private void nextPage() {
-        if (this.currentProperties.size() > (this.currentNavEntry.getRight().intValue() + 1) * 8) {
-            this.currentNavEntry.setValue(Integer.valueOf(this.currentNavEntry.getRight().intValue() + 1));
+        if (this.currentProperties.size() > (this.currentNavEntry.getRight() + 1) * 8) {
+            this.currentNavEntry.setValue(this.currentNavEntry.getRight() + 1);
         }
     }
 
@@ -527,7 +532,7 @@ public class AnimationRouletteScreen extends Screen {
                 cap.requestModelSwitch(str);
             }
         }
-        if (localPlayer != null && GeneralConfig.PRINT_ANIMATION_ROULETTE_MSG.get().booleanValue()) {
+        if (localPlayer != null && GeneralConfig.PRINT_ANIMATION_ROULETTE_MSG.get()) {
             localPlayer.sendSystemMessage(Component.translatable("message.yes_steve_model.model.animation_roulette.play", str));
         }
         getMinecraft().setScreen(null);
@@ -570,9 +575,9 @@ public class AnimationRouletteScreen extends Screen {
 
     private void renderRadialButtons(GuiGraphics guiGraphics) {
         float angle = 0.3926991f;
-        int size = this.currentProperties.size() - (this.currentNavEntry.getRight().intValue() * 8);
+        int size = this.currentProperties.size() - (this.currentNavEntry.getRight() * 8);
         for (int i = 0; i < Math.min(8, size); i++) {
-            int iIntValue = i + (this.currentNavEntry.getRight().intValue() * 8);
+            int iIntValue = i + (this.currentNavEntry.getRight() * 8);
             int iCos = (int) (this.centerX + (65 * Mth.cos(angle)));
             float fSin = this.centerY + (65 * Mth.sin(angle));
             Objects.requireNonNull(this.font);
@@ -594,7 +599,7 @@ public class AnimationRouletteScreen extends Screen {
             } else {
                 guiGraphics.drawCenteredString(this.font, Component.literal(ModelMetadataPresenter.getLocalizedModelString(this.renderContext, "properties.extra_animation.%s".formatted(this.currentProperties.getKeyAt(iIntValue)), String.valueOf(iIntValue))), iCos, labelY - 8, 15986656);
             }
-            if (this.currentNavEntry.getRight().intValue() == 0 && navigationStack.size() == 1) {
+            if (this.currentNavEntry.getRight() == 0 && navigationStack.size() == 1) {
                 renderKeyBindings(guiGraphics, iIntValue, iCos, labelY);
             }
             angle += 0.7853982f;
@@ -618,14 +623,13 @@ public class AnimationRouletteScreen extends Screen {
         if (isSubmenu) {
             mutableComponent = mutableComponent.withStyle(ChatFormatting.RED);
         }
-        List listSplit = this.font.split(mutableComponent, 50);
+        List<FormattedCharSequence> listSplit = this.font.split(mutableComponent, 50);
         int lineY = (y - (listSplit.size() * 9)) + 2;
-        if (this.currentNavEntry.getRight().intValue() != 0 || navigationStack.size() > 1) {
+        if (this.currentNavEntry.getRight() != 0 || navigationStack.size() > 1) {
             lineY += 9;
         }
-        Iterator it = listSplit.iterator();
-        while (it.hasNext()) {
-            guiGraphics.drawCenteredString(this.font, (FormattedCharSequence) it.next(), x, lineY, 15986656);
+        for (FormattedCharSequence formattedCharSequence : listSplit) {
+            guiGraphics.drawCenteredString(this.font, formattedCharSequence, x, lineY, 15986656);
             lineY += 9;
         }
     }
@@ -648,10 +652,10 @@ public class AnimationRouletteScreen extends Screen {
         float pointerRadius = Mth.sqrt(Mth.square(mouseY - this.centerY) + Mth.square(mouseX - this.centerX));
         boolean hoveredAny = false;
         boolean hoveredConfig = false;
-        for (int i = 0; i < Math.min(8, this.currentProperties.size() - (this.currentNavEntry.getRight().intValue() * 8)); i++) {
+        for (int i = 0; i < Math.min(8, this.currentProperties.size() - (this.currentNavEntry.getRight() * 8)); i++) {
             float startAngle = ((6.2831855f / 8) * i) + 0.034906585f;
             float endAngle = ((6.2831855f / 8) * (i + 1)) - 0.034906585f;
-            int iIntValue = i + (this.currentNavEntry.getRight().intValue() * 8);
+            int iIntValue = i + (this.currentNavEntry.getRight() * 8);
             boolean zStartsWith = this.currentProperties.getValueAt(iIntValue).startsWith(SUBMENU_PREFIX);
             hoveredAny = checkRadialHover(startAngle, pointerAngle, endAngle, pointerRadius, hoveredAny, zStartsWith, i, builder, matrix4fPose);
             boolean isConfigSliceHovered = startAngle < pointerAngle && pointerAngle < endAngle && 20.0f < pointerRadius && pointerRadius < 50.0f;
@@ -679,7 +683,7 @@ public class AnimationRouletteScreen extends Screen {
         boolean isHovered = startAngle < pointerAngle && pointerAngle < endAngle && 50.0f < pointerRadius && pointerRadius < 100.0f;
         if (isHovered) {
             alreadyHovered = true;
-            this.hoveredIndex = index + (this.currentNavEntry.getRight().intValue() * 8);
+            this.hoveredIndex = index + (this.currentNavEntry.getRight() * 8);
         }
         if (isHovered && index < this.currentProperties.size()) {
             if (isSubmenu) {
