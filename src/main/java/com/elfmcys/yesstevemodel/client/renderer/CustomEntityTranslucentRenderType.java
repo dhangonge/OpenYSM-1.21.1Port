@@ -17,11 +17,11 @@ public class CustomEntityTranslucentRenderType extends RenderType {
     private final Optional<RenderType> renderType;
 
     private CustomEntityTranslucentRenderType(ResourceLocation resourceLocation) {
-        this(RenderType.entityTranslucent(resourceLocation));
+        this(RenderType.itemEntityTranslucentCull(resourceLocation));
     }
 
     private CustomEntityTranslucentRenderType(RenderType renderType) {
-        super("entity_translucent_ysm", renderType.format(), renderType.mode(), renderType.bufferSize(), renderType.affectsCrumbling(), false, renderType::setupRenderState, renderType::clearRenderState);
+        super("entity_translucent_ysm", renderType.format(), renderType.mode(), renderType.bufferSize(), renderType.affectsCrumbling(), true, renderType::setupRenderState, renderType::clearRenderState);
         this.useBlend = renderType.isOutline();
         this.renderType = renderType.outline();
     }

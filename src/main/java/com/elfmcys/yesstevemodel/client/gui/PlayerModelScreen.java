@@ -8,6 +8,8 @@ import com.elfmcys.yesstevemodel.client.event.ModScreenEvent;
 import com.elfmcys.yesstevemodel.client.gui.button.*;
 import com.elfmcys.yesstevemodel.client.input.PlayerModelToggleKey;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
+import com.elfmcys.yesstevemodel.client.renderer.ModelPreviewRenderer;
+import com.elfmcys.yesstevemodel.client.renderer.RendererManager;
 import com.elfmcys.yesstevemodel.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
@@ -445,6 +447,9 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
         guiGraphics.fillGradient(this.guiLeft, this.guiTop, this.guiLeft + 135, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 138, this.guiTop, this.guiLeft + 420, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 351, this.guiTop + 7, this.guiLeft + 352, this.guiTop + 21, -790560, -790560);
+        for (Renderable renderable : this.renderables) {
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
         renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
         this.searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
         renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
@@ -536,13 +541,15 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
     public void renderModelPreview(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         if (localPlayer != null) {
-            guiGraphics.enableScissor(this.guiLeft + 5, this.guiTop + 200, this.guiLeft + 130, this.guiTop + 371);
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(0.0f, 0.0f, 100.0f);
-            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float) ((this.guiLeft + 67) - mouseX), (float) (((this.guiTop + 180) - 95) - mouseY), partialTick, localPlayer);
-            guiGraphics.pose().popPose();
-            guiGraphics.disableScissor();
+            guiGraphics.enableScissor(this.guiLeft, this.guiTop, this.guiLeft + 135, this.guiTop + 235);
             PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+            if (cap != null && cap.isModelInitialized()) {
+                ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70.0f, partialTick, cap, RendererManager.getPlayerRenderer(), false, true);
+            } else {
+                InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float) ((this.guiLeft + 67) - mouseX), (float) (((this.guiTop + 180) - 95) - mouseY), partialTick, localPlayer);
+            }
+            guiGraphics.flush();
+            guiGraphics.disableScissor();
             if (cap != null) {
                 List<FormattedCharSequence> listSplit = this.font.split(FormattedText.of(ClientModelManager.getModelContext(cap.getModelId()).map(it -> {
                     Metadata metadata2 = it.getModelData().getExtraInfo();

@@ -209,12 +209,6 @@ public final class ModelPreviewRenderer {
 
     private static void renderGroundPreview(GuiGraphics guiGraphics, float scale, float pitch, float yaw) {
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(0.0d, 0.0d, 1000.0d);
-        guiGraphics.pose().scale(scale, scale, scale);
-        guiGraphics.pose().translate(0.0d, 0.8d, 0.0d);
-        Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
-        rotationZ.mul(com.mojang.math.Axis.XP.rotationDegrees((-10.0f) + pitch));
-        guiGraphics.pose().mulPose(rotationZ);
         guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
         guiGraphics.pose().translate(-1.5d, -1.0d, -2.5d);
 
@@ -227,7 +221,7 @@ public final class ModelPreviewRenderer {
         }
 
         guiGraphics.pose().translate(-1.0f, 1.0f, 1.0f);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.SHORT_GRASS.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
         guiGraphics.pose().translate(0.0f, 0.0f, 1.0f);
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.RED_TULIP.defaultBlockState(), guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
         guiGraphics.pose().popPose();

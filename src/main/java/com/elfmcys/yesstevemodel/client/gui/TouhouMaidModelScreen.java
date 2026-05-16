@@ -49,8 +49,9 @@ public class TouhouMaidModelScreen extends PlayerModelScreen {
 
     @Override
     public void renderModelPreview(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.enableScissor(this.guiLeft + 5, this.guiTop + 200, this.guiLeft + 130, this.guiTop + 371);
+        guiGraphics.enableScissor(this.guiLeft, this.guiTop, this.guiLeft + 135, this.guiTop + 235);
         InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float)((this.guiLeft + 67) - mouseX), (float)(((this.guiTop + 180) - 95) - mouseY), partialTick, this.maid);
+        guiGraphics.flush();
         guiGraphics.disableScissor();
         MaidCapability cap = this.maid.getCapability(MaidCapabilityProvider.MAID_CAP);
         if (cap != null) {
