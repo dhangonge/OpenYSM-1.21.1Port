@@ -21,7 +21,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.NonNullList;
@@ -364,11 +363,11 @@ public final class ModelPreviewRenderer {
     // 纸娃娃
     public static void renderPlayerOverlay(GuiGraphics guiGraphics, LocalPlayer localPlayer, double x, double y, float scale, float yawOffset, int zDepth, float partialTick) {
         setExtraPlayerMode(true);
-        // PoseStack modelViewStack = RenderSystem.getModelViewStack();
-        // modelViewStack.pushPose();
-        // modelViewStack.translate(x + (scale * 0.5d), y + (scale * 2.0f), 0.0d);
-        // modelViewStack.scale(1.0f, 1.0f, -1.0f);
-        // RenderSystem.applyModelViewMatrix();
+        PoseStack modelViewStack = guiGraphics.pose();
+        modelViewStack.pushPose();
+        modelViewStack.translate(x + (scale * 0.5d), y + (scale * 2.0f), 0.0d);
+        modelViewStack.scale(1.0f, 1.0f, -1.0f);
+        RenderSystem.applyModelViewMatrix();
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0f, 0.0f, -zDepth);
@@ -392,8 +391,8 @@ public final class ModelPreviewRenderer {
         guiGraphics.flush();
         entityRenderDispatcher.setRenderShadow(true);
         guiGraphics.pose().popPose();
-        // modelViewStack.popPose();
-        // RenderSystem.applyModelViewMatrix();
+        modelViewStack.popPose();
+        RenderSystem.applyModelViewMatrix();
         Lighting.setupFor3DItems();
         setExtraPlayerMode(false);
     }

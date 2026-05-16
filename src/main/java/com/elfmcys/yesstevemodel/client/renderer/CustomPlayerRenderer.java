@@ -26,7 +26,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.ScoreHolder;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.Team;
 import net.neoforged.neoforge.common.NeoForge;
@@ -44,7 +43,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
         addLayerRenderer(new CustomPlayerArmorLayer(context));
     }
 
-    public void render(Player player, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    public void render(@NotNull Player player, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         PlayerCapability capability;
         if (SWarfareCompat.isPlayerAiming(player) || (capability = player.getCapability(PlayerCapabilityProvider.PLAYER_CAP)) == null) {
             return;
@@ -60,7 +59,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
     }
 
     @Override
-    public boolean shouldShowName(Player entity) {
+    public boolean shouldShowName(@NotNull Player entity) {
         Minecraft minecraft;
         LocalPlayer localPlayer;
         double dDistanceToSqr = this.entityRenderDispatcher.distanceToSqr(entity);
@@ -91,7 +90,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
     }
 
     @NotNull
-    public ResourceLocation getTextureLocation(Player player) {
+    public ResourceLocation getTextureLocation(@NotNull Player player) {
         if (this.currentTexture != null) {
             return this.currentTexture;
         }
@@ -99,7 +98,7 @@ public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, Cust
         return cap != null ? cap.getTextureLocation() : MissingTextureAtlasSprite.getLocation();
     }
 
-    public void renderNameTag(Player player, Component component, PoseStack poseStack, MultiBufferSource multiBufferSource, int i, float partialTick) {
+    public void renderNameTag(@NotNull Player player, @NotNull Component component, @NotNull PoseStack poseStack, @NotNull MultiBufferSource multiBufferSource, int i, float partialTick) {
         Scoreboard scoreboard;
         Objective displayObjective;
         if (PlayerPreviewEntity.isPreviewPlayer(player)) {

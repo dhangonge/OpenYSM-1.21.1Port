@@ -369,6 +369,7 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         renderRadialBackground(guiGraphics.pose(), mouseX, mouseY);
         int scrolledMouseY;
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.yes_steve_model.roulette.path", StringUtils.joinWith(" > ", navigationStack.stream().map(Pair::getLeft).toArray())), this.centerX + 195, this.centerY - 100, 16777215);

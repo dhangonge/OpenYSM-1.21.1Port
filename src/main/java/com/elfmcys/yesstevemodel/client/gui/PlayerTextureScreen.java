@@ -209,7 +209,7 @@ public class PlayerTextureScreen extends Screen {
         if (getMinecraft().player == null) {
             return;
         }
-        //renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fillGradient(this.guiLeft, this.guiTop + 22, this.guiLeft + 90, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 93, this.guiTop, this.guiLeft + 299, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 302, this.guiTop, this.guiLeft + 420, this.guiTop + 235, -14540254, -14540254);
@@ -225,7 +225,11 @@ public class PlayerTextureScreen extends Screen {
         guiGraphics.drawString(font, str, iWidth, pageY - (9 / 2), 15986656);
         String str2 = String.format("%d/%d", this.animationCurrentPage + 1, this.animationMaxPage + 1);
         guiGraphics.drawString(this.font, str2, this.guiLeft + 5 + ((80 - this.font.width(str2)) / 2), this.guiTop + 218, 15986656);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        for (net.minecraft.client.gui.components.Renderable renderable : this.renderables) {
+            if (!(renderable instanceof FlatColorButton)) {
+                renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+            }
+        }
         this.renderables.stream().filter(renderable -> {
             return renderable instanceof FlatColorButton;
         }).forEach(renderable2 -> {

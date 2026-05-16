@@ -1,31 +1,25 @@
 package com.elfmcys.yesstevemodel.client.gui;
 
-import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.YesSteveModel;
+import com.elfmcys.yesstevemodel.capability.*;
+import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.client.entity.PlayerPreviewEntity;
 import com.elfmcys.yesstevemodel.client.event.ModScreenEvent;
-import com.elfmcys.yesstevemodel.capability.PlayerCapability;
-import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
-import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
-import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
-import com.elfmcys.yesstevemodel.capability.StarModelsCapability;
-import com.elfmcys.yesstevemodel.capability.StarModelsCapabilityProvider;
-import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
-import com.elfmcys.yesstevemodel.resource.models.AuthorInfo;
-import com.elfmcys.yesstevemodel.resource.models.Metadata;
 import com.elfmcys.yesstevemodel.client.gui.button.*;
 import com.elfmcys.yesstevemodel.client.input.PlayerModelToggleKey;
+import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
+import com.elfmcys.yesstevemodel.resource.models.AuthorInfo;
+import com.elfmcys.yesstevemodel.resource.models.Metadata;
 import com.elfmcys.yesstevemodel.resource.models.ModelPackData;
 import com.elfmcys.yesstevemodel.util.FileTypeUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -36,6 +30,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
@@ -360,13 +355,13 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
             }).setTooltipText("gui.back"));
         }
         addRenderableWidget(Checkbox.builder(Component.translatable("gui.yes_steve_model.show_model_id_first"), getMinecraft().font)
-            .pos(this.guiLeft + 5, this.guiTop - 22)
-            .selected(GeneralConfig.SHOW_MODEL_ID_FIRST.get())
-            .onValueChange((cb, val) -> {
-                GeneralConfig.SHOW_MODEL_ID_FIRST.set(val);
-                GeneralConfig.SHOW_MODEL_ID_FIRST.save();
-            })
-            .build());
+                .pos(this.guiLeft + 5, this.guiTop - 22)
+                .selected(GeneralConfig.SHOW_MODEL_ID_FIRST.get())
+                .onValueChange((cb, val) -> {
+                    GeneralConfig.SHOW_MODEL_ID_FIRST.set(val);
+                    GeneralConfig.SHOW_MODEL_ID_FIRST.save();
+                })
+                .build());
         addRenderableWidget(new IconButton(this.guiLeft + 328, this.guiTop + 5, 18, 18, 32, 0, button4 -> {
             if (this.category != Category.ALL) {
                 this.category = Category.ALL;
@@ -446,10 +441,11 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
     }
 
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        //renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fillGradient(this.guiLeft, this.guiTop, this.guiLeft + 135, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 138, this.guiTop, this.guiLeft + 420, this.guiTop + 235, -14540254, -14540254);
         guiGraphics.fillGradient(this.guiLeft + 351, this.guiTop + 7, this.guiLeft + 352, this.guiTop + 21, -790560, -790560);
+        renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
         this.searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
         renderModelPreview(guiGraphics, mouseX, mouseY, this.minecraft.getTimer().getGameTimeDeltaTicks());
         if (this.searchBox.getValue().isEmpty() && !this.searchBox.isFocused()) {
@@ -464,7 +460,9 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
         String strVersionString = ModList.get().getModFileById(YesSteveModel.MOD_ID).versionString();
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0f, 0.0f, 1000.0f);
-        guiGraphics.drawString(this.font, strVersionString, this.guiLeft + 2, this.guiTop + 226, ChatFormatting.DARK_GRAY.getColor().intValue());
+        if (ChatFormatting.DARK_GRAY.getColor() != null)
+            guiGraphics.drawString(this.font, strVersionString, this.guiLeft + 2, this.guiTop + 226, ChatFormatting.DARK_GRAY.getColor());
+
         guiGraphics.pose().popPose();
         if (StringUtils.isNotBlank(currentPath)) {
             int lineIndex = 0;
@@ -476,7 +474,11 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
             }
         }
         renderSyncStatus(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        for (Renderable renderable : this.renderables) {
+            if (!(renderable instanceof IconButton) && !(renderable instanceof ModelButton) && !(renderable instanceof PackIconButton)) {
+                renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+            }
+        }
         this.renderables.stream().filter(renderable -> {
             return renderable instanceof IconButton;
         }).forEach(renderable2 -> {
@@ -537,7 +539,7 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
             guiGraphics.enableScissor(this.guiLeft + 5, this.guiTop + 200, this.guiLeft + 130, this.guiTop + 371);
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(0.0f, 0.0f, 100.0f);
-            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float)((this.guiLeft + 67) - mouseX), (float)(((this.guiTop + 180) - 95) - mouseY), partialTick, localPlayer);
+            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, this.guiLeft + 67, this.guiTop + 190, 70, 0, 0, (float) ((this.guiLeft + 67) - mouseX), (float) (((this.guiTop + 180) - 95) - mouseY), partialTick, localPlayer);
             guiGraphics.pose().popPose();
             guiGraphics.disableScissor();
             PlayerCapability cap = localPlayer.getCapability(PlayerCapabilityProvider.PLAYER_CAP);

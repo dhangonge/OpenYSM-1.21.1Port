@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
+import org.jetbrains.annotations.NotNull;
 
 public class ExtraPlayerRenderScreen extends Screen {
 
@@ -66,7 +67,8 @@ public class ExtraPlayerRenderScreen extends Screen {
             .build());
     }
 
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         int boxLeft = this.mouseStartX;
         int boxTop = this.mouseStartY;
         int boxRight = (int) (boxLeft + (this.rotationX));
@@ -95,7 +97,6 @@ public class ExtraPlayerRenderScreen extends Screen {
         if (getMinecraft().player != null && !ExtraPlayerRenderConfig.DISABLE_PLAYER_RENDER.get().booleanValue()) {
             ModelPreviewRenderer.renderPlayerOverlay(guiGraphics, getMinecraft().player, this.mouseStartX, this.mouseStartY, this.rotationX, this.rotationY, -500, this.minecraft.getTimer().getGameTimeDeltaTicks());
         }
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
