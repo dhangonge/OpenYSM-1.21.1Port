@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.entity;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.audio.*;
 import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoModel;
@@ -191,13 +192,32 @@ public abstract class GeoEntity<T extends Entity> extends AnimatableEntity<T> {
     @Override
     public Optional<IAudioStreamFactory> getAudioStreamFactory(String str) {
         AudioTrackData trackData;
-        if (this.renderShape.audioProvider != null && (trackData = getModelAssembly().getExpressionCache().getSoundEffects().get(str)) != null && trackData.getData() != null && trackData.getCodec() != AudioCodec.UNDEFINED) {
-            IAudioStreamProvider streamProvider = this.renderShape.audioProvider;
-            return Optional.of(() -> {
-                return streamProvider.createAudioStream(trackData);
-            });
+        if (this.renderShape == null || this.renderShape.audioProvider == null) {
+            YesSteveModel.LOGGER.warn("GeoEntity: renderShape or audioProvider is null for sound '{}'", str);
+            return Optional.empty();
         }
-        return Optional.empty();
+        ModelAssembly assembly = getModelAssembly();
+        if (assembly == null || assembly.getExpressionCache() == null) {
+            YesSteveModel.LOGGER.warn("GeoEntity: modelAssembly or expressionCache is null for sound '{}'", str);
+            return Optional.empty();
+        }
+        trackData = assembly.getExpressionCache().getSoundEffects().get(str);
+        if (trackData == null) {
+            YesSteveModel.LOGGER.warn("GeoEntity: sound '{}' not found in model's sound effects cache", str);
+            return Optional.empty();
+        }
+        if (trackData.getData() == null) {
+            YesSteveModel.LOGGER.warn("GeoEntity: sound '{}' has null data", str);
+            return Optional.empty();
+        }
+        if (trackData.getCodec() == AudioCodec.UNDEFINED) {
+            YesSteveModel.LOGGER.warn("GeoEntity: sound '{}' has undefined codec", str);
+            return Optional.empty();
+        }
+        IAudioStreamProvider streamProvider = this.renderShape.audioProvider;
+        return Optional.of(() -> {
+            return streamProvider.createAudioStream(trackData);
+        });
     }
 
     @Override

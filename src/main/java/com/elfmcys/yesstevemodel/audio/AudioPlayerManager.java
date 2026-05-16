@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.audio;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.config.ModSoundEvents;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
@@ -36,6 +37,7 @@ public class AudioPlayerManager {
             callback.accept(soundInstance);
         }
         if (soundInstance == null) {
+            YesSteveModel.LOGGER.warn("AudioPlayerManager: Failed to create sound instance for '{}' on entity {}", soundName, entity.getEntity().getName().getString());
             return false;
         }
         if (soundId != 0) {

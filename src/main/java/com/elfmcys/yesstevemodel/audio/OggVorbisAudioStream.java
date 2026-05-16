@@ -1,39 +1,74 @@
 package com.elfmcys.yesstevemodel.audio;
 
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.stb.STBVorbis;
+import org.lwjgl.stb.STBVorbisInfo;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 public class OggVorbisAudioStream implements IAudioStreamSupport {
 
     private static final ByteBuffer EMPTY_BUFFER = BufferUtils.createByteBuffer(0);
 
-    private final org.gagravarr.ogg.audio.Object  oggStream;
+    private final long decoder;
 
     private final AudioFormat audioFormat;
 
+    private final int channels;
+
     @Nullable
     private final AudioCacheBuilder cacheBuilder;
+
+    private final ByteBuffer inputBuffer;
 
     private volatile boolean isClosed;
 
     private boolean isEndOfStream;
 
     public OggVorbisAudioStream(ByteBuffer byteBuffer, @Nullable AudioCacheBuilder cacheBuilder) throws UnsupportedAudioFileException, IOException {
-        this.oggStream = new org.gagravarr.ogg.audio.Object(new ByteBufInputStream(Unpooled.wrappedBuffer(byteBuffer)));
-        if (this.oggStream.getFormat().getChannels() != 1 && this.oggStream.getFormat().getChannels() != 2) {
-            throw new UnsupportedAudioFileException();
-        }
-        this.audioFormat = new AudioFormat(this.oggStream.getFormat().getSampleRate(), 16, 1, true, false);
         this.cacheBuilder = cacheBuilder;
+
+        ByteBuffer directBuffer;
+        if (byteBuffer.isDirect()) {
+            directBuffer = byteBuffer;
+        } else {
+            directBuffer = ByteBuffer.allocateDirect(byteBuffer.remaining());
+            directBuffer.put(byteBuffer.duplicate());
+            directBuffer.flip();
+        }
+        this.inputBuffer = directBuffer;
+
+        IntBuffer error = BufferUtils.createIntBuffer(1);
+        this.decoder = STBVorbis.stb_vorbis_open_memory(directBuffer, error, null);
+        if (this.decoder == MemoryUtil.NULL) {
+            throw new UnsupportedAudioFileException("STBVorbis failed to open stream: error " + error.get(0));
+        }
+
+        STBVorbisInfo info = STBVorbisInfo.malloc();
+        float sampleRate;
+        try {
+            STBVorbis.stb_vorbis_get_info(this.decoder, info);
+            this.channels = info.channels();
+            sampleRate = info.sample_rate();
+        } finally {
+            info.free();
+        }
+
+        if (this.channels != 1 && this.channels != 2) {
+            STBVorbis.stb_vorbis_close(this.decoder);
+            throw new UnsupportedAudioFileException("Unsupported number of channels: " + this.channels);
+        }
+
+        this.audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
     }
 
     @NotNull
@@ -42,40 +77,58 @@ public class OggVorbisAudioStream implements IAudioStreamSupport {
     }
 
     @NotNull
-    public ByteBuffer read(int i) throws IOException {
-        ByteBuffer byteBufferCreateByteBuffer;
+    public ByteBuffer read(int size) throws IOException {
         if (this.isEndOfStream || this.isClosed) {
             return EMPTY_BUFFER;
         }
-        ByteBuffer byteBufferSlice = this.oggStream.read(this.oggStream.getFormat().getChannels() * i);
-        if (!byteBufferSlice.hasRemaining()) {
+
+        int monoSamples = size / 2;
+        if (monoSamples <= 0) {
+            return EMPTY_BUFFER;
+        }
+
+        int interleavedCapacity = monoSamples * this.channels;
+        ShortBuffer pcm = BufferUtils.createShortBuffer(interleavedCapacity);
+        int samplesDecoded = STBVorbis.stb_vorbis_get_samples_short_interleaved(this.decoder, this.channels, pcm);
+
+        if (samplesDecoded <= 0) {
             if (this.cacheBuilder != null) {
                 this.cacheBuilder.flushToCache();
             }
             this.isEndOfStream = true;
-            return byteBufferSlice;
+            return EMPTY_BUFFER;
         }
-        if (this.oggStream.getFormat().getChannels() == 2) {
-            ByteBuffer byteBufferOrder = byteBufferSlice.duplicate().order(ByteOrder.nativeOrder());
-            if (!byteBufferSlice.isReadOnly()) {
-                byteBufferCreateByteBuffer = byteBufferSlice.duplicate().order(ByteOrder.nativeOrder()).limit(byteBufferOrder.remaining() / 2);
-            } else {
-                byteBufferCreateByteBuffer = BufferUtils.createByteBuffer(byteBufferOrder.remaining() / 2);
+
+        ByteBuffer output = BufferUtils.createByteBuffer(samplesDecoded * 2);
+        output.order(ByteOrder.nativeOrder());
+
+        if (this.channels == 2) {
+            pcm.position(0);
+            for (int i = 0; i < samplesDecoded; i++) {
+                short left = pcm.get(i * 2);
+                short right = pcm.get(i * 2 + 1);
+                short mixed = (short) Math.round((left + right) / 2.0f);
+                output.putShort(mixed);
             }
-            byteBufferSlice = byteBufferCreateByteBuffer.slice();
-            do {
-                byteBufferCreateByteBuffer.putShort((short) Math.round((byteBufferOrder.getShort() + byteBufferOrder.getShort()) / 2.0f));
-            } while (byteBufferOrder.hasRemaining());
+        } else {
+            pcm.position(0);
+            pcm.limit(samplesDecoded);
+            for (int i = 0; i < samplesDecoded; i++) {
+                output.putShort(pcm.get(i));
+            }
         }
+        output.flip();
+
         if (this.cacheBuilder != null) {
-            this.cacheBuilder.appendAudio(byteBufferSlice.duplicate());
+            this.cacheBuilder.appendAudio(output.duplicate());
         }
-        return byteBufferSlice;
+
+        return output;
     }
 
     public void close() throws IOException {
         if (!this.isClosed) {
-            this.oggStream.close();
+            STBVorbis.stb_vorbis_close(this.decoder);
             this.isClosed = true;
         }
     }
