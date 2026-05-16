@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.processor;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.audio.AudioPlayerManager;
 import com.elfmcys.yesstevemodel.geckolib3.core.manager.AnimationData;
 import com.elfmcys.yesstevemodel.geckolib3.core.controller.IAnimationController;
@@ -78,12 +79,15 @@ public class AnimationProcessor<TEntity extends Entity> {
         }
         preProcess(evaluator);
         AnimationData manager = this.animatable.getAnimationData();
+        int controllerCount = 0;
+        int boneTransformCount = 0;
         for (IAnimationController controller : manager.getAnimationControllers()) {
             if (this.needsInit) {
                 controller.init(this.bones, this.initExpressions);
             }
             if (z) {
                 controller.process(event, evaluator, z2);
+                controllerCount++;
             }
             boolean deprecatedMode = controller.isDeprecatedMode();
             controller.forEachTransform(provider -> {
@@ -124,10 +128,17 @@ public class AnimationProcessor<TEntity extends Entity> {
                     value3.applyLinearBlendTo(snapshot.scale);
                 });
             });
+            boneTransformCount++;
+        }
+        if (z) {
+            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=true, controllers={}, boneTransforms={}", controllerCount, boneTransformCount);
+        } else {
+            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=false");
         }
         this.needsInit = false;
-        Iterator<BoneTopLevelSnapshot> iterator = this.modelRendererList.iterator();
-        while (iterator.hasNext()) {
+        if (z) {
+            Iterator<BoneTopLevelSnapshot> iterator = this.modelRendererList.iterator();
+            while (iterator.hasNext()) {
             BoneTopLevelSnapshot topLevelSnapshot = iterator.next();
             boolean runningAnimation = false;
             if (topLevelSnapshot.isCurrentlyRunningRotationAnimation) {
@@ -183,6 +194,9 @@ public class AnimationProcessor<TEntity extends Entity> {
                 topLevelSnapshot.isCurrentlyRunningAnimation = false;
                 iterator.remove();
             }
+        }
+        } else {
+            YesSteveModel.LOGGER.info("[YSM] AnimationProcessor.tickAnimation: animActive=false, skipping cleanup loop");
         }
         context.setPlaybackFlags(null);
         context.setAnimationControllerContext(null);

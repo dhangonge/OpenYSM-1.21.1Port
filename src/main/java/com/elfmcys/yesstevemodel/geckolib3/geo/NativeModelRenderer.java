@@ -1,6 +1,7 @@
 package com.elfmcys.yesstevemodel.geckolib3.geo;
 
 import com.elfmcys.yesstevemodel.NativeLibLoader;
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.compat.oculus.OculusCompat;
 import com.elfmcys.yesstevemodel.client.compat.optifine.OptiFineDetector;
 import com.elfmcys.yesstevemodel.client.renderer.ModelPreviewRenderer;
@@ -133,8 +134,7 @@ public class NativeModelRenderer {
                     }
                     tempNorm.set(quad.normal).mul(globalNormalMat).normalize();
                     for (int v = 0; v < 4; v++) {
-                        tempPos.set(quad.positions[v].x(), quad.positions[v].y(), quad.positions[v].z(), 1.0f).mul(globalBoneMat);
-                        vertexConsumer.addVertex(globalBoneMat, tempPos.x(), tempPos.y(), tempPos.z()).setColor(r, g, b, a).setUv(quad.uvs[v].x(), quad.uvs[v].y()).setOverlay(packedOverlay).setLight(currentPackedLight).setNormal(tempNorm.x(), tempNorm.y(), tempNorm.z());
+                        vertexConsumer.addVertex(globalBoneMat, quad.positions[v].x(), quad.positions[v].y(), quad.positions[v].z()).setColor(r, g, b, a).setUv(quad.uvs[v].x(), quad.uvs[v].y()).setOverlay(packedOverlay).setLight(currentPackedLight).setNormal(tempNorm.x(), tempNorm.y(), tempNorm.z());
                     }
                 }
             }
@@ -162,6 +162,13 @@ public class NativeModelRenderer {
         float animRx = boneParams[pOffset];
         float animRy = boneParams[pOffset + 1];
         float animRz = boneParams[pOffset + 2];
+
+        if (animRx != 0 || animRy != 0 || animRz != 0
+            || boneParams[pOffset + 3] != 0 || boneParams[pOffset + 4] != 0 || boneParams[pOffset + 5] != 0) {
+            YesSteveModel.LOGGER.info("[YSM] calculateBoneMatrix: idx={}, bone={}, animRot=({}, {}, {}), animPos=({}, {}, {})",
+                idx, bone.name, animRx, animRy, animRz,
+                boneParams[pOffset + 3], boneParams[pOffset + 4], boneParams[pOffset + 5]);
+        }
         float animTx = boneParams[pOffset + 3];
         float animTy = boneParams[pOffset + 4];
         float animTz = boneParams[pOffset + 5];

@@ -135,6 +135,11 @@ public final class MolangParserImpl implements MolangParser {
             case RETURN:
                 lexer.next();
                 return new UnaryExpression(UnaryExpression.Op.RETURN, parseCompoundExpression(lexer, UnaryExpression.Op.RETURN.precedence()));
+            case RBRACKET:
+            case RBRACE:
+            case SEMICOLON:
+                lexer.next();
+                return FloatExpression.ZERO;
         }
 
         throw new ParseException("Expected an expression.", lexer.cursor());
@@ -154,6 +159,10 @@ public final class MolangParserImpl implements MolangParser {
             if (current.kind() == TokenKind.EOF || current.kind() == TokenKind.SEMICOLON) {
                 // found eof, stop parsing, return expr
                 return compoundExpr;
+            } else if (lastPrecedence < 0 && current.kind() == TokenKind.RPAREN) {
+                // extra close paren at outermost level (model compat), consume and continue
+                lexer.next();
+                continue;
             } else if (compoundExpr == expr) {
                 return expr;
             }

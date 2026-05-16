@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.snapshot;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.geckolib3.core.processor.IBone;
 import org.joml.Vector3f;
 
@@ -30,6 +31,8 @@ public class BoneTopLevelSnapshot extends BoneSnapshot {
 
     public Vector3f prevScale;
 
+    private boolean hasLoggedNonZero = false;
+
     public BoneTopLevelSnapshot(IBone bone) {
         super(bone);
         this.currentValue = new Vector3f();
@@ -52,6 +55,10 @@ public class BoneTopLevelSnapshot extends BoneSnapshot {
         this.bone.setScaleX(this.scale.x);
         this.bone.setScaleY(this.scale.y);
         this.bone.setScaleZ(this.scale.z);
+        if (!hasLoggedNonZero && (this.rotation.x != 0 || this.rotation.y != 0 || this.rotation.z != 0 || this.position.x != 0)) {
+            hasLoggedNonZero = true;
+            YesSteveModel.LOGGER.info("[YSM] BoneTopLevelSnapshot.reset: bone={}, rot=({},{},{}), pos=({},{},{})", this.bone.getName(), this.rotation.x, this.rotation.y, this.rotation.z, this.position.x, this.position.y, this.position.z);
+        }
         this.currentValue.set(0.0f, 0.0f, 0.0f);
     }
 }
