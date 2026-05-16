@@ -104,7 +104,7 @@ public final class ModelPreviewRenderer {
         guiGraphics.pose().translate(x, y, 1050.0d);
         guiGraphics.pose().scale(1.0f, 1.0f, -1.0f);
         guiGraphics.pose().translate(0.0d, 0.0d, 1000.0d);
-        guiGraphics.pose().scale(scale, scale, scale);
+        guiGraphics.pose().scale(scale, scale, 1);
         guiGraphics.pose().translate(0.0d, 0.8d, 0.0d);
 
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
@@ -257,7 +257,7 @@ public final class ModelPreviewRenderer {
         guiGraphics.pose().translate(x, y, 1050.0d);
         guiGraphics.pose().scale(1.0f, 1.0f, -1.0f);
         guiGraphics.pose().translate(0.0d, disablePreviewRotation ? 5.5d : 0.0d, 1000.0d);
-        guiGraphics.pose().scale(scale, scale, scale);
+        guiGraphics.pose().scale(scale, scale, 1);
         Quaternionf rotationZ = com.mojang.math.Axis.ZP.rotationDegrees(180.0f);
         Quaternionf rotationX = com.mojang.math.Axis.XP.rotationDegrees(disablePreviewRotation ? 0.0f : -10.0f);
         rotationZ.mul(rotationX);
