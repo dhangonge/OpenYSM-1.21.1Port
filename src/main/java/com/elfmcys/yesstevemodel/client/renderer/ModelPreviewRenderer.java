@@ -169,7 +169,6 @@ public final class ModelPreviewRenderer {
                 if (renderGround) {
                     renderGroundPreview(guiGraphics, scale, pitch, yaw);
                 }
-                guiGraphics.flush();
                 renderer.renderEntity((LivingAnimatable) animatableEntity, 0.0f, partialTick, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);

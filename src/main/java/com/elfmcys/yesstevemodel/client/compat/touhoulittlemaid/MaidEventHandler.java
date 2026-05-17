@@ -3,7 +3,6 @@ package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.ClientDistChecker;
-import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.MaidCapabilityEvent;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.MaidClientTickEvent;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.event.MaidScreenEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
@@ -27,7 +26,6 @@ public class MaidEventHandler {
 
     public static void init() {
         NeoForge.EVENT_BUS.register(new MaidScreenEvent());
-        NeoForge.EVENT_BUS.register(new MaidCapabilityEvent());
         NeoForge.EVENT_BUS.register(new MaidClientTickEvent());
         NeoForge.EVENT_BUS.register(new ClientDistChecker());
     }

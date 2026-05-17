@@ -267,6 +267,12 @@ public class YSMClientMapper {
 
         GeoModel mesh = buildMesh(geoBones.toArray(new GeoBone[0]), parentMap, context, textureCount);
         mesh.bakedBones = bakedBones;
+        for (GeoModel.BakedBone bb : bakedBones) {
+            if (bb.glow) {
+                mesh.setTranslucentTexture(0, true);
+                break;
+            }
+        }
         if (NativeLibLoader.isLoaded()) mesh.buildNativeCache();
         return mesh;
     }
