@@ -196,6 +196,10 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xmaxerrs' << '500' << '-Xlint:deprecation' << '-Xlint:unchecked'
 }
 
+/*
+jarJar at current version has a bug that causes it to fail on Java 21 when repackaging some dependencies (e.g. ImageStream), so we need to bypass jarJar to avoid dependencies build failure.
+If you aren't using Java 21, you can just run `./gradlew jarJar` to get a server jar with dependencies repackaged by jarJar, which is more compatible with older Java versions. The 'serverjar' task is meant to be a workaround for Java 21 users until jarJar is updated to support it.
+ */
 tasks.register('serverjar') {
     group = 'build'
     description = 'Builds a server-ready jar with bundled dependencies (jar-in-jar)'
