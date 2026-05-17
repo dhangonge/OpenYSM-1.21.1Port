@@ -28,7 +28,7 @@ public class ParcoolAnimationHandler {
     public static String getParcoolAnimationName(Player player) {
         Animation animation = Animation.get(player);
         if (animation != null && animation.hasAnimator()) {
-            Animator animator = ((AnimationAccessor) animation).getAnimator();
+            Animator animator = AnimationAccessor.getAnimator(animation);
             Parkourability parkourability = Parkourability.get(player);
             if (parkourability == null || (animator instanceof CrawlAnimator) || animator.shouldRemoved(player, parkourability)) {
                 return null;
