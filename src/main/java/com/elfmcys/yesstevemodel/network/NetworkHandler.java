@@ -3,14 +3,14 @@ package com.elfmcys.yesstevemodel.network;
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.network.message.*;
 import io.netty.util.AttributeKey;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,8 +34,9 @@ public final class NetworkHandler {
         return serverPlayer.connection != null && isConnectionValid(serverPlayer.connection.getConnection());
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static boolean isClientConnected() {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        var connection = net.minecraft.client.Minecraft.getInstance().getConnection();
         if (connection == null) {
             return false;
         }
@@ -70,6 +71,7 @@ public final class NetworkHandler {
         registrar.playToServer(C2SVersionCheckPacket.TYPE, C2SVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void sendToServer(CustomPacketPayload payload) {
         if (isClientConnected()) {
             PacketDistributor.sendToServer(payload);

@@ -8,9 +8,12 @@ import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.Objects;
 
+@OnlyIn(Dist.CLIENT)
 public class DisclaimerScreen extends Screen {
 
     private Checkbox checkbox;

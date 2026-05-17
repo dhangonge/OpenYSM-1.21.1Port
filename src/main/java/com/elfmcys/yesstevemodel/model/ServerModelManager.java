@@ -1,27 +1,22 @@
 package com.elfmcys.yesstevemodel.model;
 
-import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
-import com.elfmcys.yesstevemodel.client.ExportResult;
-import com.elfmcys.yesstevemodel.model.format.*;
-import com.elfmcys.yesstevemodel.resource.YSMBinaryDeserializer;
-import com.elfmcys.yesstevemodel.resource.YSMBinarySerializer;
-import com.elfmcys.yesstevemodel.resource.YSMClientMapper;
-import com.elfmcys.yesstevemodel.resource.YSMFolderDeserializer;
-import com.elfmcys.yesstevemodel.resource.pojo.RawYsmModel;
-import net.minecraft.network.chat.Component;
-import rip.ysm.security.YsmCrypt;
-import rip.ysm.security.YSMByteBuf;
 import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapability;
 import com.elfmcys.yesstevemodel.capability.AuthModelsCapabilityProvider;
+import com.elfmcys.yesstevemodel.capability.ModelInfoCapability;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
+import com.elfmcys.yesstevemodel.client.ExportResult;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
+import com.elfmcys.yesstevemodel.model.format.*;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
-import com.elfmcys.yesstevemodel.network.message.S2CSyncAuthModelsPacket;
 import com.elfmcys.yesstevemodel.network.message.S2CModelSyncPayload;
-import com.elfmcys.yesstevemodel.util.*;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.elfmcys.yesstevemodel.network.message.S2CSyncAuthModelsPacket;
+import com.elfmcys.yesstevemodel.resource.YSMBinaryDeserializer;
+import com.elfmcys.yesstevemodel.resource.YSMBinarySerializer;
+import com.elfmcys.yesstevemodel.resource.YSMFolderDeserializer;
+import com.elfmcys.yesstevemodel.resource.pojo.RawYsmModel;
+import com.elfmcys.yesstevemodel.util.YSMNativeHelper;
+import com.elfmcys.yesstevemodel.util.YSMThreadPool;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -30,17 +25,19 @@ import it.unimi.dsi.fastutil.floats.FloatReferencePair;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketSendListener;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.neoforged.fml.ModList;
-import net.neoforged.neoforgespi.locating.IModFile;
-import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforgespi.locating.IModFile;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import rip.ysm.security.YSMByteBuf;
+import rip.ysm.security.YsmCrypt;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -48,7 +45,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,14 +86,14 @@ public final class ServerModelManager {
      * 从而将服务器文件发送给玩家
      * 还可以获取其他服务端模型信息
      */
-    private static Map<String, ServerModelData> CACHE_NAME_INFO = Maps.newHashMap();
+    private static Map<String, ServerModelData> CACHE_NAME_INFO = new HashMap<>();
 
     private static IntOpenHashSet modelHashSet = new IntOpenHashSet();
 
     /**
      * 放置授权模型名称
      */
-    private static Set<String> AUTH_MODELS = Sets.newHashSet();
+    private static Set<String> AUTH_MODELS = new HashSet<>();
 
     private static final Map<UUID, PlayerSyncState> syncStates = new ConcurrentHashMap<>();
     private static final Map<String, ServerPackData> packs = new ConcurrentHashMap<>();
@@ -111,8 +111,10 @@ public final class ServerModelManager {
     }
 
     public static void reloadPacks() throws IOException {
-        CACHE_NAME_INFO.clear();
-        AUTH_MODELS.clear();
+        if (!CACHE_NAME_INFO.isEmpty() && CACHE_NAME_INFO instanceof HashMap<String, ServerModelData>)
+            CACHE_NAME_INFO.clear();
+        if (!AUTH_MODELS.isEmpty() && AUTH_MODELS instanceof HashSet<String>)
+            AUTH_MODELS.clear();
 
         createFolder(FOLDER);
         createFolder(BUILT);
@@ -243,9 +245,13 @@ public final class ServerModelManager {
         if (Files.isDirectory(BUILT)) {
             try (var s = Files.walk(BUILT)) {
                 s.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
-                    if (!p.equals(BUILT)) try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                    if (!p.equals(BUILT)) try {
+                        Files.deleteIfExists(p);
+                    } catch (IOException ignored) {
+                    }
                 });
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
         try {
             IModFile modFile = ModList.get().getModFileById(YesSteveModel.MOD_ID).getFile();
@@ -347,7 +353,9 @@ public final class ServerModelManager {
         List<ServerModelData> allowedModels = new ArrayList<>();
 
         // TODO: 未来可基于UUID持久化，这里目前每次加入生成固定clientKey
-        PlayerSyncState() {new Random(114514).nextBytes(clientKey);}
+        PlayerSyncState() {
+            new Random(114514).nextBytes(clientKey);
+        }
     }
 
     public static void nativeSendModelData(UUID uuid, @Nullable ByteBuffer data) {
@@ -424,10 +432,14 @@ public final class ServerModelManager {
             try (Stream<Path> stream = Files.list(CACHE_SERVER)) {
                 stream.forEach(file -> {
                     if (!validCacheFiles.contains(file.getFileName().toString())) {
-                        try { Files.deleteIfExists(file); } catch (Exception ignored) {}
+                        try {
+                            Files.deleteIfExists(file);
+                        } catch (Exception ignored) {
+                        }
                     }
                 });
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             ModelLoadResult result = new ModelLoadResult(true, null, loadedModels, authIds.toArray(new String[0]));
             AUTH_MODELS = authIds;
@@ -459,8 +471,7 @@ public final class ServerModelManager {
                                 if (isAuth) authIds.add(modelId);
                             }
                         }
-                    }
-                    else if (fileName.endsWith(".ysm")) {
+                    } else if (fileName.endsWith(".ysm")) {
                         String relativePath = baseDir.relativize(path).toString().replace('\\', '/');
                         String modelId = /*relativePath.substring(0, relativePath.length() - 4)*/relativePath;
                         byte[] raw = Files.readAllBytes(path);
@@ -561,7 +572,7 @@ public final class ServerModelManager {
                 }
             }
             if (needsUpdate) {
-                try (YSMByteBuf serialized = YSMBinarySerializer.serialize(model, 32,true)) {
+                try (YSMByteBuf serialized = YSMBinarySerializer.serialize(model, 32, true)) {
                     byte[] rawBytes = new byte[serialized.getRawBuf().readableBytes()];
                     serialized.getRawBuf().readBytes(rawBytes);
 
@@ -582,7 +593,7 @@ public final class ServerModelManager {
 
 
     private static ServerModelData mapToDataClass(String modelId, RawYsmModel raw, boolean isAuth, boolean isCustomSkinModel) {
-        ServerModelInfo serverModelInfo = YSMClientMapper.buildModelInfo(raw);
+        ServerModelInfo serverModelInfo = ServerModelInfoBuilder.buildModelInfo(raw);
         // Animations
         Map<String, String[]> animMap = new HashMap<>();
         for (Map.Entry<String, RawYsmModel.RawAnimationFile> e : raw.mainEntity.animationFiles.entrySet()) {
@@ -750,7 +761,10 @@ public final class ServerModelManager {
                             if (success) {
                                 offset += length;
                             } else {
-                                try { Thread.sleep(5); } catch (InterruptedException e) {}
+                                try {
+                                    Thread.sleep(5);
+                                } catch (InterruptedException e) {
+                                }
                             }
                         }
                     }
@@ -767,7 +781,7 @@ public final class ServerModelManager {
                 ServerModelData modelData = CACHE_NAME_INFO.get(modelID);
                 if (modelData == null) {
                     if (callback != null) {
-                        callback.accept(new ExportResult(false, (Component) YSMNativeHelper.createTranslatableComponent("commands.yes_steve_model.export.failure",new Object[]{": " + modelID + "\n Model not found"}), "", "", 0));
+                        callback.accept(new ExportResult(false, (Component) YSMNativeHelper.createTranslatableComponent("commands.yes_steve_model.export.failure", new Object[]{": " + modelID + "\n Model not found"}), "", "", 0));
                     }
                     return;
                 }

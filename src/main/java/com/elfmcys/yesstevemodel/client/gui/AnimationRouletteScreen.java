@@ -49,6 +49,8 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -61,6 +63,7 @@ import org.joml.Matrix4f;
 import java.util.*;
 import java.util.function.Consumer;
 
+@OnlyIn(Dist.CLIENT)
 public class AnimationRouletteScreen extends Screen {
 
     private static final String SUBMENU_PREFIX = "#";

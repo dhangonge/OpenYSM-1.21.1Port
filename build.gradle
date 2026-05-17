@@ -16,6 +16,12 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+minecraft {
+    accessTransformers {
+        file 'src/main/resources/META-INF/accesstransformer.cfg'
+    }
+}
+
 runs {
     configureEach {
         systemProperty 'forge.logging.markers', 'REGISTRIES'
@@ -49,6 +55,8 @@ repositories {
     flatDir { dir 'libs' }
     maven { url = uri('https://jitpack.io') }
 }
+
+jarJar.enable()
 
 dependencies {
     implementation "net.neoforged:neoforge:21.1.229"
@@ -96,19 +104,21 @@ dependencies {
     implementation(files("libs/ImageStream--SNAPSHOT.jar"))
     localRunRuntime(files("libs/ImageStream--SNAPSHOT.jar"))
     jarJar(files("libs/ImageStream--SNAPSHOT.jar"))
-
-
-
+    jarJar("commons-codec:commons-codec:1.16.0")
 
     implementation(jarJar("io.github.llamalad7:mixinextras-neoforge:0.3.6")) {
         version { prefer "0.3.6" }
     }
-
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 }
 
+
+tasks.jarJar.configure {
+    archiveClassifier = ''
+}
+
 tasks.register('compileNative') {
-    if(true){ // TODO
+    if (true) { // TODO
         return false
     }
     def osName = System.getProperty("os.name").toLowerCase(Locale.ROOT)
@@ -183,5 +193,67 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-Xmaxerrs' << '500' <<'-Xlint:deprecation'<<'-Xlint:unchecked'
+    options.compilerArgs << '-Xmaxerrs' << '500' << '-Xlint:deprecation' << '-Xlint:unchecked'
 }
+
+tasks.register('serverjar') {
+    group = 'build'
+    description = 'Builds a server-ready jar with bundled dependencies (jar-in-jar)'
+    dependsOn tasks.named('jar')
+
+    def imageStreamJar = file('libs/ImageStream--SNAPSHOT.jar')
+    def commonCodecJar = configurations.runtimeClasspath.resolve().find { it.name.startsWith('commons-codec') && it.name.endsWith('.jar') }
+
+    doLast {
+        def jarTask = tasks.named('jar', Jar).get()
+        def sourceJar = jarTask.archiveFile.get().asFile
+        def destDir = layout.buildDirectory.dir('libs').get().asFile
+        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-server.jar")
+        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/merged')
+        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/repack')
+
+        delete mergedDir
+        delete repackDir
+        mergedDir.mkdirs()
+        repackDir.mkdirs()
+
+        // expand main jar
+        copy {
+            from zipTree(sourceJar)
+            into mergedDir
+        }
+
+        // expand ImageStream
+        if (imageStreamJar.exists()) {
+            copy {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                from zipTree(imageStreamJar)
+                into mergedDir
+            }
+        }
+
+        if (commonCodecJar.exists()) {
+            copy {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                from zipTree(commonCodecJar)
+                into mergedDir
+            }
+        }
+
+
+        // repack (copy to flatten directory structure before ant.jar)
+        copy {
+            from mergedDir
+            into repackDir
+        }
+
+        ant.jar(destfile: serverJar, basedir: repackDir)
+
+        delete mergedDir
+        delete repackDir
+
+        println "Server jar created: ${serverJar.absolutePath} (${serverJar.length()} bytes)"
+    }
+}
+
+

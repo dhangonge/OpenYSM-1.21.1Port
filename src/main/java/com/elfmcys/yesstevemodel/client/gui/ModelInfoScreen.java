@@ -20,11 +20,14 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+@OnlyIn(Dist.CLIENT)
 public class ModelInfoScreen extends Screen {
 
     private static final ResourceLocation DEFAULT_AVATAR = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "texture/default_avatar.png");

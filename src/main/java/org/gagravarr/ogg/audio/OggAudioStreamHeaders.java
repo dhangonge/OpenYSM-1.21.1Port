@@ -30,7 +30,7 @@ import org.gagravarr.vorbis.VorbisPacketFactory;
 
 /**
  * Streaming friendly way to get at the headers at the
- *  start of an {@link Object}, allowing for the fact
+ *  start of an {@link StreamAudioObject}, allowing for the fact
  *  that they may be interspersed with other streams' data.
  */
 

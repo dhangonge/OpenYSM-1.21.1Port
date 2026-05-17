@@ -14,6 +14,9 @@ credits="bernie-g (GeckoLib), fadookie (mclib), TT432 & SQwatermark (helped me s
 authors="YS Group, TartaricAcid, TomatoPuddin, AryochiL"
 description="A mod based on GeckoLib that modifies the player model"
 
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
+
 [[dependencies.yes_steve_model]]
 modId="neoforge"
 mandatory=true

@@ -10,10 +10,13 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.network.chat.Component;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class PauseScreenButtonBuilder {
     public static boolean isServerConnected() {
         return YesSteveModel.isOnAndroid();

@@ -1,20 +1,22 @@
 package com.elfmcys.yesstevemodel.event;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
-import com.elfmcys.yesstevemodel.capability.*;
-import com.elfmcys.yesstevemodel.client.ClientModelManager;
-import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.io.IOException;
 
 @EventBusSubscriber
 public final class CommonEvent {
+
     public static Object nativeInit() {
-        ClientModelManager.loadDefaultModel();
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            return ClientCommonInit.nativeInit();
+        }
         try {
             ServerModelManager.reloadPacks();
         } catch (IOException e) {
@@ -31,8 +33,14 @@ public final class CommonEvent {
             });
         } else {
             event.enqueueWork(() -> {
-                TouhouMaidCompat.init();
-                nativeInit();
+                if (FMLEnvironment.dist == Dist.CLIENT) {
+                    ClientCommonInit.init();
+                }
+                try {
+                    ServerModelManager.reloadPacks();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             });
         }
     }

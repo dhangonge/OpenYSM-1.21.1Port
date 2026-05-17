@@ -11,6 +11,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+@OnlyIn(Dist.CLIENT)
 public class ModelMetadataPresenter {
 
     public static final String DEFAULT_LOCALE = "en_us";

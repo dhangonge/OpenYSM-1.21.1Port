@@ -34,7 +34,7 @@ public class ReplacePlayerRenderEvent {
         }
         PlayerCapability cap = entity.getCapability(PlayerCapabilityProvider.PLAYER_CAP);
         if (cap != null && cap.isModelActive()) {
-            if (!CameraUtil.isFirstPerson(cap) || FirstPersonCompat.isFirstPersonActive() || RealCameraCompat.isActive() || GeneralConfig.DISABLE_EXTERNAL_FP_ANIM.get().booleanValue() || !PlayerAnimatorCompat.isPlayerAnimated(localPlayer)) {
+            if (!CameraUtil.isFirstPerson(cap) || FirstPersonCompat.isFirstPersonActive() || RealCameraCompat.isActive() || GeneralConfig.DISABLE_EXTERNAL_FP_ANIM.get().booleanValue() || PlayerAnimatorCompat.isPlayerAnimated(localPlayer)) {
                 event.setCanceled(true);
                 RendererManager.getPlayerRenderer().render(event.getEntity(), event.getEntity().getYRot(), event.getPartialTick(), event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight());
             }

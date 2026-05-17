@@ -40,11 +40,14 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.fml.ModList;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 
+@OnlyIn(Dist.CLIENT)
 public class PlayerModelScreen extends Screen implements IGuiWidget {
 
     private static final String AUTHOR_SEARCH_PREFIX = "@";

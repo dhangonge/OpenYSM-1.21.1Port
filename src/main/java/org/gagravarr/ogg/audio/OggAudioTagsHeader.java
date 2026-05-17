@@ -20,7 +20,7 @@ import org.gagravarr.ogg.OggStreamPacket;
 
 /**
  * Common interface for the Tags (Comments) header near
- *  the start of an {@link Object }
+ *  the start of an {@link StreamAudioObject }
  */
 public interface OggAudioTagsHeader extends OggStreamPacket {
     public String getVendor();

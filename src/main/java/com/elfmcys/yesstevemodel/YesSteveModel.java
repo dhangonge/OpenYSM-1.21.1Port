@@ -6,8 +6,6 @@ import com.elfmcys.yesstevemodel.config.ServerConfig;
 import com.elfmcys.yesstevemodel.util.obfuscate.Keep;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -43,7 +41,9 @@ public class YesSteveModel {
         if (!NativeLibLoader.isAvailable()) {
             LOGGER.error(getErrorMessage());
         } else {
-            modContainer.registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
+            if (FMLEnvironment.dist == Dist.CLIENT) {
+                modContainer.registerConfig(ModConfig.Type.CLIENT, GeneralConfig.buildSpec());
+            }
             modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.buildSpec());
             initConfig(modEventBus);
         }
@@ -76,7 +76,7 @@ public class YesSteveModel {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendUnavailableMessage() {
-        LocalPlayer localPlayer = Minecraft.getInstance().player;
+        var localPlayer = net.minecraft.client.Minecraft.getInstance().player;
         if (localPlayer != null) {
             localPlayer.sendSystemMessage(getUnavailableComponent());
         }

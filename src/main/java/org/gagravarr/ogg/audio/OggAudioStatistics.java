@@ -24,13 +24,13 @@ import org.gagravarr.opus.OpusInfo;
 
 
 /**
- * For computing statistics around an {@link Object },
+ * For computing statistics around an {@link StreamAudioObject },
  *  such as how long it lasts.
  * Format specific subclasses may be able to also identify 
  *  additional statistics beyond these.
  */
 public class OggAudioStatistics {
-    private final org.gagravarr.ogg.audio.Object  audio;
+    private final StreamAudioObject audio;
     private final OggAudioHeaders headers;
 
     private int audioPackets = 0;
@@ -41,7 +41,7 @@ public class OggAudioStatistics {
     private long headerOverheadSize = 0;
     private long audioDataSize = 0;
 
-    public OggAudioStatistics(OggAudioHeaders headers, org.gagravarr.ogg.audio.Object audio) throws IOException {
+    public OggAudioStatistics(OggAudioHeaders headers, StreamAudioObject audio) throws IOException {
         this.audio = audio;
         this.headers = headers;
     }

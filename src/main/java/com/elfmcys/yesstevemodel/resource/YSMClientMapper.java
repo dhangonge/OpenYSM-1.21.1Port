@@ -31,6 +31,7 @@ import com.elfmcys.yesstevemodel.geckolib3.util.IInterpolable;
 import com.elfmcys.yesstevemodel.geckolib3.util.LinearKeyframeInterpolator;
 import com.elfmcys.yesstevemodel.geckolib3.util.TicksInterpolator;
 import com.elfmcys.yesstevemodel.model.format.ServerModelInfo;
+import com.elfmcys.yesstevemodel.model.format.ServerModelInfoBuilder;
 import com.elfmcys.yesstevemodel.resource.models.*;
 import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoBone;
 import com.elfmcys.yesstevemodel.geckolib3.geo.render.built.GeoModel;
@@ -154,7 +155,7 @@ public class YSMClientMapper {
         }
 
         MainModelData mainModelData = new MainModelData(meshes, animations, controllersList.toArray(new AnimationControllerFile[0]), textureMap);
-        ServerModelInfo modelInfo = buildModelInfo(raw/*, modelId*/);
+        ServerModelInfo modelInfo = ServerModelInfoBuilder.buildModelInfo(raw/*, modelId*/);
         ModelExtraResourcesFile extraResources = buildExtraResources(raw);
         ProjectileModelFiles[] extraItemModels = buildExtraItemModels(raw, context, raw.properties.mergeMultilineExpr);
         VehicleModelFiles[] extraEntityModels = buildExtraEntityModels(raw, context, raw.properties.mergeMultilineExpr);

@@ -26,11 +26,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@OnlyIn(Dist.CLIENT)
 public class PlayerTextureScreen extends Screen {
 
     private static final String HIDDEN_PREFIX = "——";

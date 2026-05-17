@@ -17,7 +17,7 @@ import org.gagravarr.ogg.OggStreamPacket;
 
 /**
  * Common interface for the Setup header near the
- *  start of an {@link Object}.
+ *  start of an {@link StreamAudioObject}.
  * Note that not all Ogg Audio formats have Setup headers.
  */
 public interface OggAudioSetupHeader extends OggStreamPacket {
