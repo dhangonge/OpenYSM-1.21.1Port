@@ -192,7 +192,7 @@ tasks.withType(JavaCompile).configureEach {
 jarJar at current version has a bug that causes it to fail on Java 21 when repackaging some dependencies (e.g. ImageStream), so we need to bypass jarJar to avoid dependencies build failure.
 If you aren't using Java 21, you can just run `./gradlew jarJar` to get a server jar with dependencies repackaged by jarJar, which is more compatible with older Java versions. The 'serverjar' task is meant to be a workaround for Java 21 users until jarJar is updated to support it.
  */
-tasks.register('compilejar') {
+tasks.register('serverjar') {
     group = 'build'
     description = 'Builds a server-ready jar with bundled dependencies (jar-in-jar)'
     dependsOn tasks.named('jar')
@@ -204,9 +204,9 @@ tasks.register('compilejar') {
         def jarTask = tasks.named('jar', Jar).get()
         def sourceJar = jarTask.archiveFile.get().asFile
         def destDir = layout.buildDirectory.dir('libs').get().asFile
-        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-All.jar")
-        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/jar/merged')
-        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/jar/repack')
+        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-server.jar")
+        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/merged')
+        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/repack')
 
         delete mergedDir
         delete repackDir
@@ -232,6 +232,57 @@ tasks.register('compilejar') {
             copy {
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 from zipTree(commonCodecJar)
+                into mergedDir
+            }
+        }
+
+
+        // repack (copy to flatten directory structure before ant.jar)
+        copy {
+            from mergedDir
+            into repackDir
+        }
+
+        ant.jar(destfile: serverJar, basedir: repackDir)
+
+        delete mergedDir
+        delete repackDir
+
+        println "Server jar created: ${serverJar.absolutePath} (${serverJar.length()} bytes)"
+    }
+}
+
+tasks.register('clientjar') {
+    group = 'build'
+    description = 'Builds a client-ready jar with bundled dependencies (jar-in-jar)'
+    dependsOn tasks.named('jar')
+
+    def imageStreamJar = file('libs/ImageStream--SNAPSHOT.jar')
+
+    doLast {
+        def jarTask = tasks.named('jar', Jar).get()
+        def sourceJar = jarTask.archiveFile.get().asFile
+        def destDir = layout.buildDirectory.dir('libs').get().asFile
+        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-client.jar")
+        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/clientjar/merged')
+        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/clientjar/repack')
+
+        delete mergedDir
+        delete repackDir
+        mergedDir.mkdirs()
+        repackDir.mkdirs()
+
+        // expand main jar
+        copy {
+            from zipTree(sourceJar)
+            into mergedDir
+        }
+
+        // expand ImageStream
+        if (imageStreamJar.exists()) {
+            copy {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                from zipTree(imageStreamJar)
                 into mergedDir
             }
         }
