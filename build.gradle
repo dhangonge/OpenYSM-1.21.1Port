@@ -182,14 +182,6 @@ tasks.register('compileNative') {
 
 processResources.dependsOn compileNative
 
-tasks.named('jar', Jar).configure {
-    manifest {
-        attributes([
-                "Implementation-Title"  : project.name,
-                "Implementation-Version": "${version}"
-        ])
-    }
-}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
@@ -200,7 +192,7 @@ tasks.withType(JavaCompile).configureEach {
 jarJar at current version has a bug that causes it to fail on Java 21 when repackaging some dependencies (e.g. ImageStream), so we need to bypass jarJar to avoid dependencies build failure.
 If you aren't using Java 21, you can just run `./gradlew jarJar` to get a server jar with dependencies repackaged by jarJar, which is more compatible with older Java versions. The 'serverjar' task is meant to be a workaround for Java 21 users until jarJar is updated to support it.
  */
-tasks.register('serverjar') {
+tasks.register('compilejar') {
     group = 'build'
     description = 'Builds a server-ready jar with bundled dependencies (jar-in-jar)'
     dependsOn tasks.named('jar')
@@ -212,9 +204,9 @@ tasks.register('serverjar') {
         def jarTask = tasks.named('jar', Jar).get()
         def sourceJar = jarTask.archiveFile.get().asFile
         def destDir = layout.buildDirectory.dir('libs').get().asFile
-        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-server.jar")
-        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/merged')
-        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/serverjar/repack')
+        def serverJar = new File(destDir, "${base.archivesName.get()}-${project.version}-All.jar")
+        def mergedDir = new File(layout.buildDirectory.get().asFile, 'tmp/jar/merged')
+        def repackDir = new File(layout.buildDirectory.get().asFile, 'tmp/jar/repack')
 
         delete mergedDir
         delete repackDir
