@@ -181,7 +181,7 @@ public class ModelButton extends Button {
             RenderSystem.disableBlend();
         }
         guiGraphics.enableScissor(x, y, x + this.width, y + this.height - 20);
-        ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, x + (this.width / 2.0f), y + (this.height / 2.0f) + 20.0f, 30.0f, minecraft.getTimer().getGameTimeDeltaTicks(), this.modelIdHolder, RendererManager.getPlayerRenderer(), this.disablePreviewRotation, true);
+        ModelPreviewRenderer.renderLivingEntityPreview(guiGraphics, x + (this.width / 2.0f), y + (this.height / 2.0f) + 20.0f, 30.0f, minecraft.getFrameTimeNs()/10e-9f, this.modelIdHolder, RendererManager.getPlayerRenderer(), this.disablePreviewRotation, true);
         guiGraphics.disableScissor();
         int starZ = 3500;
         if (this.foregroundTexture != null) {

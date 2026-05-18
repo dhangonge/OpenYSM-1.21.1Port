@@ -25,7 +25,7 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class PackIconButton extends Button {
 
-    private static final ResourceLocation location = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "texture/default_pack_icon.png");
+    private static final ResourceLocation default_pack_icon_location = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "texture/default_pack_icon.png");
 
     private final ModelPackData packData;
 
@@ -43,7 +43,7 @@ public class PackIconButton extends Button {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         if (texture == MissingTextureAtlasSprite.getTexture()) {
-            guiGraphics.blit(location, getX(), getY(), 0.0f, 0.0f, this.width, this.height, this.width, this.height);
+            guiGraphics.blit(PackIconButton.default_pack_icon_location, getX(), getY(), 0.0f, 0.0f, this.width, this.height, this.width, this.height);
         } else {
             guiGraphics.blit(location, getX(), getY(), 0.0f, 0.0f, this.width, this.height, this.width, this.height);
         }
