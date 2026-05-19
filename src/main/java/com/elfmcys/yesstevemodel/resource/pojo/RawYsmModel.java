@@ -20,7 +20,14 @@ public class RawYsmModel {
         public RawGeometry armModel;
         public Map<String, RawTexture> textures = new LinkedHashMap<>();
         public Map<String, RawAnimationFile> animationFiles = new LinkedHashMap<>();
-        public Map<String, RawAnimationController> animationControllers = new LinkedHashMap<>();
+        public List<RawAnimationControllerFile> animationControllerFiles = new ArrayList<>();
+    }
+
+    public static class RawAnimationControllerFile {
+        public String name;
+        public String hash;
+        public int legacyUnknownInt;
+        public Map<String, RawAnimationController> controllers = new LinkedHashMap<>();
     }
 
     public static class RawSubEntity {
@@ -30,7 +37,9 @@ public class RawYsmModel {
         public Map<String, RawTexture> textures = new LinkedHashMap<>();
         public Map<String, RawAnimationFile> animationFiles = new LinkedHashMap<>();
         public Map<String, RawAnimationController> animationControllers = new LinkedHashMap<>();
+        public List<RawAnimationControllerFile> animationControllerFiles = new ArrayList<>();
     }
+
 
     public static class RawGeometry {
         public int modelType; // 1=main, 2=arm, 3=arrow

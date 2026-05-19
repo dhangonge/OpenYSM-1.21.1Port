@@ -1,23 +1,25 @@
 package com.elfmcys.yesstevemodel.client;
 
 import com.elfmcys.yesstevemodel.YesSteveModel;
-import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
-import com.elfmcys.yesstevemodel.client.upload.UploadManager;
-import com.elfmcys.yesstevemodel.client.model.ModelAssemblyFactory;
 import com.elfmcys.yesstevemodel.client.gui.IGuiWidget;
+import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
+import com.elfmcys.yesstevemodel.client.model.ModelAssemblyFactory;
 import com.elfmcys.yesstevemodel.client.texture.OuterFileTexture;
 import com.elfmcys.yesstevemodel.client.upload.IResourceLocatable;
+import com.elfmcys.yesstevemodel.client.upload.UploadManager;
 import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import com.elfmcys.yesstevemodel.network.message.C2SModelSyncPayload;
-import com.elfmcys.yesstevemodel.resource.*;
-import com.elfmcys.yesstevemodel.resource.pojo.RawYsmModel;
+import com.elfmcys.yesstevemodel.resource.YSMBinaryDeserializer;
+import com.elfmcys.yesstevemodel.resource.YSMClientMapper;
+import com.elfmcys.yesstevemodel.resource.YSMFolderDeserializer;
 import com.elfmcys.yesstevemodel.resource.models.ModelPackData;
+import com.elfmcys.yesstevemodel.resource.pojo.RawYsmModel;
+import com.elfmcys.yesstevemodel.util.FileTypeUtil;
+import com.elfmcys.yesstevemodel.util.YSMThreadPool;
 import com.elfmcys.yesstevemodel.util.data.OrderedStringMap;
-import rip.ysm.security.YSMClientCache;
-import rip.ysm.security.YsmCrypt;
-import com.elfmcys.yesstevemodel.util.*;
 import com.mojang.blaze3d.systems.RenderSystem;
+import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceMaps;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.client.Minecraft;
@@ -26,23 +28,23 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.connection.ConnectionType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.message.StringFormattedMessage;
 import org.jetbrains.annotations.Nullable;
-
 import rip.ysm.security.YSMByteBuf;
-import io.netty.buffer.Unpooled;
+import rip.ysm.security.YSMClientCache;
+import rip.ysm.security.YsmCrypt;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class ClientModelManager {
@@ -52,7 +54,7 @@ public class ClientModelManager {
     private static byte[] serverKey;
     private static byte[] clientKey;
     private static String currentCacheFolderName;
-    private static int pendingModelsCount;
+    private static AtomicInteger pendingModelsCount;
 
     private static final Map<UUID, ServerModelContext> serverModels = new ConcurrentHashMap<>();
 
@@ -120,10 +122,10 @@ public class ClientModelManager {
                 defaultPath = Paths.get(uri);
             }
 
-            try( YSMFolderDeserializer deserializer = new YSMFolderDeserializer(defaultPath)) {
-            RawYsmModel rawModel = deserializer.deserialize();
+            try (YSMFolderDeserializer deserializer = new YSMFolderDeserializer(defaultPath)) {
+                RawYsmModel rawModel = deserializer.deserialize();
 
-            ClientModelInfo  parsedBundle = YSMClientMapper.buildParsedBundle(rawModel, "default");
+                ClientModelInfo parsedBundle = YSMClientMapper.buildParsedBundle(rawModel, "default");
 
 
                 onModelDataReceived(parsedBundle, "default", true, false);
@@ -163,7 +165,7 @@ public class ClientModelManager {
             } else if (syncStep == 2) {
                 decrypted = YsmCrypt.decrypt(packetBytes, lastKey);
                 if (decrypted != null) {
-                    try (YSMByteBuf buf = new YSMByteBuf(Unpooled.wrappedBuffer(decrypted))){
+                    try (YSMByteBuf buf = new YSMByteBuf(Unpooled.wrappedBuffer(decrypted))) {
                         handlePacket03(buf);
                     }
                 }
@@ -204,8 +206,18 @@ public class ClientModelManager {
         }
     }
 
-    private record ModelHash(long hash1, long hash2) {}
+    private record ModelHash(long hash1, long hash2) {
+    }
+
     private static final List<ModelHash> cachedModelHashes = new ArrayList<>();
+
+    private static final ThreadPoolExecutor modelPhraseExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
+            r -> {
+                Thread t = new Thread(r, "YSM-Model-Parse-Thread");
+                t.setDaemon(true);
+                return t;
+            }
+    );
 
     private static void handlePacket03(YSMByteBuf buf) throws Exception {
         buf.skipGarbageHeader();
@@ -228,6 +240,11 @@ public class ClientModelManager {
         int unkSize = buf.readVarInt();
         onSyncProgress(unkSize);
 
+        Set<String> validServerModelIds = new HashSet<>();
+        List<String> previousModelIds = new ArrayList<>();
+        List<String> updatedModelIds = new ArrayList<>();
+        List<Boolean> isModelReadyList = new ArrayList<>();
+
         for (int i = 0; i < unkSize; i++) {
             long hash1 = buf.readVarLong();
             long hash2 = buf.readVarLong();
@@ -242,15 +259,32 @@ public class ClientModelManager {
 
             ServerModelContext ctx = new ServerModelContext(hash1, hash2, modelId, isAuth, isCustomSkinModel, version);
             serverModels.put(ctx.uuid, ctx);
+            validServerModelIds.add(modelId);
 
             File cachedFile = localCacheMap.get(ctx.uuid);
+            boolean isFileValid = YSMClientCache.verifyFileContent(cachedFile, hash1, hash2);
 
-            if (YSMClientCache.verifyFileContent(cachedFile, hash1, hash2)) {
+            boolean alreadyInMemory = modelAssemblyMap != null && modelAssemblyMap.containsKey(modelId);
+
+            if (isFileValid) {
                 YesSteveModel.LOGGER.info("[YSM] Cache HIT & Validated: " + ctx.uuid);
-                // 命中缓存
-                byte[] fileBytes = Files.readAllBytes(cachedFile.toPath());
-                byte[] decompressed = YsmCrypt.read(fileBytes, clientKey);
-                parseAndLoadModel(decompressed, modelId, isAuth);
+                if (alreadyInMemory) {
+                    previousModelIds.add(modelId);
+                    updatedModelIds.add(modelId);
+                    isModelReadyList.add(isAuth);
+                } else {
+                    // 命中缓存
+                    modelPhraseExecutor.submit(() -> {
+                        if (clientKey == null) return;
+                        try {
+                            byte[] fileBytes = Files.readAllBytes(cachedFile.toPath());
+                            byte[] decompressed = YsmCrypt.read(fileBytes, clientKey);
+                            parseAndLoadModel(decompressed, modelId, isAuth);
+                        } catch (Exception e) {
+                            YesSteveModel.LOGGER.error("[YSM] Failed to parse and load cached model: " + modelId, e);
+                        }
+                    });
+                }
             } else {
                 YesSteveModel.LOGGER.info("[YSM] Cache MISS or Invalid: " + ctx.uuid + " -> Requesting...");
                 modelsToRequest.add(mHash);
@@ -271,7 +305,9 @@ public class ClientModelManager {
                 int imageFormat = buf.readVarInt();
                 int unkImageData = buf.readVarInt();
 
-                iconTexture = new OuterFileTexture(textureData);
+                byte[] png = YSMClientMapper.toPng(textureData, imageFormat, textureWidth, textureHeight);
+
+                iconTexture = new OuterFileTexture(png);
             }
 
             String folderName = "";
@@ -300,27 +336,36 @@ public class ClientModelManager {
             onModelPacksReceived(parsedPacks.toArray(new ModelPackData[0]));
         }
 
-        Set<String> validServerModelIds = new HashSet<>();
-        for (ServerModelContext ctx : serverModels.values()) {
-            validServerModelIds.add(ctx.modelId);
-        }
         List<String> modelsToRemove = new ArrayList<>();
+        if (modelAssemblyMap != null) {
+            for (String loadedId : modelAssemblyMap.keySet()) {
+                if ("default".equals(loadedId)) continue;
 
-//        if (modelAssemblyMap != null) {
-//            for (String loadedId : modelAssemblyMap.keySet()) {
-//                if (!validServerModelIds.contains(loadedId) && !"default".equals(loadedId)) {
-//                    modelsToRemove.add(loadedId);
-//                }
-//            }
-//        }
-//
-//        if (!modelsToRemove.isEmpty()) {
-//            onModelContextsUpdated(modelsToRemove.toArray(new String[0]), null, null, null);
-//            YesSteveModel.LOGGER.info("[YSM] Cleaned up {} outdated models during sync.", modelsToRemove.size());
-//        }
+                if (!validServerModelIds.contains(loadedId)) {
+                    modelsToRemove.add(loadedId);
+                } else if (modelsToRequest.stream().anyMatch(h -> serverModels.containsKey(new UUID(h.hash1, h.hash2)) && serverModels.get(new UUID(h.hash1, h.hash2)).modelId.equals(loadedId))) {
+                    modelsToRemove.add(loadedId);
+                }
+            }
+        }
+
+        if (!modelsToRemove.isEmpty() || !previousModelIds.isEmpty()) {
+            boolean[] readyArr = new boolean[isModelReadyList.size()];
+            for (int j = 0; j < isModelReadyList.size(); j++) {
+                readyArr[j] = isModelReadyList.get(j);
+            }
+
+            onModelContextsUpdated(
+                    modelsToRemove.isEmpty() ? null : modelsToRemove.toArray(new String[0]),
+                    previousModelIds.isEmpty() ? null : previousModelIds.toArray(new String[0]),
+                    updatedModelIds.isEmpty() ? null : updatedModelIds.toArray(new String[0]),
+                    readyArr
+            );
+            YesSteveModel.LOGGER.info("[YSM] Cleaned up {} outdated models and updated {} existing models during sync.", modelsToRemove.size(), previousModelIds.size());
+        }
 
         syncStep = 3;
-        pendingModelsCount = modelsToRequest.size();
+        pendingModelsCount.set(modelsToRequest.size());
 
         int garbageLen = 16 + SECURE_RANDOM.nextInt(48);
         byte[] garbage = new byte[garbageLen];
@@ -340,9 +385,11 @@ public class ClientModelManager {
             sendModelFile(ByteBuffer.wrap(result.data()));
         }
 
-        if (pendingModelsCount == 0) {
-            YesSteveModel.LOGGER.info("[YSM] All models loaded from local cache. Handshake complete!");
-            onSyncComplete();
+        if (pendingModelsCount.get() == 0) {
+            modelPhraseExecutor.submit(() -> {
+                YesSteveModel.LOGGER.info("[YSM] All models loaded from local cache. Handshake complete!");
+                onSyncComplete();
+            });
         }
     }
 
@@ -376,30 +423,37 @@ public class ClientModelManager {
         ctx.bytesReceived += chunkLength;
 
         if (ctx.bytesReceived >= totalSize) {
-            String folder = currentCacheFolderName != null ? currentCacheFolderName : "default_cache";
-            File cacheDir = ServerModelManager.CACHE_CLIENT.resolve(folder).toFile();
-            if (!cacheDir.exists()) cacheDir.mkdirs();
+            byte[] fileBuffer = ctx.fileBuffer;
 
-            byte[] cachedFileData = YsmCrypt.transcodeServerDataToClientCache(ctx.fileBuffer, serverKey, clientKey, hash1, hash2);
+            modelPhraseExecutor.submit(() -> {
+                if (clientKey == null) return;
+                try {
+                    String folder = currentCacheFolderName != null ? currentCacheFolderName : "default_cache";
+                    File cacheDir = ServerModelManager.CACHE_CLIENT.resolve(folder).toFile();
+                    if (!cacheDir.exists()) cacheDir.mkdirs();
 
-            String legitFileName = YSMClientCache.generateCacheFileName(hash1, hash2, clientKey);
-            File outFile = new File(cacheDir, legitFileName);
+                    byte[] cachedFileData = YsmCrypt.transcodeServerDataToClientCache(fileBuffer, serverKey, clientKey, hash1, hash2);
 
-            try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                fos.write(cachedFileData);
-            }
-            ctx.fileBuffer = null;
+                    String legitFileName = YSMClientCache.generateCacheFileName(hash1, hash2, clientKey);
+                    File outFile = new File(cacheDir, legitFileName);
 
-            YesSteveModel.LOGGER.info("[YSM] Downloaded & Cached: " + outFile.getAbsolutePath());
-            byte[] decompressed = YsmCrypt.read(cachedFileData, clientKey);
+                    try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                        fos.write(cachedFileData);
+                    }
 
-            parseAndLoadModel(decompressed, ctx.modelId, ctx.isAuth);
+                    YesSteveModel.LOGGER.info("[YSM] Downloaded & Cached: " + outFile.getAbsolutePath());
+                    byte[] decompressed = YsmCrypt.read(cachedFileData, clientKey);
 
-            pendingModelsCount--;
-            if (pendingModelsCount <= 0) {
-                YesSteveModel.LOGGER.info("[YSM] All missing models downloaded and loaded successfully!");
-                onSyncComplete();
-            }
+                    parseAndLoadModel(decompressed, ctx.modelId, ctx.isAuth);
+                } catch (Exception e) {
+                    YesSteveModel.LOGGER.error("[YSM] Failed to save/parse downloaded model: " + ctx.modelId, e);
+                } finally {
+                    if (pendingModelsCount.decrementAndGet() <= 0) {
+                        YesSteveModel.LOGGER.info("[YSM] All missing models downloaded and loaded successfully!");
+                        onSyncComplete();
+                    }
+                }
+            });
         }
     }
 
@@ -453,24 +507,14 @@ public class ClientModelManager {
         lastKey = null;
         serverKey = null;
         clientKey = null;
+
+        modelPhraseExecutor.getQueue().clear();
+
         currentCacheFolderName = null;
-        pendingModelsCount = 0;
+        pendingModelsCount.set(0);
         cachedModelHashes.clear();
 
         serverModels.clear();
-
-        Map<String, ModelAssembly> oldModels = modelAssemblyMap;
-        if (oldModels != null && !oldModels.isEmpty()) {
-            Minecraft.getInstance().execute(() -> {
-                for (ModelAssembly model : oldModels.values()) {
-                    if (model != null) {
-                        for (AbstractTexture tex : model.getTextures()) {
-                            UploadManager.removeTexture(tex);
-                        }
-                    }
-                }
-            });
-        }
 
         Map<String, ModelPackData> oldPreviews = modelPackMap;
         if (oldPreviews != null && !oldPreviews.isEmpty()) {
@@ -484,15 +528,16 @@ public class ClientModelManager {
             }
         }
 
-        modelAssemblyMap = Object2ReferenceMaps.emptyMap();
         modelPackMap = new Object2ReferenceOpenHashMap<>();
-//        localModelContext = null;
         pendingModelCallback = null;
         pendingModelQueue.clear();
 
         forEachGuiWidget(l -> {
-            try { l.onSyncBegin(); }
-            catch (Throwable t) { t.printStackTrace(); }
+            try {
+                l.onSyncBegin();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
         });
     }
 
@@ -530,7 +575,10 @@ public class ClientModelManager {
             model = reg.get("default");
             if (model == null) {
                 for (ModelAssembly v : reg.values()) {
-                    if (v != null) { model = v; break; }
+                    if (v != null) {
+                        model = v;
+                        break;
+                    }
                 }
             }
             if (model != null) {

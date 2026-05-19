@@ -4,12 +4,13 @@ import java.util.concurrent.*;
 
 public final class YSMThreadPool {
 
-    private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(Math.max(2, Runtime.getRuntime().availableProcessors() / 2), Math.max(2, Runtime.getRuntime().availableProcessors() / 2), 30, TimeUnit.SECONDS, new LinkedBlockingQueue(), runnable -> {
+    private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(Math.max(2, Runtime.getRuntime().availableProcessors()), Math.max(2, Runtime.getRuntime().availableProcessors()), 30, TimeUnit.SECONDS, new LinkedBlockingQueue(128), runnable -> {
         Thread thread = new Thread(runnable, "YSM Worker");
         thread.setPriority(5);
         thread.setDaemon(true);
         return thread;
-    });
+    },
+            new ThreadPoolExecutor.DiscardPolicy());
 
     private static final ThreadPoolExecutor SYNC_EXECUTOR = new ThreadPoolExecutor(2, 4, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), runnable -> {
         Thread thread = new Thread(runnable, "YSM Sync");
@@ -24,6 +25,10 @@ public final class YSMThreadPool {
 
     public static <T> Future<T> submitCallable(Callable<T> callable) {
         return EXECUTOR.submit(callable);
+    }
+
+    public static int getQueueSize(){
+        return EXECUTOR.getQueue().size();
     }
 
     public static Future<?> submitSync(Runnable runnable) {

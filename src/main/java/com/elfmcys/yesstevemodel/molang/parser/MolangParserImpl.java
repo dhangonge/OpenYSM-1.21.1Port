@@ -66,41 +66,28 @@ public final class MolangParserImpl implements MolangParser {
                 return expression;
             case LBRACE:
                 lexer.next();
+                token = lexer.current();
                 List<Expression> expressions = new ArrayList<>();
-                while (true) {
-                    token = lexer.current();
-                    if (token.kind() == TokenKind.RBRACE) {
-                        lexer.next();
-                        break;
-                    }
-                    if (token.kind() == TokenKind.EOF) {
-                        throw new ParseException(
-                                "Found the end before the execution scope closing token",
-                                lexer.cursor()
-                        );
-                    }
-                    if (token.kind() == TokenKind.ERROR) {
-                        throw new ParseException("Found an invalid token (error): " + token.value(), lexer.cursor());
-                    }
+                while (token.kind() != TokenKind.RBRACE) {
                     expressions.add(parseCompoundExpression(lexer, 0));
-                    token = lexer.current();
-                    if (token.kind() == TokenKind.RBRACE) {
+                    Token current = lexer.current();
+                    if (current.kind() == TokenKind.RBRACE) {
                         lexer.next();
-                        break;
-                    } else if (token.kind() == TokenKind.EOF) {
-                        throw new ParseException(
-                                "Found the end before the execution scope closing token",
-                                lexer.cursor()
-                        );
-                    } else if (token.kind() == TokenKind.ERROR) {
-                        throw new ParseException("Found an invalid token (error): " + token.value(), lexer.cursor());
-                    } else {
-                        if (token.kind() != TokenKind.SEMICOLON) {
-                            throw new ParseException("Missing semicolon", lexer.cursor());
-                        }
-                        lexer.next();
+                        return new ExecutionScopeExpression(expressions);
                     }
+
+                    if (current.kind() == TokenKind.EOF) {
+                        throw new ParseException("Found the end before the execution scope closing token", lexer.cursor());
+                    }
+                    if (current.kind() == TokenKind.ERROR) {
+                        throw new ParseException("Found an invalid token (error): " + current.value(), lexer.cursor());
+                    }
+                    if (current.kind() != TokenKind.SEMICOLON) {
+                        throw new ParseException("Missing semicolon", lexer.cursor());
+                    }
+                    token = lexer.next();
                 }
+                lexer.next();
                 return new ExecutionScopeExpression(expressions);
             case BREAK:
                 lexer.next();
@@ -111,8 +98,7 @@ public final class MolangParserImpl implements MolangParser {
             case IDENTIFIER:
                 Object lastTarget = binding.getProperty(token.value());
                 if (lastTarget == null) {
-                    lexer.next();
-                    return FloatExpression.ZERO;
+                    throw new ParseException("Failed to get property: " + token.value(), lexer.cursor());
                 }
                 Expression expr = IdentifierExpression.get(token.value(), lastTarget);
                 token = lexer.next();
@@ -149,20 +135,6 @@ public final class MolangParserImpl implements MolangParser {
             case RETURN:
                 lexer.next();
                 return new UnaryExpression(UnaryExpression.Op.RETURN, parseCompoundExpression(lexer, UnaryExpression.Op.RETURN.precedence()));
-            case LBRACKET:
-                lexer.next();
-                while (true) {
-                    token = lexer.current();
-                    if (token.kind() == TokenKind.RBRACKET) {
-                        lexer.next();
-                        break;
-                    } else if (token.kind() == TokenKind.EOF) {
-                        throw new ParseException("Found EOF inside bracket expression", lexer.cursor());
-                    } else {
-                        lexer.next();
-                    }
-                }
-                return FloatExpression.ZERO;
         }
 
         throw new ParseException("Expected an expression.", lexer.cursor());
@@ -173,11 +145,6 @@ public final class MolangParserImpl implements MolangParser {
             final @NotNull MolangLexer lexer,
             final int lastPrecedence
     ) throws IOException {
-        // at any level, a closing } or ] means no expression to parse
-        Token first = lexer.current();
-        if (first.kind() == TokenKind.RBRACE || first.kind() == TokenKind.RBRACKET) {
-            return FloatExpression.ZERO;
-        }
         Expression expr = parseSingle(lexer);
         while (true) {
             final Expression compoundExpr = parseCompound(lexer, expr, lastPrecedence);
@@ -185,16 +152,8 @@ public final class MolangParserImpl implements MolangParser {
             // current token
             final Token current = lexer.current();
             if (current.kind() == TokenKind.EOF || current.kind() == TokenKind.SEMICOLON) {
-                // found eof or semicolon, stop parsing, return expr
+                // found eof, stop parsing, return expr
                 return compoundExpr;
-            } else if (lastPrecedence < 0 && current.kind() == TokenKind.RPAREN) {
-                // extra close paren at outermost level (model compat), consume and continue
-                lexer.next();
-                continue;
-            } else if (lastPrecedence < 0 && (current.kind() == TokenKind.RBRACE || current.kind() == TokenKind.RBRACKET)) {
-                // extra close brace/bracket at outermost level (model compat), consume and continue
-                lexer.next();
-                continue;
             } else if (compoundExpr == expr) {
                 return expr;
             }
@@ -373,11 +332,6 @@ public final class MolangParserImpl implements MolangParser {
         if (token.kind() == TokenKind.ERROR) {
             // tokenization error!
             throw new ParseException("Found an invalid token (error): " + token.value(), cursor());
-        }
-
-        // skip stray semicolons, braces, brackets at top level (model compat)
-        if (token.kind() == TokenKind.SEMICOLON || token.kind() == TokenKind.RBRACE || token.kind() == TokenKind.RBRACKET || token.kind() == TokenKind.LBRACKET) {
-            return next0();
         }
 
         final Expression expression = parseCompoundExpression(lexer, -10);

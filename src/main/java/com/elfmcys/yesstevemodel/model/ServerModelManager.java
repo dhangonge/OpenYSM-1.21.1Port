@@ -17,12 +17,14 @@ import com.elfmcys.yesstevemodel.resource.YSMFolderDeserializer;
 import com.elfmcys.yesstevemodel.resource.pojo.RawYsmModel;
 import com.elfmcys.yesstevemodel.util.YSMNativeHelper;
 import com.elfmcys.yesstevemodel.util.YSMThreadPool;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.floats.FloatReferencePair;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.chat.Component;
@@ -52,6 +54,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -100,6 +103,33 @@ public final class ServerModelManager {
     private static final SecureRandom theRandom = new SecureRandom();
     public static byte[] serverKey;
     private static volatile boolean initialized = false;
+
+    private static RateLimiter bandwidthLimiter = null;
+    private static Semaphore threadLimiter = null;
+    private static boolean limitsInitialized = false;
+
+    private static void initRateLimit() {
+        if (!limitsInitialized) {
+            try {
+                int mbps = ServerConfig.BANDWIDTH_LIMIT.get();
+                double bytesPerSec = Math.max(1.0, mbps * 131072.0);
+                bandwidthLimiter = RateLimiter.create(bytesPerSec);
+
+                int threads = ServerConfig.THREAD_COUNT.get();
+                if (threads <= 0) {
+                    threads = Math.max(2, Runtime.getRuntime().availableProcessors() - 1);
+                }
+                threadLimiter = new Semaphore(threads);
+
+                limitsInitialized = true;
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("[YSM] Failed to initialize limits from config", e);
+                bandwidthLimiter = RateLimiter.create(5 * 131072.0);
+                threadLimiter = new Semaphore(Math.max(2, Runtime.getRuntime().availableProcessors() - 1));
+                limitsInitialized = true;
+            }
+        }
+    }
 
     public static class ServerPackData {
         public String folderPath;
@@ -608,14 +638,44 @@ public final class ServerModelManager {
         return new ServerModelData(modelId, animInfo, projectiles, vehicles, serverModelInfo, isCustomSkinModel, isAuth);
     }
 
+    public static MinecraftServer THE_SERVER;
+
+    private static MinecraftServer contextSuitableServer() {
+        //以合适方式获取server实例
+        MinecraftServer server = null;
+        if (Minecraft.getInstance().isSingleplayer())
+            server = Minecraft.getInstance().getSingleplayerServer();
+        else if (Minecraft.getInstance().getCurrentServer() != null)
+            server = THE_SERVER;
+        else
+            server = ServerLifecycleHooks.getCurrentServer();
+
+
+        if (server == null) {
+            return null;
+        }
+
+        if (server.isDedicatedServer()) {
+            // 专用服务器
+            return server;
+        }
+
+        // IntegratedServer
+        if (server.isPublished()) {
+            // 局域网开放
+            return server;
+        }
+
+        // 单人游戏
+        return server;
+    }
+
     public static void nativeSyncModels(UUID[] uuids, String[] playerNames, String[] modelIds, Object callback) {
-        YSMThreadPool.submit(() -> {
+        initRateLimit();
+        YSMThreadPool.submitSync(() -> {
             try {
-                MinecraftServer currentServer = ServerLifecycleHooks.getCurrentServer();
-                if (currentServer == null) {
-                    YesSteveModel.LOGGER.warn("[YSM] nativeSyncModels: currentServer is null, aborting");
-                    return;
-                }
+                MinecraftServer currentServer = contextSuitableServer();
+                if (currentServer == null) return;
 
                 for (UUID uuid : uuids) {
                     PlayerSyncState state = syncStates.computeIfAbsent(uuid, k -> new PlayerSyncState());
@@ -623,6 +683,19 @@ public final class ServerModelManager {
                     state.allowedModels.addAll(CACHE_NAME_INFO.values());
                     state.step = 1;
 
+                    // HandshakePing
+//                    byte[] garbage = new byte[16 + SECURE_RANDOM_S.nextInt(48)];
+//                    SECURE_RANDOM_S.nextBytes(garbage);
+//                    byte[] payload = new byte[2 + garbage.length + 1];
+//                    payload[0] = (byte)(garbage.length & 0xFF);
+//                    payload[1] = (byte)((garbage.length >> 8) & 0xFF);
+//                    System.arraycopy(garbage, 0, payload, 2, garbage.length);
+//                    payload[2 + garbage.length] = 0x01;
+//
+//                    var result = YsmCrypt.encrypt(payload, K0_SERVER, true);
+//                    state.key1 = result.nextKey();
+//
+//                    sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
                     int garbageLen = 16 + theRandom.nextInt(48);
                     byte[] garbage = new byte[garbageLen];
                     theRandom.nextBytes(garbage);
@@ -633,8 +706,7 @@ public final class ServerModelManager {
                         YsmCrypt.EncryptedPacket result = YsmCrypt.encrypt(outBuf.toArray(), YsmCrypt.publicKey, true);
                         state.key1 = result.nextKey();
 
-                        boolean sent = sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
-                        YesSteveModel.LOGGER.info("[YSM] nativeSyncModels: Packet01 sent={} for uuid={}", sent, uuid);
+                        sendModelData(uuid, ByteBuffer.wrap(result.data()), new PendingTransfer());
                     }
                 }
 //                if (callback != null) onAuthDataReceived(null, callback);
@@ -721,7 +793,7 @@ public final class ServerModelManager {
     }
 
     private static void sendPacket05(UUID uuid, PlayerSyncState state, List<long[]> requestedHashes) {
-        YSMThreadPool.submit(() -> {
+        YSMThreadPool.submitSync(() -> {
             try {
                 PendingTransfer transfer = new PendingTransfer();
 
@@ -931,7 +1003,7 @@ public final class ServerModelManager {
 
     private static Connection getPlayerConnection(UUID uuid) {
         ServerPlayer player;
-        MinecraftServer currentServer = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer currentServer = contextSuitableServer();
         if (currentServer == null || (player = currentServer.getPlayerList().getPlayer(uuid)) == null) {
             return null;
         }

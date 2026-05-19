@@ -10,6 +10,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 public class ServerStartupEvent {
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
+        ServerModelManager.THE_SERVER = event.getServer();
         if (!YesSteveModel.isAvailable()) {
             return;
         }
