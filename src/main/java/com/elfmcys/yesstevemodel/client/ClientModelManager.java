@@ -54,7 +54,7 @@ public class ClientModelManager {
     private static byte[] serverKey;
     private static byte[] clientKey;
     private static String currentCacheFolderName;
-    private static AtomicInteger pendingModelsCount;
+    private final static AtomicInteger pendingModelsCount = new AtomicInteger(0);
 
     private static final Map<UUID, ServerModelContext> serverModels = new ConcurrentHashMap<>();
 
@@ -126,7 +126,6 @@ public class ClientModelManager {
                 RawYsmModel rawModel = deserializer.deserialize();
 
                 ClientModelInfo parsedBundle = YSMClientMapper.buildParsedBundle(rawModel, "default");
-
 
                 onModelDataReceived(parsedBundle, "default", true, false);
                 YesSteveModel.LOGGER.info("[YSM] Successfully pushed Default Model to render queue.");

@@ -14,6 +14,8 @@ import java.lang.ref.WeakReference;
 
 public class EntityRenderCache {
 
+    private static final int MAX_SUBMISSIONS_PER_FRAME = 32;
+
     private static final ReferenceArrayList<WeakReference<GeoEntity<?>>> weakRefs = new ReferenceArrayList<>(64);
 
     private static final ReferenceArrayList<GeoEntity<?>> strongRefs = new ReferenceArrayList<>(16);
@@ -26,6 +28,7 @@ public class EntityRenderCache {
         if (Minecraft.getInstance().player == null) {
             return;
         }
+        int submittedThisFrame = 0;
         ObjectListIterator<WeakReference<GeoEntity<?>>> it = weakRefs.iterator();
         while (it.hasNext()) {
             GeoEntity geoEntity = (GeoEntity) ((WeakReference<?>) it.next()).get();
@@ -36,25 +39,35 @@ public class EntityRenderCache {
             } else {
                 geoEntity.tickModel();
                 if (geoEntity.supportsAsync() && geoEntity.isModelInitialized() && geoEntity.isModelReady()) {
+                    if (submittedThisFrame >= MAX_SUBMISSIONS_PER_FRAME) {
+                        break;
+                    }
+                    if (YSMThreadPool.getQueueSize() > 64) {
+                        break;
+                    }
                     Entity entity = geoEntity.getEntity();
                     if (entity instanceof AbstractClientPlayer) {
                         if (entity instanceof LocalPlayer) {
                             if (!GeneralConfig.DISABLE_SELF_MODEL.get()) {
                                 geoEntity.submitAsyncUpdate(partialTick);
                                 strongRefs.add(geoEntity);
+                                submittedThisFrame++;
                             }
                         } else if (!GeneralConfig.DISABLE_OTHER_MODEL.get()) {
                             geoEntity.submitAsyncUpdate(partialTick);
                             strongRefs.add(geoEntity);
+                            submittedThisFrame++;
                         }
                     } else if (entity instanceof Projectile) {
                         if (!GeneralConfig.DISABLE_PROJECTILE_MODEL.get()) {
                             geoEntity.submitAsyncUpdate(partialTick);
                             strongRefs.add(geoEntity);
+                            submittedThisFrame++;
                         }
                     } else if (!GeneralConfig.DISABLE_VEHICLE_MODEL.get()) {
                         geoEntity.submitAsyncUpdate(partialTick);
                         strongRefs.add(geoEntity);
+                        submittedThisFrame++;
                     }
                 }
             }
