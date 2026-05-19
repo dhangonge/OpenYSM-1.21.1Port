@@ -28,9 +28,6 @@ public class EntityRenderCache {
         }
         ObjectListIterator<WeakReference<GeoEntity<?>>> it = weakRefs.iterator();
         while (it.hasNext()) {
-            if (YSMThreadPool.getQueueSize() >= 100) {  // 队列快满，跳过
-                continue;
-            }
             GeoEntity geoEntity = (GeoEntity) ((WeakReference<?>) it.next()).get();
             if (geoEntity == null) {
                 it.remove();

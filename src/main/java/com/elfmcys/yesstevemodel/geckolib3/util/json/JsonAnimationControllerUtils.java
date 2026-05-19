@@ -15,7 +15,7 @@ import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**

@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

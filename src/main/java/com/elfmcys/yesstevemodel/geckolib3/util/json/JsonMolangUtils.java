@@ -5,7 +5,7 @@ import com.elfmcys.yesstevemodel.geckolib3.core.molang.value.IValue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class JsonMolangUtils {
     // 默认不合并

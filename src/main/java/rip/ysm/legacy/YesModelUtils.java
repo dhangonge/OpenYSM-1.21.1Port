@@ -1,10 +1,10 @@
 package rip.ysm.legacy;
 
+import com.elfmcys.yesstevemodel.util.DigestUtil;
 import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.bytes.ByteArrays;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,6 +15,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.*;
@@ -26,6 +28,30 @@ public final class YesModelUtils {
     public static final int VERSION_II = 0x00_00_00_02;
     private static final String ENCRYPTION_METHOD = "AES";
 
+    public static int getYsmCryptoVersion(byte[] fileData) {
+        if (fileData == null || fileData.length < 8) {
+            return -1;
+        }
+
+        // EF BB BF YSGP
+        if (fileData[0] == (byte) 0xEF && fileData[1] == (byte) 0xBB && fileData[2] == (byte) 0xBF &&
+                fileData[3] == 0x59 && fileData[4] == 0x53 && fileData[5] == 0x47 && fileData[6] == 0x50) {
+            return 3;
+        }
+
+        if (fileData[0] == 0x59 && fileData[1] == 0x53 && fileData[2] == 0x47 && fileData[3] == 0x50) {
+            int cryptoVersion = ByteBuffer.wrap(fileData, 4, 4).order(ByteOrder.BIG_ENDIAN).getInt();
+
+            if (cryptoVersion == 2) {
+                return 2;
+            } else if (cryptoVersion == 1) {
+                return 1;
+            }
+        }
+
+        return -1;
+    }
+
     public static Map<String, byte[]> input(byte[] data) throws IOException {
         if (data.length < 24) return Collections.emptyMap();
         int head = ByteInteger.bytes2Int(data, 0);
@@ -35,7 +61,7 @@ public final class YesModelUtils {
 
     public static Map<String, byte[]> input(File ysmFile) throws IOException {
         String fileName = removeExtension(ysmFile.getName());
-        if (ResourceLocation.tryParse(fileName) == null) {
+        if (!ResourceLocation.isValidResourceLocation(fileName)) {
             return Collections.emptyMap();
         }
         byte[] data = FileUtils.readFileToByteArray(ysmFile);
@@ -54,7 +80,7 @@ public final class YesModelUtils {
 
         byte[] md5 = ByteArrays.copy(data, 8, 16);
         byte[] modelFilesData = ByteArrays.copy(data, 24, data.length - 24);
-        if (!Arrays.equals(md5, DigestUtils.md5(modelFilesData))) {
+        if (!Arrays.equals(md5, DigestUtil.md5(modelFilesData))) {
             return Collections.emptyMap();
         }
 
@@ -122,7 +148,7 @@ public final class YesModelUtils {
     }
 
     private static byte[] getKeyFromMd5(byte[] fileData) {
-        byte[] md5 = DigestUtils.md5(fileData);
+        byte[] md5 = DigestUtil.md5(fileData);
         Random random = new Random(toLong(md5));
         byte[] keys = new byte[16];
         random.nextBytes(keys);

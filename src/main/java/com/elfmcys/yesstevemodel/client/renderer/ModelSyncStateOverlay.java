@@ -3,17 +3,15 @@ package com.elfmcys.yesstevemodel.client.renderer;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.config.LoadingStateConfig;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import rip.ysm.api.client.HudOverlay;
 
-public class ModelSyncStateOverlay implements LayeredDraw.Layer {
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        int screenWidth = guiGraphics.guiWidth();
-        int screenHeight = guiGraphics.guiHeight();
+public class ModelSyncStateOverlay implements HudOverlay {
+    @Override
+    public void render(GuiGraphics guiGraphics, Font font, float partialTick, int screenWidth, int screenHeight) {
         int textX;
         int textY;
         int barX;
@@ -76,7 +74,7 @@ public class ModelSyncStateOverlay implements LayeredDraw.Layer {
                 int loadedModelCount = ClientModelManager.getModelAssemblyMap().size();
                 int totalModelCount = loadedModelCount + pendingModelCount;
                 MutableComponent loadingText = Component.translatable("gui.yes_steve_model.sync_hint.title").append(Component.translatable("gui.yes_steve_model.sync_hint.loading_models", pendingModelCount, totalModelCount).withStyle(ChatFormatting.YELLOW));
-                renderSyncText(guiGraphics, loadingText, textX, textY, screenWidth);
+                renderSyncText(font, guiGraphics, loadingText, textX, textY, screenWidth);
                 guiGraphics.fill(barX, barY, barX + 150, barY + 10, -11184811);
                 guiGraphics.fill(barX, barY, barX + (150 * (loadedModelCount / totalModelCount)), barY + 10, -256);
             }
@@ -106,18 +104,18 @@ public class ModelSyncStateOverlay implements LayeredDraw.Layer {
                 }
                 break;
         }
-        renderSyncText(guiGraphics, prefixText, textX, textY, screenWidth);
+        renderSyncText(font, guiGraphics, prefixText, textX, textY, screenWidth);
     }
 
-    private void renderSyncText(GuiGraphics guiGraphics, MutableComponent textComponent, int baseX, int textY, int screenWidth) {
+    private void renderSyncText(Font font, GuiGraphics guiGraphics, MutableComponent textComponent, int baseX, int textY, int screenWidth) {
         int drawX;
-        int textWidth = Minecraft.getInstance().font.width(textComponent);
+        int textWidth = font.width(textComponent);
 
         drawX = switch (LoadingStateConfig.LOADING_STATE_POSITION.get()) {
             case TOP_LEFT, BOTTOM_LEFT -> baseX;
             case TOP_CENTER, BOTTOM_CENTER -> (screenWidth - textWidth) / 2;
             case TOP_RIGHT, BOTTOM_RIGHT -> baseX - textWidth;
         };
-        guiGraphics.drawString(Minecraft.getInstance().font, textComponent, drawX, textY, 16777215);
+        guiGraphics.drawString(font, textComponent, drawX, textY, 16777215);
     }
 }
