@@ -3,6 +3,8 @@ package com.elfmcys.yesstevemodel.client.renderer;
 import com.elfmcys.yesstevemodel.client.ClientModelManager;
 import com.elfmcys.yesstevemodel.config.LoadingStateConfig;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -10,6 +12,9 @@ import net.minecraft.network.chat.MutableComponent;
 import rip.ysm.api.client.HudOverlay;
 
 public class ModelSyncStateOverlay implements HudOverlay {
+
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    }
     @Override
     public void render(GuiGraphics guiGraphics, Font font, float partialTick, int screenWidth, int screenHeight) {
         int textX;
