@@ -96,6 +96,14 @@ public final class PlayerCapability extends CustomPlayerEntity {
     }
 
     @Override
+    public void initModelWithTexture(String str, String str2) {
+        super.initModelWithTexture(str, str2);
+        if (isLocalPlayerModel()) {
+            PlayerCapabilityProvider.savePersistedModel(str, str2);
+        }
+    }
+
+    @Override
     public void applyHeadTracking(AnimationEvent<? extends AnimatableEntity<Player>> event, boolean wasAnimEvaluated) {
         super.applyHeadTracking(event, wasAnimEvaluated);
         AnimatedGeoModel model2 = getCurrentModel();

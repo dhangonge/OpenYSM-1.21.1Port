@@ -13,7 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 public class ClientPlayerCloneEvent {
     @SubscribeEvent
     public static void onPlayerClone(ClientPlayerNetworkEvent.Clone event) {
-        if (!YesSteveModel.isAvailable() || !NetworkHandler.isClientConnected()) {
+        if (!YesSteveModel.isAvailable()) {
             return;
         }
         PlayerCapability cap = event.getOldPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP);

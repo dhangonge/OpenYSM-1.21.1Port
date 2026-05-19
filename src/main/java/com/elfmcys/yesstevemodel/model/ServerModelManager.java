@@ -641,33 +641,7 @@ public final class ServerModelManager {
     public static MinecraftServer THE_SERVER;
 
     private static MinecraftServer contextSuitableServer() {
-        //以合适方式获取server实例
-        MinecraftServer server = null;
-        if (Minecraft.getInstance().isSingleplayer())
-            server = Minecraft.getInstance().getSingleplayerServer();
-        else if (Minecraft.getInstance().getCurrentServer() != null)
-            server = THE_SERVER;
-        else
-            server = ServerLifecycleHooks.getCurrentServer();
-
-
-        if (server == null) {
-            return null;
-        }
-
-        if (server.isDedicatedServer()) {
-            // 专用服务器
-            return server;
-        }
-
-        // IntegratedServer
-        if (server.isPublished()) {
-            // 局域网开放
-            return server;
-        }
-
-        // 单人游戏
-        return server;
+        return ServerLifecycleHooks.getCurrentServer();
     }
 
     public static void nativeSyncModels(UUID[] uuids, String[] playerNames, String[] modelIds, Object callback) {
