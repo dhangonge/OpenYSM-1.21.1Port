@@ -8,18 +8,17 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 @EventBusSubscriber({Dist.CLIENT})
 public class ClientPlayerCloneEvent {
     @SubscribeEvent
-    public static void onPlayerClone(ClientPlayerNetworkEvent.Clone event) {
+    public static void onPlayerClone(PlayerEvent.Clone event) {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        PlayerCapability cap = event.getOldPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
-        PlayerCapability cap2 = event.getNewPlayer().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
-        if (cap != null && cap2 != null) {
-            cap2.copyFrom(cap);
-        }
+        PlayerCapability cap = event.getOriginal().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        PlayerCapability cap2 = event.getEntity().getCapability(PlayerCapabilityProvider.PLAYER_CAP);
+        RenderTickEvent.markClone(cap, cap2);
     }
 }

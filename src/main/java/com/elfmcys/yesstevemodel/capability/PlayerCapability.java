@@ -214,6 +214,7 @@ public final class PlayerCapability extends CustomPlayerEntity {
     public void copyFrom(PlayerCapability playerCapability) {
         this.molangVarsMap.putAll(playerCapability.molangVarsMap);
         initModelWithTexture(playerCapability.getModelId(), playerCapability.currentTextureName);
+        reset();
         setForceDisabled(playerCapability.isForceDisabled());
         playerCapability.molangVarsMap.clear();
         playerCapability.serverVarContainer = null;

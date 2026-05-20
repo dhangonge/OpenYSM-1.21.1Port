@@ -299,7 +299,7 @@ tasks.register('clientjar') {
         delete mergedDir
         delete repackDir
 
-        println "Server jar created: ${serverJar.absolutePath} (${serverJar.length()} bytes)"
+        println "Client jar created: ${serverJar.absolutePath} (${serverJar.length()} bytes)"
     }
 }
 
