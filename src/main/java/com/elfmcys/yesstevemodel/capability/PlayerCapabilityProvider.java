@@ -49,8 +49,8 @@ public final class PlayerCapabilityProvider implements ICapabilityProvider<Entit
             if(existing != null &&!existing.isActive())
                 return existing;
             if ( existing != null && existing.getEntity() != Minecraft.getInstance().player) {
-                YesSteveModel.LOGGER.info("Player capability already exists for entity {}, Type {}, named {},isAlive: {}" , existing.getEntity().getUUID(),existing.getEntity().getType(),existing.getEntity().getName(),existing.getEntity().isAlive());
-                YesSteveModel.LOGGER.info("Current Player is {}, Type {}, named {},isAlive: {}" , entity.getUUID(),entity.getType(),entity.getName(),entity.isAlive());
+                //YesSteveModel.LOGGER.info("Player capability already exists for entity {}, Type {}, named {},isAlive: {}" , existing.getEntity().getUUID(),existing.getEntity().getType(),existing.getEntity().getName(),existing.getEntity().isAlive());
+                //YesSteveModel.LOGGER.info("Current Player is {}, Type {}, named {},isAlive: {}" , entity.getUUID(),entity.getType(),entity.getName(),entity.isAlive());
                 cache.remove(entity.getUUID());
                 UUID newUUID = UUID.randomUUID();
                 existing.getEntity().setUUID(newUUID);
