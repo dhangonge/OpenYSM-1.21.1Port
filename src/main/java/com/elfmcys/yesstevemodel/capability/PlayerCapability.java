@@ -5,15 +5,15 @@ import com.elfmcys.yesstevemodel.client.animation.molang.struct.RoamingStruct;
 import com.elfmcys.yesstevemodel.client.animation.molang.struct.RoamingSyncBatch;
 import com.elfmcys.yesstevemodel.client.compat.bettercombat.BetterCombatCompat;
 import com.elfmcys.yesstevemodel.client.compat.firstperson.FirstPersonCompat;
-import com.elfmcys.yesstevemodel.client.entity.PlayerEntityFrameState;
-import com.elfmcys.yesstevemodel.client.entity.LivingAnimatable;
-import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.client.entity.CustomPlayerEntity;
-import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
+import com.elfmcys.yesstevemodel.client.entity.LivingAnimatable;
+import com.elfmcys.yesstevemodel.client.entity.PlayerEntityFrameState;
+import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
 import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.geckolib3.core.processor.IBone;
+import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.molang.runtime.Int2FloatOpenHashMapStruct;
 import com.elfmcys.yesstevemodel.molang.runtime.Struct;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
@@ -35,7 +35,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 
 @OnlyIn(Dist.CLIENT)
 public final class PlayerCapability extends CustomPlayerEntity {
@@ -46,8 +45,20 @@ public final class PlayerCapability extends CustomPlayerEntity {
 
     private Struct serverVarContainer;
 
+    private boolean isActive = true;
+
+    public boolean isActive() {
+        return isActive;
+    }
+
     public PlayerCapability(Player player) {
         super(player, player instanceof LocalPlayer, true);
+        this.molangVarsMap = new Int2ReferenceOpenHashMap<>(8);
+    }
+
+    public PlayerCapability(Player player,boolean isActive) {
+        super(player, player instanceof LocalPlayer, isActive);
+        this.isActive = isActive;
         this.molangVarsMap = new Int2ReferenceOpenHashMap<>(8);
     }
 
@@ -69,16 +80,8 @@ public final class PlayerCapability extends CustomPlayerEntity {
     @Override
     public void onModelLoaded(ModelAssembly context) {
         super.onModelLoaded(context);
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        StringBuilder builder = new StringBuilder();
-        Arrays.stream(stackTraceElements).forEach(stackTraceElement -> {
-            builder.append(stackTraceElement.toString()).append("\n");
-        });
-        if(stackTraceElements.length > 2){
-            YesSteveModel.LOGGER.warn("caller information:\n {}",builder);
-        }
-        debugDump("model loaded", this);
         this.currentModelHashId = getModelAssembly().getModelData().getHashId();
+        PlayerCapabilityProvider.savePersistedModel(getModelId(),getCurrentTextureName());
     }
 
     @Override
@@ -218,8 +221,6 @@ public final class PlayerCapability extends CustomPlayerEntity {
     }
 
     public void copyFrom(PlayerCapability playerCapability) {
-        debugDump("copyFrom source before", playerCapability);
-        debugDump("copyFrom target before", this);
         this.molangVarsMap.putAll(playerCapability.molangVarsMap);
         initModelWithTexture(playerCapability.getModelId(), playerCapability.currentTextureName);
         reset();
@@ -228,9 +229,24 @@ public final class PlayerCapability extends CustomPlayerEntity {
         clearAnimationControllers();
         playerCapability.molangVarsMap.clear();
         playerCapability.serverVarContainer = null;
+    }
+
+    /*
+        debugDump("copyFrom source before", playerCapability);
+        debugDump("copyFrom target before", this);
         debugDump("copyFrom source after", playerCapability);
         debugDump("copyFrom target after", this);
-    }
+
+
+    *   StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        StringBuilder builder = new StringBuilder();
+        Arrays.stream(stackTraceElements).forEach(stackTraceElement -> {
+            builder.append(stackTraceElement.toString()).append("\n");
+        });
+        if(stackTraceElements.length > 2){
+            YesSteveModel.LOGGER.warn("caller information:\n {}",builder);
+        }
+        debugDump("model loaded", this);*/
 
     private static void debugDump(String label, PlayerCapability cap) {
         StringBuilder builder = new StringBuilder(4096);
