@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.capability;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.animation.molang.struct.RoamingStruct;
 import com.elfmcys.yesstevemodel.client.animation.molang.struct.RoamingSyncBatch;
 import com.elfmcys.yesstevemodel.client.compat.bettercombat.BetterCombatCompat;
@@ -31,6 +32,10 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 @OnlyIn(Dist.CLIENT)
 public final class PlayerCapability extends CustomPlayerEntity {
@@ -64,6 +69,15 @@ public final class PlayerCapability extends CustomPlayerEntity {
     @Override
     public void onModelLoaded(ModelAssembly context) {
         super.onModelLoaded(context);
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        StringBuilder builder = new StringBuilder();
+        Arrays.stream(stackTraceElements).forEach(stackTraceElement -> {
+            builder.append(stackTraceElement.toString()).append("\n");
+        });
+        if(stackTraceElements.length > 2){
+            YesSteveModel.LOGGER.warn("caller information:\n {}",builder);
+        }
+        debugDump("model loaded", this);
         this.currentModelHashId = getModelAssembly().getModelData().getHashId();
     }
 
@@ -93,14 +107,6 @@ public final class PlayerCapability extends CustomPlayerEntity {
     public void reset() {
         this.serverVarContainer = null;
         super.reset();
-    }
-
-    @Override
-    public void initModelWithTexture(String str, String str2) {
-        super.initModelWithTexture(str, str2);
-        if (isLocalPlayerModel()) {
-            PlayerCapabilityProvider.savePersistedModel(str, str2);
-        }
     }
 
     @Override
@@ -212,12 +218,62 @@ public final class PlayerCapability extends CustomPlayerEntity {
     }
 
     public void copyFrom(PlayerCapability playerCapability) {
+        debugDump("copyFrom source before", playerCapability);
+        debugDump("copyFrom target before", this);
         this.molangVarsMap.putAll(playerCapability.molangVarsMap);
         initModelWithTexture(playerCapability.getModelId(), playerCapability.currentTextureName);
         reset();
         setForceDisabled(playerCapability.isForceDisabled());
+        clearModelSwitch();
+        clearAnimationControllers();
         playerCapability.molangVarsMap.clear();
         playerCapability.serverVarContainer = null;
+        debugDump("copyFrom source after", playerCapability);
+        debugDump("copyFrom target after", this);
+    }
+
+    private static void debugDump(String label, PlayerCapability cap) {
+        StringBuilder builder = new StringBuilder(4096);
+        builder.append("PlayerCapability debug dump [").append(label).append("]")
+                .append(" identity=").append(System.identityHashCode(cap))
+                .append(" uuid=").append(cap.entity == null ? "null" : cap.entity.getUUID())
+                .append('\n');
+
+        Class<?> type = cap.getClass();
+        while (type != null && type != Object.class) {
+            builder.append("  class ").append(type.getName()).append('\n');
+            for (Field field : type.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                try {
+                    field.setAccessible(true);
+                    Object value = field.get(cap);
+                    builder.append("    ")
+                            .append(Modifier.toString(field.getModifiers()))
+                            .append(' ')
+                            .append(field.getType().getSimpleName())
+                            .append(' ')
+                            .append(field.getName())
+                            .append(" = ")
+                            .append(String.valueOf(value))
+                            .append('\n');
+                } catch (Throwable throwable) {
+                    builder.append("    ")
+                            .append(field.getType().getSimpleName())
+                            .append(' ')
+                            .append(field.getName())
+                            .append(" = <error: ")
+                            .append(throwable.getClass().getSimpleName())
+                            .append(": ")
+                            .append(throwable.getMessage())
+                            .append(">\n");
+                }
+            }
+            type = type.getSuperclass();
+        }
+
+        YesSteveModel.LOGGER.warn(builder.toString());
     }
 
     @Override

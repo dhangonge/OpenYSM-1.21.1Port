@@ -26,7 +26,7 @@ public final class PlayerCapabilityProvider implements ICapabilityProvider<Entit
 
     public static final PlayerCapabilityProvider INSTANCE = new PlayerCapabilityProvider();
 
-    private final ConcurrentHashMap<UUID, PlayerCapability> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, PlayerCapability> cache = new ConcurrentHashMap<>();
 
     private static volatile String persistedModelId;
     private static volatile String persistedTextureName;
@@ -42,7 +42,16 @@ public final class PlayerCapabilityProvider implements ICapabilityProvider<Entit
     @Nullable
     public PlayerCapability getCapability(Entity entity, Void context) {
         if (entity instanceof Player player) {
-            return cache.computeIfAbsent(entity.getUUID(), uuid -> {
+            //修复了尸体模组共用模型的bug
+            PlayerCapability existing = cache.get(entity.getId());
+            if (existing != null && existing.getEntity() != entity) {
+                PlayerCapability old = cache.putIfAbsent(entity.getId(), null);
+                if(old != null) {
+                    cache.put(old.getEntity().getId(),old);
+                }
+                cache.remove(entity.getId());
+            }
+            return cache.computeIfAbsent(entity.getId(), uuid -> {
                 PlayerCapability cap = new PlayerCapability(player);
                 if (player instanceof LocalPlayer && persistedModelId != null) {
                     cap.initModelWithTexture(persistedModelId, persistedTextureName);
@@ -53,15 +62,15 @@ public final class PlayerCapabilityProvider implements ICapabilityProvider<Entit
         return null;
     }
 
-    public void invalidate(UUID uuid) {
-        cache.remove(uuid);
+    public void invalidate(int id) {
+        cache.remove(id);
     }
 
     @EventBusSubscriber(value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
     private static class CleanupHandler {
         @SubscribeEvent
         public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
-            INSTANCE.invalidate(event.getEntity().getUUID());
+            INSTANCE.invalidate(event.getEntity().getId());
         }
 
         @SubscribeEvent
