@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.commands.arguments.ParticleArgument;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
@@ -77,7 +78,7 @@ public class ParticleEffectUtil {
     private static void spawnParticles(Entity entity, String particleId, Vector3d offset, Vector3d delta, double speed, int count, int lifetime, boolean isAbsolute, RandomSource random) throws ExecutionException, CommandSyntaxException {
         ParticleOptions particleOptions = particleCache.get(particleId, () -> {
             // ParticleArgument.readParticle signature changed in 1.21.1
-            return null; // return ParticleArgument.readParticle(new StringReader(particleId), BuiltInRegistries.PARTICLE_TYPE.asLookup());
+            return ParticleArgument.readParticle(new StringReader(particleId), (HolderLookup.Provider) BuiltInRegistries.PARTICLE_TYPE.asLookup());
         });
 
         if (particleOptions == null) {
