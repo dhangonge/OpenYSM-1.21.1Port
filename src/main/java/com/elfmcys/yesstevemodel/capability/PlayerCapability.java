@@ -221,6 +221,9 @@ public final class PlayerCapability extends CustomPlayerEntity {
     }
 
     public void copyFrom(PlayerCapability playerCapability) {
+        debugDump("copyFrom source before", playerCapability);
+        debugDump("copyFrom target before", this);
+
         this.molangVarsMap.putAll(playerCapability.molangVarsMap);
         initModelWithTexture(playerCapability.getModelId(), playerCapability.currentTextureName);
         reset();
@@ -229,6 +232,9 @@ public final class PlayerCapability extends CustomPlayerEntity {
         clearAnimationControllers();
         playerCapability.molangVarsMap.clear();
         playerCapability.serverVarContainer = null;
+
+        debugDump("copyFrom source after", playerCapability);
+        debugDump("copyFrom target after", this);
     }
 
     /*
