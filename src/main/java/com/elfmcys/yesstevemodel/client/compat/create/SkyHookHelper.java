@@ -1,11 +1,13 @@
 package com.elfmcys.yesstevemodel.client.compat.create;
 
-import com.elfmcys.yesstevemodel.mixin.client.create.PlayerSkyhookRendererAccessor;
-import com.simibubi.create.foundation.render.PlayerSkyhookRenderer;
 import net.minecraft.world.entity.player.Player;
 
+/**
+ * STUB: libs/ 未提供 create jar。
+ */
 public class SkyHookHelper {
+
     public static boolean isPlayerOnSkyHook(Player player) {
-        return PlayerSkyhookRendererAccessor.hangingPlayers().contains(player.getUUID());
+        return false;
     }
 }

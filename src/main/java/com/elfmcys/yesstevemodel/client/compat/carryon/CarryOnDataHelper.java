@@ -1,35 +1,21 @@
 package com.elfmcys.yesstevemodel.client.compat.carryon;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import tschipp.carryon.common.carry.CarryOnData;
-import tschipp.carryon.common.carry.CarryOnDataManager;
 
+/**
+ * STUB: libs/ 未提供 carryon jar。
+ */
 public class CarryOnDataHelper {
-    public enum CarryType {
-        ENTITY,
-        BLOCK,
-        PLAYER,
-        NONE
-    }
 
     public static boolean isPlayerCarrying(LivingEntity livingEntity) {
-        if(!(livingEntity.getVehicle() instanceof Player)) return false;
-        Player vehicle = (Player) livingEntity.getVehicle();
-        return (vehicle instanceof Player) && getCarryType(vehicle) == CarryType.PLAYER;
+        return false;
     }
 
-    public static CarryType getCarryType(Player player) {
-        CarryOnData carryData = CarryOnDataManager.getCarryData(player);
-        if (carryData.isCarrying(CarryOnData.CarryType.BLOCK)) {
-            return CarryType.BLOCK;
-        }
-        if (carryData.isCarrying(CarryOnData.CarryType.ENTITY)) {
-            return CarryType.ENTITY;
-        }
-        if (carryData.isCarrying(CarryOnData.CarryType.PLAYER)) {
-            return CarryType.PLAYER;
-        }
+    public enum CarryType {
+        ENTITY, BLOCK, PLAYER, NONE
+    }
+
+    public static CarryType getCarryType(net.minecraft.world.entity.player.Player player) {
         return CarryType.NONE;
     }
 }

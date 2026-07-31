@@ -995,4 +995,12 @@ public class ClientModelManager {
             }
         });
     }
+
+    /**
+     * Client-only 模式入口（阶段 2 补完）。
+     * 上游 2.6.6.x 在此加载本地模型目录，移植版暂为空实现。
+     */
+    public static void enterClientOnlyMode() {
+        YesSteveModel.LOGGER.info("[YSM] enterClientOnlyMode() called (stub - full impl pending Phase 2)");
+    }
 }

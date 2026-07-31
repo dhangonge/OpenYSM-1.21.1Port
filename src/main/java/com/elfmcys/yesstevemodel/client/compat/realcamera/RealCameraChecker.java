@@ -1,9 +1,11 @@
 package com.elfmcys.yesstevemodel.client.compat.realcamera;
 
-import com.xtracr.realcamera.RealCameraCore;
-
+/**
+ * STUB: libs/ 未提供 realcamera jar。
+ */
 public class RealCameraChecker {
+
     public static boolean isRealCameraActive() {
-        return RealCameraCore.isActive();
+        return false;
     }
 }

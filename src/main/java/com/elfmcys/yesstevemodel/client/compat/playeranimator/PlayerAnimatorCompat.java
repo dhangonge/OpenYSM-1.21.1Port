@@ -1,25 +1,20 @@
 package com.elfmcys.yesstevemodel.client.compat.playeranimator;
 
-import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.neoforged.fml.ModList;
 
+/**
+ * STUB: libs/ 未提供 player-animation-lib jar（移植版锁定 2.0.4，自用模组为 1.1.5 不兼容）。
+ */
 public class PlayerAnimatorCompat {
 
-    private static final String MOD_ID = "playeranimator";
-
-    private static boolean IS_LOADED = false;
-
     public static void init() {
-        IS_LOADED = ModList.get().isLoaded(MOD_ID);
     }
 
     public static boolean isLoaded() {
-        return IS_LOADED;
+        return false;
     }
 
     public static boolean isPlayerAnimated(AbstractClientPlayer abstractClientPlayer) {
-        return IS_LOADED && PlayerAnimationAccess.getPlayerAnimLayer(abstractClientPlayer).getFirstPersonMode(0.0f) == FirstPersonMode.THIRD_PERSON_MODEL;
+        return false;
     }
 }

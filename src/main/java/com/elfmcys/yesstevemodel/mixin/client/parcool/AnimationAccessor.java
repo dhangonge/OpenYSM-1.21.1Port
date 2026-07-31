@@ -1,24 +1,6 @@
 package com.elfmcys.yesstevemodel.mixin.client.parcool;
 
-import com.alrex.parcool.client.animation.Animator;
-import com.alrex.parcool.common.attachment.client.Animation;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
-
-import java.lang.reflect.Field;
-
-@Mixin({Animation.class})
+// STUB: libs/ 未提供 parcool jar。原为 @Mixin(Animation.class) 的 Accessor。
+// 恢复方式：放入 parcool jar，从 /tmp/opencode/orig_compat 还原。
 public interface AnimationAccessor {
-    @Accessor(value = "animator", remap = false)
-    static Animator getAnimator(Animation animation) {
-        try {
-            Field animator = Animation.class.getDeclaredField("animator");
-            animator.setAccessible(true);
-            @SuppressWarnings("uncheked")
-            Animator result = (Animator) animator.get(animation);
-            return result;
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    };
 }

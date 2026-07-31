@@ -61,49 +61,14 @@ jarJar.enable()
 dependencies {
     implementation "net.neoforged:neoforge:21.1.229"
 
-    // compileOnly dependencies from libs/ (optional mod compat)
-    compileOnly files('libs/elytraslot-neoforge-9.0.2+1.21.1.jar')
-    compileOnly files('libs/firstperson-neoforge-2.7.1-mc1.21.1.jar')
-    compileOnly files('libs/immersive_melodies-neoforge-0.6.4+1.21.1.jar')
-    compileOnly files('libs/player-animation-lib-2.0.4+1.21.1.jar')
-    compileOnly files('libs/touhoulittlemaid-1.5.3-neoforge+mc1.21.1.jar')
-    // TACZ: no NeoForge official 1.21.1 version
-    compileOnly files('libs/tacz-neoforge-1.21.1-1.1.8-r2.jar')
-    compileOnly files('libs/carryon-neoforge-1.21.1-2.2.4.4.jar')
-    compileOnly files('libs/theoneprobe-1.21_neo-12.0.8.jar')
-    compileOnly files('libs/curios-neoforge-9.5.1+1.21.1.jar')
-    compileOnly files('libs/sophisticatedcore-1.21.1-1.4.39.1852.jar')
-    compileOnly files('libs/sophisticatedbackpacks-1.21.1-3.25.45.1742.jar')
-    compileOnly files('libs/cosmeticarmorreworked-1.21.1-v1-neoforge.jar')
-    compileOnly files('libs/swem-1.21.1-1.6.9.jar')
-    compileOnly files('libs/simpleplanes-1.21.1-5.3.7.jar')
-    compileOnly files('libs/irons_spellbooks-1.21.1-3.15.6.jar')
-    compileOnly files('libs/ParCool-1.21.1-3.4.3.3-NF.jar')
-    compileOnly files('libs/immersive_aircraft-neoforge-1.4.3+1.21.1.jar')
-    compileOnly files('libs/bettercombat-neoforge-2.3.2+1.21.1.jar')
-    compileOnly files('libs/Jade-1.21.1-NeoForge-15.10.5.jar')
-    compileOnly files('libs/superbwarfare-1.21.1-0.8.8-final-neoforge.jar')
-    compileOnly files('libs/realcamera-1.21.1-neoforge-0.7.6-beta.jar')
-    compileOnly files('libs/SlashBladeResharped-2.0.3-1.21.1.jar')
-    // SlashBlade: no NeoForge 1.21.1 version
-    // compileOnly files('libs/SlashBlade-1.20.1-0.1.2.jar')
-    compileOnly files('libs/neoculus-mc1.21.1-1.8.7.jar')
-    compileOnly files('libs/geckolib-neoforge-1.21.1-4.8.4.jar')
-    compileOnly files('libs/create-1.21.1-6.0.10.jar')
-    compileOnly files('libs/simplehats-neoforge-1.21.1-0.4.0.jar')
-    compileOnly files('libs/accessories-neoforge-1.1.0-beta.53+1.21.1.jar')
+    // 版本无关：libs/ 下所有 jar 均作为编译期可选依赖（compileOnly，不进运行时）
+    compileOnly fileTree(dir: 'libs', include: '*.jar', exclude: 'ImageStream*.jar')
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
 
-    /*
-    // cannot implementation due to unknown reason.
-    implementation (jarJar("com.github.OpenYSM:ImageStream:-SNAPSHOT")){
+    // ImageStream：avif/webp/jpeg 解码，走 JitPack（与上游 ModernYSM 同坐标）
+    implementation(jarJar("com.github.TartaricAlkaline:ImageStream:-SNAPSHOT")) {
         version { prefer "-SNAPSHOT" }
     }
-     */
-    // using local jar instead.
-    implementation(files("libs/ImageStream--SNAPSHOT.jar"))
-    localRunRuntime(files("libs/ImageStream--SNAPSHOT.jar"))
-    jarJar(files("libs/ImageStream--SNAPSHOT.jar"))
     jarJar("commons-codec:commons-codec:1.16.0")
 
     implementation(jarJar("io.github.llamalad7:mixinextras-neoforge:0.3.6")) {
@@ -197,7 +162,7 @@ tasks.register('serverjar') {
     description = 'Builds a server-ready jar with bundled dependencies (jar-in-jar)'
     dependsOn tasks.named('jar')
 
-    def imageStreamJar = file('libs/ImageStream--SNAPSHOT.jar')
+    def imageStreamJar = configurations.runtimeClasspath.resolve().find { it.name.startsWith('ImageStream') && it.name.endsWith('.jar') }
     def commonCodecJar = configurations.runtimeClasspath.resolve().find { it.name.startsWith('commons-codec') && it.name.endsWith('.jar') }
 
     doLast {
@@ -220,7 +185,7 @@ tasks.register('serverjar') {
         }
 
         // expand ImageStream
-        if (imageStreamJar.exists()) {
+        if (imageStreamJar != null && imageStreamJar.exists()) {
             copy {
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 from zipTree(imageStreamJar)
@@ -228,7 +193,7 @@ tasks.register('serverjar') {
             }
         }
 
-        if (commonCodecJar.exists()) {
+        if (commonCodecJar != null && commonCodecJar.exists()) {
             copy {
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 from zipTree(commonCodecJar)
@@ -257,7 +222,7 @@ tasks.register('clientjar') {
     description = 'Builds a client-ready jar with bundled dependencies (jar-in-jar)'
     dependsOn tasks.named('jar')
 
-    def imageStreamJar = file('libs/ImageStream--SNAPSHOT.jar')
+    def imageStreamJar = configurations.runtimeClasspath.resolve().find { it.name.startsWith('ImageStream') && it.name.endsWith('.jar') }
 
     doLast {
         def jarTask = tasks.named('jar', Jar).get()
@@ -279,7 +244,7 @@ tasks.register('clientjar') {
         }
 
         // expand ImageStream
-        if (imageStreamJar.exists()) {
+        if (imageStreamJar != null && imageStreamJar.exists()) {
             copy {
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 from zipTree(imageStreamJar)
