@@ -4,11 +4,18 @@ import com.google.common.collect.Sets;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 
 public class AuthModelsCapability {
+
+    /** 与上游 2.6.6.x API 对齐的便捷方法。 */
+    public static Optional<AuthModelsCapability> get(Player player) {
+        return Optional.ofNullable(player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP));
+    }
 
     private Set<String> authModels = Sets.newHashSet();
 

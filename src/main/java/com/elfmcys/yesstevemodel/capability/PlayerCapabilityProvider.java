@@ -64,6 +64,15 @@ public final class PlayerCapabilityProvider implements ICapabilityProvider<Entit
         cache.remove(entity);
     }
 
+    /** 与上游 rip.ysm API 对齐的便捷方法。 */
+    public static java.util.Optional<PlayerCapability> get(Player player) {
+        return java.util.Optional.ofNullable(player.getCapability(PLAYER_CAP));
+    }
+
+    public static java.util.Optional<PlayerCapability> get(Entity entity) {
+        return java.util.Optional.ofNullable(entity.getCapability(PLAYER_CAP));
+    }
+
     @EventBusSubscriber(value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
     private static class CleanupHandler {
         @SubscribeEvent

@@ -64,7 +64,7 @@ public class ModelButton extends Button {
 
     private final boolean disablePreviewRotation;
 
-    private final Component displayName;
+    private Component displayName;
 
     @Nullable
     private IResourceLocatable backgroundTexture;
@@ -82,6 +82,14 @@ public class ModelButton extends Button {
     private List<Component> detailedTooltipLines;
 
     private long lastHoverTime;
+
+    /** 与上游 2.6.6.x API 对齐的构造器（targetModelId 仅用于显示名）。 */
+    public ModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity playerPreviewEntity, ModelAssembly textureRegistry, String targetModelId) {
+        this(x, y, isAuthLocked, playerPreviewEntity, textureRegistry);
+        if (targetModelId != null && !targetModelId.isEmpty()) {
+            this.displayName = Component.literal(FileTypeUtil.getNameWithoutArchiveExtension(targetModelId));
+        }
+    }
 
     public ModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity playerPreviewEntity, ModelAssembly textureRegistry) {
         super(x, y, 52, 90, createDisplayName(playerPreviewEntity, textureRegistry), button -> {

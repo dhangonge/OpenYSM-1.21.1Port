@@ -41,6 +41,8 @@ public class Animation {
 
     public boolean isFromPrimaryAssembly = false;
 
+    public String sourceKey;
+
     public Animation(String animationName, double animationLength, ILoopType loop,
                      @Nullable IValue unKnowData1, @Nullable IValue unKnowData2,
                      @Nullable IValue blendWeight, @Nullable Boolean overridePrevAnim,

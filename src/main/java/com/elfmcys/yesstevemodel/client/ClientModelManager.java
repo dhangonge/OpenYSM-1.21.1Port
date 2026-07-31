@@ -71,6 +71,26 @@ public class ClientModelManager {
     private static final WeakHashMap<IGuiWidget, Object> guiWidgets = new WeakHashMap<>();
     private static final SyncStatus syncState = new SyncStatus();
 
+    /** 与上游 2.6.6.x API 对齐：服务器握手状态。 */
+    private static boolean isOysmServer = false;
+    private static boolean allowUpload = false;
+
+    public static boolean isAllowUpload() {
+        return allowUpload;
+    }
+
+    public static boolean isOysmServer() {
+        return isOysmServer;
+    }
+
+    public static void setAllowUpload(boolean allowUpload) {
+        ClientModelManager.allowUpload = allowUpload;
+    }
+
+    public static void setOysmServer(boolean isOysmServer) {
+        ClientModelManager.isOysmServer = isOysmServer;
+    }
+
     public enum SyncState {
         WAITING, LOADING, IDLE, PREPARING, SYNCING
     }
@@ -856,6 +876,16 @@ public class ClientModelManager {
 
     public static int getPendingModelCount() {
         return pendingModelQueue.size();
+    }
+
+    /** 与上游 2.6.6.x API 对齐：模型是否仍在懒加载队列中。 */
+    public static boolean isModelPending(String modelId) {
+        for (Pair<ModelAssembly, String> pair : pendingModelQueue) {
+            if (pair.getRight().equals(modelId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class SyncStatus {
