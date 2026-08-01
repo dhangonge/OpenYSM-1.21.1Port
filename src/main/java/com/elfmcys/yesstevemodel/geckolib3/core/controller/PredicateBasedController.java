@@ -2,29 +2,30 @@ package com.elfmcys.yesstevemodel.geckolib3.core.controller;
 
 import com.elfmcys.yesstevemodel.audio.PlaybackFlags;
 import com.elfmcys.yesstevemodel.client.animation.IAnimationPredicate;
-import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.ConstantPoint;
-import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.TransitionPoint;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.ILoopType;
+import com.elfmcys.yesstevemodel.geckolib3.core.enums.AnimationState;
+import com.elfmcys.yesstevemodel.geckolib3.core.enums.PlayState;
 import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.AnimationPoint;
 import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.BoneAnimationQueue;
+import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.ConstantPoint;
+import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.TransitionPoint;
+import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.value.IValue;
-import com.elfmcys.yesstevemodel.geckolib3.core.enums.AnimationState;
-import com.elfmcys.yesstevemodel.geckolib3.core.enums.PlayState;
 import com.elfmcys.yesstevemodel.geckolib3.core.snapshot.BoneTopLevelSnapshot;
+import com.elfmcys.yesstevemodel.geckolib3.core.util.EulerNlerpScratch;
 import com.elfmcys.yesstevemodel.geckolib3.core.util.MathUtil;
+import com.elfmcys.yesstevemodel.geckolib3.core.util.TransitionVector3f;
 import com.elfmcys.yesstevemodel.geckolib3.util.IInterpolable;
 import com.elfmcys.yesstevemodel.geckolib3.util.TicksInterpolator;
-import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
 import com.elfmcys.yesstevemodel.molang.runtime.ExpressionEvaluator;
-import com.elfmcys.yesstevemodel.geckolib3.core.util.TransitionVector3f;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class PredicateBasedController<T extends AnimatableEntity<?>> implements IAnimationController<T> {
@@ -74,7 +75,7 @@ public class PredicateBasedController<T extends AnimatableEntity<?>> implements 
         } else if (playState == PlayState.STOP) {
             AnimationState state = this.transitionInterpolator.getAnimationState();
             if (state == AnimationState.BEGINNING_TRANSITION || state == AnimationState.RUNNING) {
-                this.transitionInterpolator.beginEndingTransition(event.currentTick);
+                this.transitionInterpolator.beginEndingTransition(event.currentTick, evaluator);
                 this.transitionInterpolator.resetRequestedAnimation();
             }
             if (state == AnimationState.ENDING_TRANSITION) {
@@ -164,8 +165,10 @@ public class PredicateBasedController<T extends AnimatableEntity<?>> implements 
     @Override
     public void forEachTransform(Consumer<BoneTransformProvider> consumer) {
         if (!this.needsReset) {
-            for (BoneAnimationQueue boneAnimationQueue : this.transitionInterpolator.getActiveBoneAnimationQueues()) {
-                consumer.accept(new TransformProviderRecord(boneAnimationQueue));
+            final var queues = this.transitionInterpolator.getActiveBoneAnimationQueues();
+            final int size = queues.size();
+            for (int i = 0; i < size; i++) {
+                consumer.accept(queues.get(i).transformProviderRecord);
             }
         }
     }
@@ -184,8 +187,8 @@ public class PredicateBasedController<T extends AnimatableEntity<?>> implements 
         this.transitionInterpolator.resetRequestedAnimation();
     }
 
-    public void beginEndTransition(float currentTick) {
-        this.transitionInterpolator.beginEndingTransition(currentTick);
+    public void beginEndTransition(float currentTick, ExpressionEvaluator<AnimationContext<?>> evaluator) {
+        this.transitionInterpolator.beginEndingTransition(currentTick, evaluator);
     }
 
     public boolean isPlaying() {
@@ -202,84 +205,116 @@ public class PredicateBasedController<T extends AnimatableEntity<?>> implements 
         return this.deprecatedMode && this.transitionInterpolator.getAnimationState() == AnimationState.RUNNING;
     }
 
-    private record TransformProviderRecord(BoneAnimationQueue data) implements BoneTransformProvider {
+    public static final class TransformProviderRecord implements BoneTransformProvider {
+        private final BoneAnimationQueue data;
+
+        public TransformProviderRecord(BoneAnimationQueue data) {
+            this.data = data;
+        }
+
         @Override
         public BoneTopLevelSnapshot getBoneTarget() {
             return this.data.topLevelSnapshot;
         }
 
+        final TransitionVector3f mutableVector = new TransitionVector3f(0, 0, 0);
+        private final EulerNlerpScratch rotScratch = new EulerNlerpScratch();
+
         @Override
-        public Optional<TransitionVector3f> getRotation(ExpressionEvaluator<AnimationContext<?>> evaluator) {
-            TransitionVector3f result;
+        public TransitionVector3f getRotation(ExpressionEvaluator<AnimationContext<?>> evaluator) {
             AnimationPoint point = this.data.rotationQueue;
             if (point == null) {
-                return Optional.empty();
+                return null;
             }
             if (point instanceof ConstantPoint) {
-                result = new TransitionVector3f(point.getLerpPoint(evaluator));
-                result.setPercentCompleted(point.getPercentCompleted());
+                mutableVector.set(point.getLerpPoint(evaluator));
+                mutableVector.setPercentCompleted(point.getPercentCompleted());
                 float blendWeight = this.data.getBlendWeight();
                 if (blendWeight != 1.0f) {
-                    result.mul(blendWeight);
+                    mutableVector.mul(blendWeight);
                 }
             } else if (point instanceof TransitionPoint transition) {
                 Vector3f vector3fMul = transition.evaluateRaw(evaluator).mul(this.data.getBlendWeight());
-                MathUtil.nlerpEulerAngles(transition.getLerpFactor(), transition.getOffsetPoint(), vector3fMul, this.data.topLevelSnapshot.bone.getInitialRotation(), vector3fMul);
-                result = new TransitionVector3f(vector3fMul);
-                result.setPercentCompleted(0.0f);
+                MathUtil.nlerpEulerAngles(transition.getLerpFactor(), transition.getOffsetPoint(), vector3fMul, this.data.topLevelSnapshot.bone.getInitialRotation(), vector3fMul, this.rotScratch);
+                mutableVector.set(vector3fMul);
+                mutableVector.setPercentCompleted(0.0f);
             } else {
-                result = new TransitionVector3f(point.getLerpPoint(evaluator));
+                mutableVector.set(point.getLerpPoint(evaluator));
                 float blendWeight2 = this.data.getBlendWeight();
                 if (blendWeight2 != 1.0f) {
-                    result.mul(blendWeight2);
+                    mutableVector.mul(blendWeight2);
                 }
-                result.setPercentCompleted(0.0f);
+                mutableVector.setPercentCompleted(0.0f);
             }
-            return Optional.of(result);
+            return mutableVector;
         }
 
         @Override
-        public Optional<TransitionVector3f> getPosition(ExpressionEvaluator<AnimationContext<?>> evaluator) {
+        public TransitionVector3f getPosition(ExpressionEvaluator<AnimationContext<?>> evaluator) {
             AnimationPoint point = this.data.positionQueue;
             if (point == null) {
-                return Optional.empty();
+                return null;
             }
-            TransitionVector3f result = new TransitionVector3f(point.getLerpPoint(evaluator));
+            mutableVector.set(point.getLerpPoint(evaluator));
             float blendWeight = this.data.getBlendWeight();
             if (point instanceof ConstantPoint) {
-                result.setPercentCompleted(point.getPercentCompleted());
+                mutableVector.setPercentCompleted(point.getPercentCompleted());
             } else {
                 if (point instanceof TransitionPoint) {
                     blendWeight = MathUtil.lerpValues(((TransitionPoint) point).getLerpFactor(), 1.0f, blendWeight);
                 }
-                result.setPercentCompleted(0.0f);
+                mutableVector.setPercentCompleted(0.0f);
             }
             if (blendWeight != 1.0f) {
-                result.mul(blendWeight);
+                mutableVector.mul(blendWeight);
             }
-            return Optional.of(result);
+            return mutableVector;
         }
 
         @Override
-        public Optional<TransitionVector3f> getScale(ExpressionEvaluator<AnimationContext<?>> evaluator) {
+        public TransitionVector3f getScale(ExpressionEvaluator<AnimationContext<?>> evaluator) {
             AnimationPoint point = this.data.scaleQueue;
             if (point == null) {
-                return Optional.empty();
+                return null;
             }
-            TransitionVector3f result = new TransitionVector3f(point.getLerpPoint(evaluator));
+            mutableVector.set(point.getLerpPoint(evaluator));
             float blendWeight = this.data.getBlendWeight();
             if (point instanceof ConstantPoint) {
-                result.setPercentCompleted(point.getPercentCompleted());
+                mutableVector.setPercentCompleted(point.getPercentCompleted());
             } else {
                 if (point instanceof TransitionPoint) {
                     blendWeight = MathUtil.lerpValues(((TransitionPoint) point).getLerpFactor(), 1.0f, blendWeight);
                 }
-                result.setPercentCompleted(0.0f);
+                mutableVector.setPercentCompleted(0.0f);
             }
             if (blendWeight != 1.0f) {
-                MathUtil.lerpAnglesInPlace(result, blendWeight, result);
+                MathUtil.lerpAnglesInPlace(mutableVector, blendWeight, mutableVector);
             }
-            return Optional.of(result);
+            return mutableVector;
         }
+
+        public BoneAnimationQueue data() {
+            return data;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            var that = (TransformProviderRecord) obj;
+            return Objects.equals(this.data, that.data);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(data);
+        }
+
+        @Override
+        public String toString() {
+            return "TransformProviderRecord[" +
+                    "data=" + data + ']';
+        }
+
     }
 }

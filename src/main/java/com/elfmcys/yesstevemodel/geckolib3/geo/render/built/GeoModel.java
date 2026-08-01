@@ -1,20 +1,29 @@
 package com.elfmcys.yesstevemodel.geckolib3.geo.render.built;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
 import com.elfmcys.yesstevemodel.resource.models.GeometryDescription;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
+import rip.ysm.gpu.GpuRenderPath;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * Bedrock的.geo模型文件
@@ -99,30 +108,163 @@ public class GeoModel {
 
     public static class BakedCube {
         public boolean cullable = false;
-        public float pivotX, pivotY, pivotZ;
-        public float rotX, rotY, rotZ;
+        //        public float pivotX, pivotY, pivotZ;
+//        public float rotX, rotY, rotZ;
         public List<BakedQuad> quads = new ObjectArrayList<>();
     }
 
     public static class BakedQuad {
-        public Vector3f[] positions = new Vector3f[4];
-        public Vector2f[] uvs = new Vector2f[4];
-        public Vector3f normal;
+        public final float[] positions = new float[12];
+        public final float[] uvs = new float[8];
+        public final float[] normal = new float[3];
+        public boolean isTranslucent;
     }
 
+//    static {
+//        System.load("test.dll");
+//    }
+
     public long nativeModelHandle = 0;
-    public final ByteBuffer vertexOutBuffer = /*ByteBuffer.allocateDirect(900000 * 14 * 4).order(ByteOrder.nativeOrder())*/null; //FIXME
+
+    public long gpuMeshHandle = 0;
+
+    public static void initSIMD() {
+        try {
+            String bufferName = null;
+            String verticesName = null;
+            String nextElementByteName = null;
+            String ensureCapacityName = null;
+            String modeName = null;
+
+
+            String classPath = "/com/elfmcys/yesstevemodel/mixin/client/BufferBuilderMixin.class";
+            InputStream is = GeoModel.class.getResourceAsStream(classPath);
+
+            if (is == null) {
+                YesSteveModel.LOGGER.error("[YSM] Could not find Mixin class resource!");
+                return;
+            }
+
+            ClassReader classReader = new ClassReader(is); //客户端环境没法加载mixin类，只能这样了
+            ClassNode classNode = new ClassNode();
+            classReader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            is.close();
+
+
+            String targetAnnotationDesc = "Lrip/ysm/annotations/BufferBuilderMapping;";
+
+            BiFunction<List<AnnotationNode>, String, String> getAnnotationValue = (annotations, targetDesc) -> {
+                if (annotations == null) return null;
+                for (AnnotationNode ann : annotations) {
+                    if (targetDesc.equals(ann.desc) && ann.values != null) {
+                        for (int i = 0; i < ann.values.size(); i += 2) {
+                            if ("value".equals(ann.values.get(i))) {
+                                return (String) ann.values.get(i + 1);
+                            }
+                        }
+                    }
+                }
+                return null;
+            };
+
+
+            BiFunction<List<AnnotationNode>, List<AnnotationNode>, String> extractMappingId = (visibleAnns, invisibleAnns) -> {
+                String id = getAnnotationValue.apply(visibleAnns, targetAnnotationDesc);
+                return id != null ? id : getAnnotationValue.apply(invisibleAnns, targetAnnotationDesc);
+            };
+
+            for (FieldNode field : classNode.fields) {
+                String id = extractMappingId.apply(field.visibleAnnotations, field.invisibleAnnotations);
+                if (id != null) {
+                    switch (id) {
+                        case "buffer_builder_buffer": bufferName = field.name; break;
+                        case "buffer_builder_vertices": verticesName = field.name; break;
+                        case "buffer_builder_nextElementByte": nextElementByteName = field.name; break;
+                        case "buffer_builder_mode": modeName = field.name; break;
+                    }
+                }
+            }
+
+            for (MethodNode method : classNode.methods) {
+                String id = extractMappingId.apply(method.visibleAnnotations, method.invisibleAnnotations);
+                if ("buffer_builder_ensureCapacity".equals(id)) {
+                    ensureCapacityName = method.name;
+                }
+            }
+
+            YesSteveModel.LOGGER.info("[YSM] Dynamic Mapping Loaded: buffer={}, vertices={}, nextElementByte={}, mode={}, ensureCapacity={}",
+                    bufferName, verticesName, nextElementByteName, modeName, ensureCapacityName);
+
+            nInitSIMD(
+                    BufferBuilder.class,
+                    bufferName,
+                    verticesName,
+                    nextElementByteName,
+                    ensureCapacityName,
+                    modeName,
+                    VertexFormat.Mode.class
+            );
+        } catch (Throwable ex) {
+            YesSteveModel.LOGGER.error("[YSM] Failed to initialize SIMD mappings, fast vertex building will not work.", ex);
+        }
+    }
+
+    private static native void nInitSIMD(
+            Class<?> bufferBuilderClass,
+            String bufferName,
+            String verticesName,
+            String nextElementByteName,
+            String ensureCapacityName,
+            String modeName,
+            Class<?> vertexFormatClass
+    );
 
     public static native long nInitModelCache(ByteBuffer buffer);
 
     public static native void nDestroyModelCache(long handle);
 
-    public static native int nComputeModelVertices(long handle, ByteBuffer outBuffer, ByteBuffer matrixBuffer, ByteBuffer animBuffer, int renderPartMask, int packedLight, int packedOverlay, float r, float g, float b, float a, boolean sb);
+    public static native void nComputeModelVertices(
+            long handle,
+            Object vertexConsumer,
+            float[] matrixArray,
+            float[] animArray,
+            float[] stateArray,
+            int renderPartMask,
+            int packedLight,
+            int packedOverlay,
+            float r, float g, float b, float a
+    );
+
+    public static native long nBuildGpuMesh(ByteBuffer buffer, int[] outMeta);
+
+    public static native ByteBuffer nGetGpuMeshVertexBuffer(long pointer);
+
+    public static native ByteBuffer nGetGpuMeshIndexBuffer(long pointer);
+
+    public static native void nReleaseGpuMeshScratch(long pointer);
+
+    public static native void nFreeGpuMesh(long pointer);
+
+    public static native void nComputeBoneMatrices(long pointer, float[] rootPose, float[] rootNormal, float[] anim, int packedLight, ByteBuffer outBoneBuffer);
+
+    public static native void nComputeBoneMatricesLocal(long handle, float[] animArray, int packedLight, ByteBuffer outBoneBuffer);
 
     public void buildNativeCache() {
         if (bakedBones == null || bakedBones.isEmpty()) return;
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024 * 20).order(ByteOrder.nativeOrder());
+        int totalBones = bakedBones.size();
+        int totalCubes = 0;
+        int totalQuads = 0;
+
+        for (BakedBone bone : bakedBones) {
+            totalCubes += bone.cubes.size();
+            for (BakedCube cube : bone.cubes) {
+                totalQuads += cube.quads.size();
+            }
+        }
+
+        int initBufferSize = 4 + (totalBones * 25) + (totalCubes * 5) + (totalQuads * 93);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(initBufferSize).order(ByteOrder.nativeOrder());
 
         buffer.putInt(bakedBones.size());
         for (BakedBone bone : bakedBones) {
@@ -138,31 +280,32 @@ public class GeoModel {
                 buffer.put((byte) (cube.cullable ? 1 : 0));
                 buffer.putInt(cube.quads.size());
                 for (BakedQuad quad : cube.quads) {
-                    for (int v = 0; v < 4; v++) { // 12 floats
-                        buffer.putFloat(quad.positions[v].x());
-                        buffer.putFloat(quad.positions[v].y());
-                        buffer.putFloat(quad.positions[v].z());
+                    buffer.put((byte) (quad.isTranslucent ? 1 : 0)); //是否含半透明
+                    for (float position : quad.positions) {
+                        buffer.putFloat(position);
                     }
-                    for (int v = 0; v < 4; v++) { // 8 floats
-                        buffer.putFloat(quad.uvs[v].x());
-                        buffer.putFloat(quad.uvs[v].y());
+                    for (float uv : quad.uvs) {
+                        buffer.putFloat(uv);
                     }
-                    // 3 floats
-                    buffer.putFloat(quad.normal.x());
-                    buffer.putFloat(quad.normal.y());
-                    buffer.putFloat(quad.normal.z());
+                    // 3 floats *4=12
+                    buffer.putFloat(quad.normal[0]);
+                    buffer.putFloat(quad.normal[1]);
+                    buffer.putFloat(quad.normal[2]);
                 }
             }
         }
 
         buffer.position(0);
-//        this.nativeModelHandle = nInitModelCache(buffer);
+        this.nativeModelHandle = nInitModelCache(buffer);
     }
 
     public void freeNativeCache() {
         if (nativeModelHandle != 0) {
             nDestroyModelCache(nativeModelHandle);
             nativeModelHandle = 0;
+        }
+        if (gpuMeshHandle != 0) {
+            GpuRenderPath.disposeMesh(this);
         }
     }
 

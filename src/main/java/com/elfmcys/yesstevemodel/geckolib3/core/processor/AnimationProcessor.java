@@ -1,19 +1,21 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.processor;
 
 import com.elfmcys.yesstevemodel.audio.AudioPlayerManager;
-import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
-import com.elfmcys.yesstevemodel.geckolib3.core.controller.BoneTransformProvider;
-import com.elfmcys.yesstevemodel.geckolib3.core.controller.IAnimationController;
-import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.manager.AnimationData;
-import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
+import com.elfmcys.yesstevemodel.geckolib3.core.controller.IAnimationController;
+import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
+import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
+import com.elfmcys.yesstevemodel.geckolib3.core.event.predicate.AnimationEvent;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.storage.IForeignVariableStorage;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.storage.VariableStorage;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.value.IValue;
 import com.elfmcys.yesstevemodel.geckolib3.core.snapshot.BoneTopLevelSnapshot;
+import com.elfmcys.yesstevemodel.geckolib3.core.util.EulerNlerpScratch;
 import com.elfmcys.yesstevemodel.geckolib3.core.util.MathUtil;
-import com.elfmcys.yesstevemodel.geckolib3.geo.animated.AnimatedGeoModel;
+import com.elfmcys.yesstevemodel.geckolib3.core.controller.BoneTransformProvider;
+import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
+import com.elfmcys.yesstevemodel.geckolib3.core.util.TransitionVector3f;
 import com.elfmcys.yesstevemodel.molang.runtime.ExpressionEvaluator;
 import com.elfmcys.yesstevemodel.molang.runtime.Struct;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceMaps;
@@ -60,6 +62,13 @@ public class AnimationProcessor<TEntity extends Entity> {
 
     private boolean needsInit = false;
 
+    // tickAnimation 给每帧 forEachTransform 复用同一个 Consumer
+    private final Consumer<BoneTransformProvider> transformConsumer = this::applyTransform;
+    private ExpressionEvaluator<AnimationContext<?>> currentEvaluator;
+    private float currentSeekTime;
+    private boolean currentDeprecatedMode;
+    private final EulerNlerpScratch rotScratch = new EulerNlerpScratch();
+
     public AnimationProcessor(AnimatableEntity<TEntity> animatable) {
         this.animatable = animatable;
     }
@@ -78,121 +87,128 @@ public class AnimationProcessor<TEntity extends Entity> {
         }
         preProcess(evaluator);
         AnimationData manager = this.animatable.getAnimationData();
-        int controllerCount = 0;
-        int boneTransformCount = 0;
+        this.currentEvaluator = evaluator;
+        this.currentSeekTime = seekTime;
         for (IAnimationController controller : manager.getAnimationControllers()) {
             if (this.needsInit) {
                 controller.init(this.bones, this.initExpressions);
             }
             if (z) {
                 controller.process(event, evaluator, z2);
-                controllerCount++;
             }
-            boolean deprecatedMode = controller.isDeprecatedMode();
-            controller.forEachTransform(provider -> {
-                BoneTopLevelSnapshot snapshot = ((BoneTransformProvider) provider).getBoneTarget();
-                if (!snapshot.isCurrentlyRunningAnimation) {
-                    snapshot.isCurrentlyRunningAnimation = true;
-                    this.modelRendererList.add(snapshot);
-                }
-                ((BoneTransformProvider) provider).getRotation(evaluator).ifPresent(value -> {
-                    Vector3f vector3f = snapshot.currentValue;
-                    if (!snapshot.isCurrentlyRunningRotationAnimation) {
-                        snapshot.isCurrentlyRunningRotationAnimation = true;
-                        snapshot.rotation.set(0.0f, 0.0f, 0.0f);
-                    }
-                    snapshot.mostRecentResetRotationTick = seekTime;
-                    if (deprecatedMode) {
-                        vector3f.add(value);
-                        snapshot.rotation.set(vector3f);
-                    } else {
-                        value.applyRotationBlendTo(snapshot.rotation, ((BoneTransformProvider) provider).getBoneTarget().bone.getInitialRotation());
-                        vector3f.set(snapshot.rotation);
-                    }
-                });
-                ((BoneTransformProvider) provider).getPosition(evaluator).ifPresent(value2 -> {
-                    if (!snapshot.isCurrentlyRunningPositionAnimation) {
-                        snapshot.isCurrentlyRunningPositionAnimation = true;
-                        snapshot.position.set(0.0f, 0.0f, 0.0f);
-                    }
-                    snapshot.mostRecentResetPositionTick = seekTime;
-                    value2.applyLinearBlendTo(snapshot.position);
-                });
-                ((BoneTransformProvider) provider).getScale(evaluator).ifPresent(value3 -> {
-                    if (!snapshot.isCurrentlyRunningScaleAnimation) {
-                        snapshot.isCurrentlyRunningScaleAnimation = true;
-                        snapshot.scale.set(1.0f, 1.0f, 1.0f);
-                    }
-                    snapshot.mostRecentResetScaleTick = seekTime;
-                    value3.applyLinearBlendTo(snapshot.scale);
-                });
-            });
-            boneTransformCount++;
+            this.currentDeprecatedMode = controller.isDeprecatedMode();
+            controller.forEachTransform(this.transformConsumer);
         }
+        this.currentEvaluator = null;
         this.needsInit = false;
-        if (z) {
-            Iterator<BoneTopLevelSnapshot> iterator = this.modelRendererList.iterator();
-            while (iterator.hasNext()) {
-                BoneTopLevelSnapshot topLevelSnapshot = iterator.next();
-                boolean runningAnimation = false;
-                if (topLevelSnapshot.isCurrentlyRunningRotationAnimation) {
+        Iterator<BoneTopLevelSnapshot> iterator = this.modelRendererList.iterator();
+        while (iterator.hasNext()) {
+            BoneTopLevelSnapshot topLevelSnapshot = iterator.next();
+            boolean runningAnimation = false;
+            if (topLevelSnapshot.isCurrentlyRunningRotationAnimation) {
+                runningAnimation = true;
+                topLevelSnapshot.isCurrentlyRunningRotationAnimation = false;
+                topLevelSnapshot.prevRotation = null;
+            } else {
+                if (topLevelSnapshot.prevRotation == null) {
+                    topLevelSnapshot.prevRotation = new Vector3f(topLevelSnapshot.rotation);
+                }
+                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetRotationTick) / manager.getResetSpeed();
+                if (percentageReset < 1.0f) {
                     runningAnimation = true;
-                    topLevelSnapshot.isCurrentlyRunningRotationAnimation = false;
-                    topLevelSnapshot.prevRotation = null;
+                    MathUtil.nlerpEulerAngles(percentageReset, topLevelSnapshot.prevRotation, MathUtil.ZERO, topLevelSnapshot.bone.getInitialRotation(), topLevelSnapshot.rotation, this.rotScratch);
                 } else {
-                    if (topLevelSnapshot.prevRotation == null) {
-                        topLevelSnapshot.prevRotation = new Vector3f(topLevelSnapshot.rotation);
-                    }
-                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetRotationTick) / manager.getResetSpeed();
-                    if (percentageReset < 1.0f) {
-                        runningAnimation = true;
-                        MathUtil.nlerpEulerAngles(percentageReset, topLevelSnapshot.prevRotation, MathUtil.ZERO, topLevelSnapshot.bone.getInitialRotation(), topLevelSnapshot.rotation);
-                    } else {
-                        topLevelSnapshot.rotation.set(MathUtil.ZERO);
-                    }
+                    topLevelSnapshot.rotation.set(MathUtil.ZERO);
                 }
-                if (topLevelSnapshot.isCurrentlyRunningPositionAnimation) {
+            }
+            if (topLevelSnapshot.isCurrentlyRunningPositionAnimation) {
+                runningAnimation = true;
+                topLevelSnapshot.isCurrentlyRunningPositionAnimation = false;
+                topLevelSnapshot.prevPosition = null;
+            } else {
+                if (topLevelSnapshot.prevPosition == null) {
+                    topLevelSnapshot.prevPosition = new Vector3f(topLevelSnapshot.position);
+                }
+                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetPositionTick) / manager.getResetSpeed();
+                if (percentageReset < 1.0f) {
                     runningAnimation = true;
-                    topLevelSnapshot.isCurrentlyRunningPositionAnimation = false;
-                    topLevelSnapshot.prevPosition = null;
+                    MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevPosition, MathUtil.ZERO, topLevelSnapshot.position);
                 } else {
-                    if (topLevelSnapshot.prevPosition == null) {
-                        topLevelSnapshot.prevPosition = new Vector3f(topLevelSnapshot.position);
-                    }
-                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetPositionTick) / manager.getResetSpeed();
-                    if (percentageReset < 1.0f) {
-                        runningAnimation = true;
-                        MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevPosition, MathUtil.ZERO, topLevelSnapshot.position);
-                    } else {
-                        topLevelSnapshot.position.set(0.0f, 0.0f, 0.0f);
-                    }
+                    topLevelSnapshot.position.set(0.0f, 0.0f, 0.0f);
                 }
-                if (topLevelSnapshot.isCurrentlyRunningScaleAnimation) {
+            }
+            if (topLevelSnapshot.isCurrentlyRunningScaleAnimation) {
+                runningAnimation = true;
+                topLevelSnapshot.isCurrentlyRunningScaleAnimation = false;
+                topLevelSnapshot.prevScale = null;
+            } else {
+                if (topLevelSnapshot.prevScale == null) {
+                    topLevelSnapshot.prevScale = new Vector3f(topLevelSnapshot.scale);
+                }
+                float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetScaleTick) / manager.getResetSpeed();
+                if (percentageReset < 1.0f) {
                     runningAnimation = true;
-                    topLevelSnapshot.isCurrentlyRunningScaleAnimation = false;
-                    topLevelSnapshot.prevScale = null;
+                    MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevScale, MathUtil.ONE, topLevelSnapshot.scale);
                 } else {
-                    if (topLevelSnapshot.prevScale == null) {
-                        topLevelSnapshot.prevScale = new Vector3f(topLevelSnapshot.scale);
-                    }
-                    float percentageReset = (seekTime - topLevelSnapshot.mostRecentResetScaleTick) / manager.getResetSpeed();
-                    if (percentageReset < 1.0f) {
-                        runningAnimation = true;
-                        MathUtil.lerpValues(percentageReset, topLevelSnapshot.prevScale, MathUtil.ONE, topLevelSnapshot.scale);
-                    } else {
-                        topLevelSnapshot.scale.set(1.0f, 1.0f, 1.0f);
-                    }
+                    topLevelSnapshot.scale.set(1.0f, 1.0f, 1.0f);
                 }
-                topLevelSnapshot.reset();
-                if (!runningAnimation) {
-                    topLevelSnapshot.isCurrentlyRunningAnimation = false;
-                    iterator.remove();
-                }
+            }
+            topLevelSnapshot.reset();
+            if (!runningAnimation) {
+                topLevelSnapshot.isCurrentlyRunningAnimation = false;
+                iterator.remove();
             }
         }
         context.setPlaybackFlags(null);
         context.setAnimationControllerContext(null);
         postProcess(evaluator);
+    }
+
+    private void applyTransform(BoneTransformProvider provider) {
+        final BoneTopLevelSnapshot snapshot = provider.getBoneTarget();
+        if (!snapshot.isCurrentlyRunningAnimation) {
+            snapshot.isCurrentlyRunningAnimation = true;
+            this.modelRendererList.add(snapshot);
+        }
+        final ExpressionEvaluator<AnimationContext<?>> evaluator = this.currentEvaluator;
+        final float seekTime = this.currentSeekTime;
+
+        TransitionVector3f rot = provider.getRotation(evaluator);
+        if (rot != null) {
+            Vector3f vector3f = snapshot.currentValue;
+            if (!snapshot.isCurrentlyRunningRotationAnimation) {
+                snapshot.isCurrentlyRunningRotationAnimation = true;
+                snapshot.rotation.set(0.0f, 0.0f, 0.0f);
+            }
+            snapshot.mostRecentResetRotationTick = seekTime;
+            if (this.currentDeprecatedMode) {
+                vector3f.add(rot);
+                snapshot.rotation.set(vector3f);
+            } else {
+                rot.applyRotationBlendTo(snapshot.rotation, snapshot.bone.getInitialRotation(), this.rotScratch);
+                vector3f.set(snapshot.rotation);
+            }
+        }
+
+        TransitionVector3f pos = provider.getPosition(evaluator);
+        if (pos != null) {
+            if (!snapshot.isCurrentlyRunningPositionAnimation) {
+                snapshot.isCurrentlyRunningPositionAnimation = true;
+                snapshot.position.set(0.0f, 0.0f, 0.0f);
+            }
+            snapshot.mostRecentResetPositionTick = seekTime;
+            pos.applyLinearBlendTo(snapshot.position);
+        }
+
+        TransitionVector3f scale = provider.getScale(evaluator);
+        if (scale != null) {
+            if (!snapshot.isCurrentlyRunningScaleAnimation) {
+                snapshot.isCurrentlyRunningScaleAnimation = true;
+                snapshot.scale.set(1.0f, 1.0f, 1.0f);
+            }
+            snapshot.mostRecentResetScaleTick = seekTime;
+            scale.applyLinearBlendTo(snapshot.scale);
+        }
     }
 
     @Nullable
@@ -299,7 +315,6 @@ public class AnimationProcessor<TEntity extends Entity> {
         this.animationStorage.forEachPropertyName(consumer);
     }
 
-    private record PendingExpression(IValue IValue, boolean isClientPlayer, boolean executeBeforeAnimation,
-                                     Consumer<String> callback) {
+    private record PendingExpression(IValue IValue, boolean isClientPlayer, boolean executeBeforeAnimation, Consumer<String> callback) {
     }
 }

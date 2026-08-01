@@ -1,20 +1,20 @@
 package com.elfmcys.yesstevemodel.geckolib3.core.controller;
 
-import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.*;
-import com.elfmcys.yesstevemodel.geckolib3.core.event.SoundKeyFrameExecutor;
-import com.elfmcys.yesstevemodel.geckolib3.core.event.InstructionKeyFrameExecutor;
 import com.elfmcys.yesstevemodel.geckolib3.core.AnimatableEntity;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.Animation;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.ILoopType;
-import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.bone.BoneKeyFrame;
 import com.elfmcys.yesstevemodel.geckolib3.core.enums.AnimationState;
+import com.elfmcys.yesstevemodel.geckolib3.core.event.InstructionKeyFrameExecutor;
+import com.elfmcys.yesstevemodel.geckolib3.core.event.SoundKeyFrameExecutor;
+import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.*;
+import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.bone.BoneKeyFrame;
 import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.bone.TransitionKeyFrame;
+import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
 import com.elfmcys.yesstevemodel.geckolib3.core.snapshot.BoneSnapshot;
 import com.elfmcys.yesstevemodel.geckolib3.core.snapshot.BoneTopLevelSnapshot;
 import com.elfmcys.yesstevemodel.geckolib3.util.IInterpolable;
 import com.elfmcys.yesstevemodel.geckolib3.util.InterpolationLookup;
 import com.elfmcys.yesstevemodel.geckolib3.util.TicksInterpolator;
-import com.elfmcys.yesstevemodel.geckolib3.core.molang.context.AnimationContext;
 import com.elfmcys.yesstevemodel.molang.runtime.ExpressionEvaluator;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
@@ -116,7 +116,7 @@ public class  AnimationControllerInstance {
         }
         if (this.animationState == AnimationState.RUNNING && this.currentAnimationLoop == ILoopType.EDefaultLoopTypes.PLAY_ONCE && adjustedTick >= this.currentAnimation.animationLength) {
             executeRemainingEvents(evaluator, z);
-            startEndingTransition(tick);
+            startEndingTransition(tick, evaluator);
             this.context.executeRenderLayers(evaluator);
             adjustedTick = adjustTick(tick);
         }
@@ -205,18 +205,22 @@ public class  AnimationControllerInstance {
         }
     }
 
-    private void startEndingTransition(float tick) {
+    private void startEndingTransition(float tick, ExpressionEvaluator<AnimationContext<?>> evaluator) {
         if (this.animationState == AnimationState.RUNNING || this.animationState == AnimationState.BEGINNING_TRANSITION) {
             float adjustedTick = adjustTick(tick);
+            float sampleTick = Math.min(adjustedTick, this.currentAnimation.animationLength);
             for (BoneAnimationQueue animationQueue : this.activeBoneAnimationQueues) {
-                if (animationQueue.rotationQueue != null && animationQueue.rotationQueue.cachedValue != null) {
-                    animationQueue.positionOutput = new Vector3f(animationQueue.rotationQueue.cachedValue);
+                Vector3f rotation = sampleTimeline(animationQueue.rotationTimeline, animationQueue.rotationQueue, sampleTick, evaluator);
+                if (rotation != null) {
+                    animationQueue.positionOutput = rotation;
                 }
-                if (animationQueue.positionQueue != null && animationQueue.positionQueue.cachedValue != null) {
-                    animationQueue.rotationOutput = new Vector3f(animationQueue.positionQueue.cachedValue);
+                Vector3f position = sampleTimeline(animationQueue.positionTimeline, animationQueue.positionQueue, sampleTick, evaluator);
+                if (position != null) {
+                    animationQueue.rotationOutput = position;
                 }
-                if (animationQueue.scaleQueue != null && animationQueue.scaleQueue.cachedValue != null) {
-                    animationQueue.scaleOutput = new Vector3f(animationQueue.scaleQueue.cachedValue);
+                Vector3f scale = sampleTimeline(animationQueue.scaleTimeline, animationQueue.scaleQueue, sampleTick, evaluator);
+                if (scale != null) {
+                    animationQueue.scaleOutput = scale;
                 }
             }
             this.tickOffset = tick;
@@ -231,6 +235,23 @@ public class  AnimationControllerInstance {
             this.isAnimationFinished = true;
             this.animationState = AnimationState.ENDING_TRANSITION;
         }
+    }
+
+    @Nullable
+    private Vector3f sampleTimeline(@Nullable InterpolationLookup<BoneKeyFrame> timeline, @Nullable AnimationPoint point, float tick, ExpressionEvaluator<AnimationContext<?>> evaluator) {
+        if (point != null && point.cachedValue != null) {
+            return new Vector3f(point.cachedValue);
+        }
+        if (timeline == null) {
+            return null;
+        }
+        BoneKeyFrame frame = timeline.getAtTime(tick);
+        if (frame == null) {
+            return null;
+        }
+        float frameTick = tick - frame.getStartTick();
+        float frameLength = frame.getEndTick() - frame.getStartTick();
+        return frame.evaluate(evaluator, frameLength <= 0.0f ? 1.0f : Math.min(frameTick / frameLength, 1.0f), new Vector3f());
     }
 
     private void processBeginningTransition(ExpressionEvaluator<AnimationContext<?>> evaluator, float tick) {
@@ -262,13 +283,16 @@ public class  AnimationControllerInstance {
         for (BoneAnimationQueue boneAnimationQueue : this.activeBoneAnimationQueues) {
             boneAnimationQueue.setBlendWeight(blendWeight);
             if (boneAnimationQueue.rotationTimeline != null) {
-                boneAnimationQueue.rotationQueue = getKeyFramePointAtTick(boneAnimationQueue.rotationTimeline, tick);
+                BoneKeyFrame frame = boneAnimationQueue.rotationTimeline.getAtTime(tick);
+                boneAnimationQueue.rotationQueue = boneAnimationQueue.updateRotationPoint(tick - frame.getStartTick(), frame, this.context);
             }
             if (boneAnimationQueue.positionTimeline != null) {
-                boneAnimationQueue.positionQueue = getKeyFramePointAtTick(boneAnimationQueue.positionTimeline, tick);
+                BoneKeyFrame frame = boneAnimationQueue.positionTimeline.getAtTime(tick);
+                boneAnimationQueue.positionQueue = boneAnimationQueue.updatePositionPoint(tick - frame.getStartTick(), frame, this.context);
             }
             if (boneAnimationQueue.scaleTimeline != null) {
-                boneAnimationQueue.scaleQueue = getKeyFramePointAtTick(boneAnimationQueue.scaleTimeline, tick);
+                BoneKeyFrame frame = boneAnimationQueue.scaleTimeline.getAtTime(tick);
+                boneAnimationQueue.scaleQueue = boneAnimationQueue.updateScalePoint(tick - frame.getStartTick(), frame, this.context);
             }
         }
     }
@@ -300,11 +324,6 @@ public class  AnimationControllerInstance {
     /**
      * 当前关键帧播放进度
      **/
-    private KeyFramePoint getKeyFramePointAtTick(InterpolationLookup<BoneKeyFrame> frames, float tick) {
-        BoneKeyFrame frame = frames.getAtTime(tick);
-        return new KeyFramePoint(tick - frame.getStartTick(), frame, this.context);
-    }
-
     /**
      * 返过渡进度
      **/
@@ -406,7 +425,7 @@ public class  AnimationControllerInstance {
         this.lastRequestedAnimation = null;
     }
 
-    public void beginEndingTransition(float tick) {
-        startEndingTransition(tick);
+    public void beginEndingTransition(float tick, ExpressionEvaluator<AnimationContext<?>> evaluator) {
+        startEndingTransition(tick, evaluator);
     }
 }

@@ -358,16 +358,13 @@ public class YSMClientMapper {
                     }
 
                     GeoModel.BakedQuad bq = new GeoModel.BakedQuad();
-                    bq.normal = new Vector3f(rf.normal[0], rf.normal[1], rf.normal[2]);
-                    bq.positions = new Vector3f[4];
-                    bq.uvs = new Vector2f[4];
+                    System.arraycopy(rf.normal, 0, bq.normal, 0, 3);
                     for (int i = 0; i < 4; i++) {
-                        float px = rf.positions[i][0];
-                        float py = rf.positions[i][1];
-                        float pz = rf.positions[i][2];
-
-                        bq.positions[i] = new Vector3f(px, py, pz);
-                        bq.uvs[i] = new Vector2f(rf.u[i], rf.v[i]);
+                        int positionOffset = i * 3;
+                        int uvOffset = i * 2;
+                        System.arraycopy(rf.positions[i], 0, bq.positions, positionOffset, 3);
+                        bq.uvs[uvOffset] = rf.u[i];
+                        bq.uvs[uvOffset + 1] = rf.v[i];
                     }
                     bc.quads.add(bq);
                     validFaceCount++;
@@ -375,17 +372,17 @@ public class YSMClientMapper {
 
                 boolean isZeroThickness = true;
                 if (!bc.quads.isEmpty()) {
-                    Vector3f baseNormal = bc.quads.get(0).normal;
-                    Vector3f basePos = bc.quads.get(0).positions[0];
+                    float[] baseNormal = bc.quads.get(0).normal;
+                    float[] basePositions = bc.quads.get(0).positions;
 
                     for (GeoModel.BakedQuad q : bc.quads) {
                         for (int i = 0; i < 4; i++) {
-                            Vector3f pos = q.positions[i];
-                            float dx = pos.x - basePos.x;
-                            float dy = pos.y - basePos.y;
-                            float dz = pos.z - basePos.z;
+                            int offset = i * 3;
+                            float dx = q.positions[offset] - basePositions[0];
+                            float dy = q.positions[offset + 1] - basePositions[1];
+                            float dz = q.positions[offset + 2] - basePositions[2];
 
-                            float distance = dx * baseNormal.x + dy * baseNormal.y + dz * baseNormal.z;
+                            float distance = dx * baseNormal[0] + dy * baseNormal[1] + dz * baseNormal[2];
 
                             if (Math.abs(distance) > 1e-3f) {
                                 isZeroThickness = false;
