@@ -1,33 +1,19 @@
 package rip.ysm.gpu;
 
-import com.elfmcys.yesstevemodel.config.GeneralConfig;
+import com.elfmcys.yesstevemodel.NativeLibLoader;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 
-/**
- * GPU 能力检测。对齐 Sparkle-Morpher 的 Android/MobileGlues 方案：
- * - ForceGpuRenderer 配置（默认 true）开启 forced 模式：跳过扩展广告检查，
- *   MobileGlues/GLES 翻译层（报告桌面 GL 4.0 但扩展位缺失）下仍可用 GPU 渲染
- *   （layout(binding=0) 的 SSBO 在翻译层上正常工作，Sparkle 已验证）。
- * - 移除 isOnAndroid/GLES 硬拦截：GPU 能力由运行时检测 + forced 决定，不再按平台一刀切。
- */
 public final class GpuCapability {
     private static volatile boolean checked = false;
     private static volatile boolean available = false;
-    private static volatile boolean forced = false;
     private static volatile String reason = null;
-    private static volatile boolean unavailableLogged;
 
     public static boolean isAvailable() {
         if (!checked) check();
         return available;
-    }
-
-    public static boolean isForced() {
-        if (!checked) check();
-        return forced;
     }
 
     public static String getReason() {
@@ -35,36 +21,22 @@ public final class GpuCapability {
         return reason;
     }
 
-    public static void logUnavailableOnce() {
-        if (unavailableLogged || isAvailable()) {
-            return;
-        }
-        unavailableLogged = true;
-        System.out.println("[ysm] GPU unavailable: " + getReason());
-    }
-
-    public static synchronized void resetForTesting() {
-        checked = false;
-        available = false;
-        forced = false;
-        reason = null;
-        unavailableLogged = false;
-    }
-
     public static synchronized void check() {
         if (checked) return;
         checked = true;
 
         if (System.getProperty("OYSM_DISABLE_GPU") != null) {
-            reason = "gpu renderer has been disabled (OYSM_DISABLE_GPU)";
+            reason = "gpu renderer has been disabled";
+            return;
+        }
+        if (!NativeLibLoader.isLoaded()) {
+            reason = "native ysm-core not loaded";
             return;
         }
         String osName = System.getProperty("os.name", "").toLowerCase();
         if (osName.contains("mac") || osName.contains("darwin")) {
-            if (!isForceRequested()) {
-                reason = "macOS GL is capped at 4.1 and lacks GL_ARB_shader_storage_buffer_object";
-                return;
-            }
+            reason = "macOS GL is capped at 4.1 and lacks GL_ARB_shader_storage_buffer_object";
+            return;
         }
 
         GLCapabilities caps;
@@ -89,6 +61,13 @@ public final class GpuCapability {
             return;
         }
 
+        // GLES/MobileGlues 环境（安卓翻译层）不视为桌面 OpenGL：即使报告 GL 4.0 Core Profile，
+        // 也缺少桌面 GL 的完整特性（SSBO/程序接口查询等），且桌面 GL 着色器路径会破坏渲染状态
+        if (glslVersion != null && (glslVersion.contains("OpenGL ES") || glslVersion.toLowerCase().contains("mobileglues"))) {
+            reason = "GLES context detected (" + glslVersion + ")";
+            return;
+        }
+
         System.out.println("OpenGL version: " + glVersion);
         System.out.println("OpenGL renderer version: " + glRenderer);
         System.out.println("OpenGL vendor: " + glVendor);
@@ -96,16 +75,6 @@ public final class GpuCapability {
 
         if (!caps.OpenGL30) {
             reason = "OpenGL 3.0 not supported (got " + glVersion + ")";
-            return;
-        }
-
-        boolean force = isForceRequested();
-        if (force) {
-            // MobileGlues / under-reporting layers: skip extension ads; layout(binding=0) SSBO still works.
-            available = true;
-            forced = true;
-            reason = "forced ok (skip GL extension ad check; GL " + glVersion + ", " + glRenderer + ")";
-            System.out.println("[ysm] GPU capability forced: " + reason);
             return;
         }
 
@@ -137,13 +106,5 @@ public final class GpuCapability {
 
         available = true;
         reason = "ok (GL " + glVersion + ", " + glRenderer + ")";
-    }
-
-    private static boolean isForceRequested() {
-        String prop = System.getProperty("OYSM_FORCE_GPU");
-        if (prop != null) {
-            return !"false".equalsIgnoreCase(prop) && !"0".equals(prop);
-        }
-        return GeneralConfig.FORCE_GPU_RENDERER != null && GeneralConfig.FORCE_GPU_RENDERER.get();
     }
 }

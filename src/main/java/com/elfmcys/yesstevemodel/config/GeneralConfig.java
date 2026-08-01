@@ -31,8 +31,6 @@ public class GeneralConfig {
     public static ModConfigSpec.BooleanValue PARCOOL;
 
     public static ModConfigSpec.BooleanValue USE_GPU_RENDERER;
-    /** 强制 GPU 渲染：MobileGlues/翻译层下跳过扩展检查（Sparkle-Morpher 验证在安卓 GLES 翻译层可用） */
-    public static ModConfigSpec.BooleanValue FORCE_GPU_RENDERER;
 
     public static ModConfigSpec.BooleanValue LAZY_MODEL_LOADING;
 
@@ -107,8 +105,6 @@ public class GeneralConfig {
         USE_COMPATIBILITY_RENDERER = builder.define("UseCompatibilityRenderer", false);
         builder.comment("Test renderer.");
         USE_GPU_RENDERER = builder.define("UseGpuRenderer", true);
-        builder.comment("Force GPU renderer even when GL extensions are under-reported (MobileGlues/GLES translation layers).");
-        FORCE_GPU_RENDERER = builder.define("ForceGpuRenderer", true);
         LAZY_MODEL_LOADING = builder.define("LazyModelLoading", true);
         builder.comment("Always use client-only mode");
         FORCE_CLIENT_MODE = builder.define("ForceClientMode", false);
