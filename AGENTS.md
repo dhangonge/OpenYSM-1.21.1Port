@@ -61,12 +61,19 @@ stub 化的 compat 列表：bettercombat, carryon, cosmeticarmorreworked (部分
 |------|------|------|
 | 0 | 构建加固、stub、native、ImageStream | ✅ 完成 |
 | 1 | 拼音搜索核心、ClientOnly 模式、配置/语言 | ✅ 完成 |
-| 1b | SearchSuggestions + PlayerModelScreen 搜索 UI | 推迟到阶段 2（依赖 `rip.ysm.gui`） |
-| 2 | 序列化器、ServerModelManager、ClientModelManager、rip.ysm.gui | 待开始 |
-| 3 | geckolib3 关键帧、GeoModel、native 渲染恢复 | 待开始 |
-| 4 | 网络层（YSMChannel → PayloadRegistrar） | 待开始 |
-| 5 | 兼容修复、Issue #1、渲染缺陷 | 待开始 |
-| 6 | 版本号 2.6.6.6、mods.toml MIT、实测 | 待开始 |
+| 1b | SearchSuggestions + PlayerModelScreen 搜索 UI | ✅ 完成 |
+| 2 | rip.ysm.gui、搜索 UI、API 对齐（PlayerCapability.get 等） | ✅ 完成 |
+| 3 | geckolib3 关键帧重构、GPU 渲染栈、native 恢复 | ✅ 完成 |
+| 4 | 网络层：大模型分片协议、握手 brand、mixin accessor 补全 | ✅ 完成 |
+| 5 | 现代配置界面、模型上传系统、女仆兼容 | ✅ 完成 |
+| 6 | 版本号 2.6.6.6、mods.toml MIT | ✅ 完成 |
+
+版本号：`2.6.6.6-NeoForge+mc1.21.1`（build.gradle 与 mods.toml 均已同步）。
+
+## 已知平台限制
+
+- **安卓（FCL）**：native/GPU 渲染路径已禁用（`NativeLibLoader.isOnAndroid()` 时强制 CPU 渲染），因 C++ 背面剔除按桌面 GL 坐标约定编写，安卓 GLES 会误剔。见 `NativeModelRenderer.renderMesh`。
+- **macOS**：`GpuCapability` 自动禁用 GPU 渲染（GL 4.1 无 SSBO）。
 
 ## 代码结构
 
@@ -81,7 +88,8 @@ src/main/java/
     geckolib3/                ← 内嵌的 geckolib 移植层
     mixin/                    ← Mixin + MixinTweaker 插件
   rip/ysm/
-    gpu/                      ← GPU 渲染桩（BlurStack/Pie/GpuCapability，阶段 3 补完）
+    gpu/                      ← GPU 渲染栈（完整，安卓禁用）
+    compat/                   ← 平台门面（TLM/Oculus/OptiFine）
     pinyin/                   ← PinyinMatcher（拼音搜索）
     algorithms/ security/ zstd/ legacy/ api/
   net/sourceforge/pinyin4j/   ← 内嵌拼音库（18 类）
