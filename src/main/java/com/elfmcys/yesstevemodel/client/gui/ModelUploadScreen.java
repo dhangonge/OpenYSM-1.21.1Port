@@ -23,7 +23,7 @@ public class ModelUploadScreen extends Screen implements ModelUploadSession.List
     private float prevProgressTarget = -1f;
 
     public ModelUploadScreen(Screen parent) {
-        super(Component.literal("upload"));
+        super(Component.translatable("gui.yes_steve_model.upload.title"));
         this.parentScreen = parent;
     }
 
@@ -38,7 +38,7 @@ public class ModelUploadScreen extends Screen implements ModelUploadSession.List
     public void init() {
         clearWidgets();
         ModelUploadSession.addListener(this);
-        addRenderableWidget(new FlatColorButton(this.width - 70, 10, 60, 18, Component.literal("Back"), button -> Minecraft.getInstance().setScreen(this.parentScreen)));
+        addRenderableWidget(new FlatColorButton(this.width - 70, 10, 60, 18, Component.translatable("gui.yes_steve_model.upload.back"), button -> Minecraft.getInstance().setScreen(this.parentScreen)));
     }
 
     @Override
@@ -61,25 +61,25 @@ public class ModelUploadScreen extends Screen implements ModelUploadSession.List
         Path path = paths.get(0);
         String fileName = path.getFileName().toString();
         if (!fileName.toLowerCase().endsWith(".ysm")) {
-            this.error = "Invalid file type, expected .ysm";
+            this.error = Component.translatable("gui.yes_steve_model.upload.error_invalid_type").getString();
             return;
         }
         ModelUploadSession existing = ModelUploadSession.getInstance();
         if (existing != null && !existing.isTerminal()) {
-            this.error = "Upload already in progress";
+            this.error = Component.translatable("gui.yes_steve_model.upload.error_in_progress").getString();
             return;
         }
         byte[] data;
         try {
             data = Files.readAllBytes(path);
         } catch (IOException e) {
-            this.error = "Failed to read file: " + e.getMessage();
+            this.error = Component.translatable("gui.yes_steve_model.upload.error_read", e.getMessage()).getString();
             return;
         }
         String stem = fileName.substring(0, fileName.length() - 4);
         String modelId = stem.toLowerCase();
         if (modelId.isEmpty()) {
-            this.error = "Cannot derive a valid model id from filename: " + stem;
+            this.error = Component.translatable("gui.yes_steve_model.upload.error_derive_id", stem).getString();
             return;
         }
         String err = ModelUploadSession.start(modelId, data);
@@ -123,8 +123,8 @@ public class ModelUploadScreen extends Screen implements ModelUploadSession.List
     }
 
     private void renderEmptyState(GuiGraphics guiGraphics) {
-        MutableComponent main = Component.literal("Drag a YSM file into this window").withStyle(ChatFormatting.WHITE);
-        MutableComponent sub = Component.literal("Require standalone ysm model file.").withStyle(ChatFormatting.GRAY);
+        MutableComponent main = Component.translatable("gui.yes_steve_model.upload.drag_hint").withStyle(ChatFormatting.WHITE);
+        MutableComponent sub = Component.translatable("gui.yes_steve_model.upload.require_standalone").withStyle(ChatFormatting.GRAY);
         int cx = this.width / 2;
         int cy = this.height / 2;
         guiGraphics.pose().pushPose();
@@ -136,7 +136,7 @@ public class ModelUploadScreen extends Screen implements ModelUploadSession.List
         int sw = this.font.width(sub);
         guiGraphics.drawString(this.font, sub, cx - sw / 2, cy + 22, 0xFFAAAAAA);
         if (ModelUploadSession.hasServerLimits()) {
-            MutableComponent limit = Component.literal("Size limit: " + ModelUploadSession.formatBytes(ModelUploadSession.getLastMaxTotalBytes())).withStyle(ChatFormatting.DARK_GRAY);
+            MutableComponent limit = Component.translatable("gui.yes_steve_model.upload.size_limit", ModelUploadSession.formatBytes(ModelUploadSession.getLastMaxTotalBytes())).withStyle(ChatFormatting.DARK_GRAY);
             int lw = this.font.width(limit);
             guiGraphics.drawString(this.font, limit, cx - lw / 2, cy + 36, 0xFFFFFFFF);
         }

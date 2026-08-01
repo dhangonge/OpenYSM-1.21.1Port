@@ -70,7 +70,7 @@ public class ModernAnimationRouletteScreen extends Screen {
     private final ModelAssembly renderContext;
 
     public ModernAnimationRouletteScreen(String modelId, ModelAssembly modelAssembly, AnimatableEntity<?> animatable) {
-        super(Component.literal("YSM Roulette"));
+        super(Component.translatable("gui.yes_steve_model.roulette.title"));
         this.renderContext = modelAssembly;
         this.animatableModel = animatable;
         this.textProperties = modelAssembly.getModelData().getModelProperties().getExtraAnimationClassify();

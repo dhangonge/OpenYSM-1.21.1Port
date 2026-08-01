@@ -94,7 +94,7 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
     }
 
     public PlayerModelScreen() {
-        super(Component.literal("YSM Player Model GUI"));
+        super(Component.translatable("gui.yes_steve_model.player_model.title"));
         this.hiddenModels = Sets.newHashSet();
         this.filteredModels = Maps.newHashMap();
         this.filteredPacks = Maps.newHashMap();
@@ -346,7 +346,7 @@ public class PlayerModelScreen extends Screen implements IGuiWidget {
             value = this.searchBox.getValue();
             zIsFocused = this.searchBox.isFocused();
         }
-        this.searchBox = new EditBox(Minecraft.getInstance().font, this.guiLeft + 144, this.guiTop + 6, 140, 16, Component.literal("YSM Search Box"));
+        this.searchBox = new EditBox(Minecraft.getInstance().font, this.guiLeft + 144, this.guiTop + 6, 140, 16, Component.translatable("gui.yes_steve_model.search_box.hint"));
         this.searchBox.setValue(value);
         this.searchBox.setTextColor(15986656);
         this.searchBox.setFocused(zIsFocused);

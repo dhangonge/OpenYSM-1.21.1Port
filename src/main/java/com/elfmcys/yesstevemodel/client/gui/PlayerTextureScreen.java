@@ -97,7 +97,7 @@ public class PlayerTextureScreen extends Screen {
     }
 
     public PlayerTextureScreen(PlayerModelScreen modelScreen, String str, ModelAssembly modelAssembly) {
-        super(Component.literal("Player Texture GUI"));
+        super(Component.translatable("gui.yes_steve_model.player_texture.title"));
         this.currentAnimation = StringPool.EMPTY;
         this.offsetX = 0.0f;
         this.offsetY = -60.0f;

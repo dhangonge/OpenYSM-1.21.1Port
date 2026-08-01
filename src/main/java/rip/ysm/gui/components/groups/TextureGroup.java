@@ -12,6 +12,6 @@ public final class TextureGroup extends CategoryGroup {
     public Component getTitle() {
         String key = "gui.yes_steve_model.animation.category._textures";
         if (I18n.exists(key)) return Component.translatable(key);
-        return Component.literal("Textures");
+        return Component.translatable("gui.yes_steve_model.textures.title");
     }
 }

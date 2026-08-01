@@ -1,5 +1,7 @@
 package com.elfmcys.yesstevemodel.client.upload;
 
+import net.minecraft.network.chat.Component;
+
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import com.elfmcys.yesstevemodel.network.message.C2SModelUploadChunkPacket;
 import com.elfmcys.yesstevemodel.network.message.C2SModelUploadFinishPacket;
@@ -37,16 +39,16 @@ public final class ModelUploadSession {
 
     public static synchronized String start(String modelId, byte[] data) {
         if (instance != null && !instance.isTerminal()) {
-            return "Upload already in progress";
+            return Component.translatable("gui.yes_steve_model.upload.msg_in_progress").getString();
         }
         if (data.length == 0) {
-            return "Empty file";
+            return Component.translatable("gui.yes_steve_model.upload.msg_empty").getString();
         }
         if (serverLimitsKnown && data.length > lastMaxTotalBytes) {
-            return "File exceeds server limit (" + formatBytes(lastMaxTotalBytes) + ")";
+            return Component.translatable("gui.yes_steve_model.upload.msg_exceeds", formatBytes(lastMaxTotalBytes)).getString();
         }
         if (!isYsmFile(data)) {
-            return "Invalid file type!";
+            return Component.translatable("gui.yes_steve_model.upload.msg_invalid_type").getString();
         }
         ModelUploadSession session = new ModelUploadSession(modelId, data);
         instance = session;
@@ -112,7 +114,7 @@ public final class ModelUploadSession {
         s.chunkSize = Math.max(1, chunkSize);
         s.chunksPerTick = Math.max(1, chunksPerTick);
         s.state = State.UPLOADING;
-        s.message = "Uploading…";
+        s.message = Component.translatable("gui.yes_steve_model.upload.msg_uploading").getString();
         notifyListeners();
     }
 
@@ -123,7 +125,7 @@ public final class ModelUploadSession {
         }
         if (status == 0) {
             s.state = State.COMPLETED;
-            s.message = "Uploaded as " + modelId;
+            s.message = Component.translatable("gui.yes_steve_model.upload.msg_uploaded", modelId).getString();
         } else {
             s.fail(getResponseErrorText(status) + (message.isEmpty() ? "" : ": " + message));
         }
@@ -160,25 +162,25 @@ public final class ModelUploadSession {
 
     private static String getRequestErrorText(byte status) {
         return switch (status) {
-            case 1 -> "Model ID already exists";
-            case 2 -> "File exceeds server limit";
-            case 3 -> "No upload permission";
-            case 4 -> "Server busy, try again later";
-            case 5 -> "Invalid model ID or hash";
-            case 6 -> "Uploads disabled on server";
-            default -> "error: " + status;
+            case 1 -> Component.translatable("gui.yes_steve_model.upload.err_model_exists").getString();
+            case 2 -> Component.translatable("gui.yes_steve_model.upload.err_exceeds").getString();
+            case 3 -> Component.translatable("gui.yes_steve_model.upload.err_no_perm").getString();
+            case 4 -> Component.translatable("gui.yes_steve_model.upload.err_busy").getString();
+            case 5 -> Component.translatable("gui.yes_steve_model.upload.err_invalid_id").getString();
+            case 6 -> Component.translatable("gui.yes_steve_model.upload.err_disabled").getString();
+            default -> Component.translatable("gui.yes_steve_model.upload.err_error", status).getString();
         };
     }
 
     private static String getResponseErrorText(byte status) {
         return switch (status) {
-            case 1 -> "Hash mismatch";
-            case 2 -> "Server failed to parse model";
-            case 3 -> "Server storage error";
-            case 4 -> "Session expired";
-            case 5 -> "Incomplete upload";
-            case 6 -> "Server rejected write";
-            default -> "error: " + status;
+            case 1 -> Component.translatable("gui.yes_steve_model.upload.err_hash").getString();
+            case 2 -> Component.translatable("gui.yes_steve_model.upload.err_parse").getString();
+            case 3 -> Component.translatable("gui.yes_steve_model.upload.err_storage").getString();
+            case 4 -> Component.translatable("gui.yes_steve_model.upload.err_expired").getString();
+            case 5 -> Component.translatable("gui.yes_steve_model.upload.err_incomplete").getString();
+            case 6 -> Component.translatable("gui.yes_steve_model.upload.err_rejected").getString();
+            default -> Component.translatable("gui.yes_steve_model.upload.err_error", status).getString();
         };
     }
 
@@ -195,7 +197,7 @@ public final class ModelUploadSession {
         }
         if (nextOffset >= data.length) {
             state = State.FINISHING;
-            message = "Verifying…";
+            message = Component.translatable("gui.yes_steve_model.upload.msg_verifying").getString();
             NetworkHandler.sendToServer(new C2SModelUploadFinishPacket(uploadId));
         }
         notifyListeners();

@@ -117,7 +117,7 @@ public class AnimationRouletteScreen extends Screen {
     private final ModelAssembly renderContext;
 
     public AnimationRouletteScreen(Map<String, ExtraAnimationButtons> map, Map<String, OrderedStringMap<String, String>> map2, ModelAssembly modelAssembly, AnimatableEntity<?> animatableEntity) {
-        super(Component.literal("Animation Roulette GUI"));
+        super(Component.translatable("gui.yes_steve_model.roulette.title"));
         this.hoveredIndex = -1;
         this.hoveredConfigIndex = -1;
         this.currentConfigGroup = null;
@@ -140,7 +140,7 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     public AnimationRouletteScreen(String str, ModelAssembly modelAssembly, AnimatableEntity<?> animatableEntity) {
-        super(Component.literal("Animation Roulette GUI"));
+        super(Component.translatable("gui.yes_steve_model.roulette.title"));
         this.hoveredIndex = -1;
         this.hoveredConfigIndex = -1;
         this.currentConfigGroup = null;

@@ -18,7 +18,7 @@ public class DebugAnimationScreen extends Screen {
     private int guiTop;
 
     public DebugAnimationScreen(PlayerModelScreen modelScreen) {
-        super(Component.literal("YSM Config GUI"));
+        super(Component.translatable("gui.yes_steve_model.player_model.title"));
         this.parentScreen = modelScreen;
     }
 
