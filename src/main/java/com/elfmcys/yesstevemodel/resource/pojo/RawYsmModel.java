@@ -238,9 +238,9 @@ public class RawYsmModel {
         public boolean allCutout = false;
         public boolean disablePreviewRotation = false;
         public boolean guiNoLighting = false;
-        // 对齐上游默认 false：true 时把所有表达式拼接成单个字符串整体解析，任一条语法错误（如多余的 )）
-        // 会拖垮整组表达式退化为 0 值，导致骨骼变换全部归零、模型渲染异常；false 时逐条解析，坏表达式只影响自身
-        public boolean mergeMultilineExpr = false;
+        // 默认 true + YSMClientMapper.parse 容错合并：多行表达式正确合并（服装/变体条件生效），
+        // 任一行语法错误时回退逐条解析（坏条目置 0，其余正常），不再拖垮整组
+        public boolean mergeMultilineExpr = true;
 
         public String guiForeground = "";
         public String guiBackground = "";
