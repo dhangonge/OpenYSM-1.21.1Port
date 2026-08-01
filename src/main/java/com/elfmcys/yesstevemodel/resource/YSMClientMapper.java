@@ -12,6 +12,7 @@ import com.elfmcys.yesstevemodel.client.gui.custom.configs.RadioConfig;
 import com.elfmcys.yesstevemodel.client.gui.custom.configs.RangeConfig;
 import com.elfmcys.yesstevemodel.client.model.MainModelData;
 import com.elfmcys.yesstevemodel.client.texture.OuterFileTexture;
+import com.elfmcys.yesstevemodel.geckolib3.core.keyframe.bone.Vector3v;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.Animation;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.AnimationController;
 import com.elfmcys.yesstevemodel.geckolib3.core.builder.AnimationState;
@@ -61,29 +62,32 @@ import java.util.stream.IntStream;
 public class YSMClientMapper {
 
     public static class TranslucencyScanner {
-        private final BufferedImage[] images;
+        private static final int TILE_SIZE = 8;
+        private final AlphaIndex[] indexes;
         private final boolean[] results;
-//        private int remaining;
 
-        public static final int STATE_INVISIBLE = 0;
-        public static final int STATE_OPAQUE = 1;
-        public static final int STATE_TRANSLUCENT = 2;
+        public static final int FLAG_VISIBLE = 1;
+        public static final int FLAG_HAS_HOLE = 2;
+        public static final int FLAG_TRANSLUCENT = 4;
 
         public TranslucencyScanner(BufferedImage[] images, int expectedCount) {
-            this.images = images;
-            this.results = new boolean[Math.max(expectedCount, images.length)];
-//            this.remaining = images.length;
-//
-//            for (BufferedImage image : images) {
-//                if (image == null) {
-//                    remaining--;
-//                }
-//            }
+            this.indexes = new AlphaIndex[images.length];
+            for (int i = 0; i < images.length; i++) {
+                if (images[i] != null) {
+                    this.indexes[i] = new AlphaIndex(images[i]);
+                }
+            }
+            this.results = new boolean[Math.max(expectedCount, indexes.length)];
         }
 
-//        public boolean isFinished() {
-//            return remaining <= 0;
-//        }
+        private TranslucencyScanner(AlphaIndex[] indexes, int expectedCount) {
+            this.indexes = indexes;
+            this.results = new boolean[Math.max(expectedCount, indexes.length)];
+        }
+
+        public TranslucencyScanner fork(int expectedCount) {
+            return new TranslucencyScanner(indexes, expectedCount);
+        }
 
         public boolean[] getResults() {
             return results;
@@ -100,16 +104,17 @@ public class YSMClientMapper {
             }
 
             boolean hasValidImage = false;
-            boolean faceHasVisiblePixel = false;
-            boolean faceHasTransparentPixel = false;
+            boolean hasVisible = false;
+            boolean hasHole = false;
+            boolean hasTranslucent = false;
 
-            for (int i = 0; i < images.length; i++) {
-                if (images[i] == null) continue;
+            for (int i = 0; i < indexes.length; i++) {
+                AlphaIndex index = indexes[i];
+                if (index == null) continue;
                 hasValidImage = true;
 
-                BufferedImage img = images[i];
-                int imgW = img.getWidth();
-                int imgH = img.getHeight();
+                int imgW = index.width;
+                int imgH = index.height;
 
                 int startX = (int) Math.floor(minU * imgW + 0.01f);
                 int endX = (int) Math.floor(maxU * imgW - 0.01f);
@@ -124,53 +129,150 @@ public class YSMClientMapper {
                 startY = Math.max(0, Math.min(startY, imgH - 1));
                 endY = Math.max(0, Math.min(endY, imgH - 1));
 
-                boolean imageHasVisiblePixel = false;
-                boolean imageHasTransparentPixel = false;
-                boolean imageHasColoredTranslucentPixel = false;
+                int flags = index.query(startX, endX, startY, endY);
+                hasVisible |= (flags & FLAG_VISIBLE) != 0;
+                hasHole |= (flags & FLAG_HAS_HOLE) != 0;
+                hasTranslucent |= (flags & FLAG_TRANSLUCENT) != 0;
 
-                for (int x = startX; x <= endX; x++) {
-                    for (int y = startY; y <= endY; y++) {
-                        int alpha = (img.getRGB(x, y) >>> 24) & 0xFF;
+                if (hasTranslucent) results[i] = true;
+            }
 
-                        if (alpha > 0) {
-                            imageHasVisiblePixel = true;
+            if (!hasValidImage) return FLAG_VISIBLE;
 
-                            if (alpha < 255) {
-                                imageHasColoredTranslucentPixel = true;
-                            }
-                        }
+            int mask = 0;
+            if (hasVisible) mask |= FLAG_VISIBLE;
+            if (hasHole) mask |= FLAG_HAS_HOLE;
+            if (hasTranslucent) mask |= FLAG_TRANSLUCENT;
+            return mask;
+        }
 
-                        if (alpha < 255) {
-                            imageHasTransparentPixel = true;
-                        }
+        private static final class AlphaIndex {
+            private final int width;
+            private final int height;
+            private final byte[] pixelFlags;
+            private final int tileColumns;
+            private final int prefixStride;
+            private final int[] visiblePrefix;
+            private final int[] holePrefix;
+            private final int[] translucentPrefix;
 
-                        if (imageHasVisiblePixel && imageHasTransparentPixel && imageHasColoredTranslucentPixel) {
-                            break;
-                        }
-                    }
+            private AlphaIndex(BufferedImage image) {
+                this.width = image.getWidth();
+                this.height = image.getHeight();
+                this.pixelFlags = new byte[width * height];
+                this.tileColumns = (width + TILE_SIZE - 1) / TILE_SIZE;
+                int tileRows = (height + TILE_SIZE - 1) / TILE_SIZE;
+                this.prefixStride = tileColumns + 1;
 
-                    if (imageHasVisiblePixel && imageHasTransparentPixel && imageHasColoredTranslucentPixel) {
-                        break;
+                byte[] tileFlags = new byte[tileColumns * tileRows];
+                int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
+                for (int y = 0; y < height; y++) {
+                    int tileRowOffset = (y / TILE_SIZE) * tileColumns;
+                    int pixelRowOffset = y * width;
+                    for (int x = 0; x < width; x++) {
+                        byte flags = (byte) flagsForAlpha((pixels[pixelRowOffset + x] >>> 24) & 0xFF);
+                        pixelFlags[pixelRowOffset + x] = flags;
+                        tileFlags[tileRowOffset + x / TILE_SIZE] |= flags;
                     }
                 }
 
-                if (imageHasVisiblePixel) {
-                    faceHasVisiblePixel = true;
+                int prefixSize = prefixStride * (tileRows + 1);
+                this.visiblePrefix = new int[prefixSize];
+                this.holePrefix = new int[prefixSize];
+                this.translucentPrefix = new int[prefixSize];
 
-                    if (imageHasTransparentPixel) {
-                        faceHasTransparentPixel = true;
-                    }
+                for (int tileY = 0; tileY < tileRows; tileY++) {
+                    int visibleCount = 0;
+                    int holeCount = 0;
+                    int translucentCount = 0;
+                    int tileRowOffset = tileY * tileColumns;
+                    int prefixRowOffset = (tileY + 1) * prefixStride;
+                    int previousPrefixRowOffset = tileY * prefixStride;
 
-                    if (imageHasColoredTranslucentPixel) {
-                        results[i] = true;
+                    for (int tileX = 0; tileX < tileColumns; tileX++) {
+                        int flags = tileFlags[tileRowOffset + tileX];
+                        if ((flags & FLAG_VISIBLE) != 0) visibleCount++;
+                        if ((flags & FLAG_HAS_HOLE) != 0) holeCount++;
+                        if ((flags & FLAG_TRANSLUCENT) != 0) translucentCount++;
+
+                        int prefixIndex = prefixRowOffset + tileX + 1;
+                        visiblePrefix[prefixIndex] = visiblePrefix[previousPrefixRowOffset + tileX + 1] + visibleCount;
+                        holePrefix[prefixIndex] = holePrefix[previousPrefixRowOffset + tileX + 1] + holeCount;
+                        translucentPrefix[prefixIndex] = translucentPrefix[previousPrefixRowOffset + tileX + 1] + translucentCount;
                     }
                 }
             }
 
-            if (!hasValidImage) return STATE_OPAQUE;
-            if (!faceHasVisiblePixel) return STATE_INVISIBLE;
-            if (faceHasTransparentPixel) return STATE_TRANSLUCENT;
-            return STATE_OPAQUE;
+            private int query(int startX, int endX, int startY, int endY) {
+                int fullStartX = ((startX + TILE_SIZE - 1) / TILE_SIZE) * TILE_SIZE;
+                int fullEndX = ((endX + 1) / TILE_SIZE) * TILE_SIZE;
+                int fullStartY = ((startY + TILE_SIZE - 1) / TILE_SIZE) * TILE_SIZE;
+                int fullEndY = ((endY + 1) / TILE_SIZE) * TILE_SIZE;
+
+                if (fullStartX >= fullEndX || fullStartY >= fullEndY) {
+                    return scanPixels(startX, endX, startY, endY, 0);
+                }
+
+                int flags = queryFullTiles(
+                        fullStartX / TILE_SIZE,
+                        fullEndX / TILE_SIZE,
+                        fullStartY / TILE_SIZE,
+                        fullEndY / TILE_SIZE
+                );
+                if (flags == FLAG_VISIBLE + FLAG_HAS_HOLE + FLAG_TRANSLUCENT) return flags;
+
+                flags = scanPixels(startX, endX, startY, fullStartY - 1, flags);
+                if (flags == FLAG_VISIBLE + FLAG_HAS_HOLE + FLAG_TRANSLUCENT) return flags;
+
+                flags = scanPixels(startX, endX, fullEndY, endY, flags);
+                if (flags == FLAG_VISIBLE + FLAG_HAS_HOLE + FLAG_TRANSLUCENT) return flags;
+
+                flags = scanPixels(startX, fullStartX - 1, fullStartY, fullEndY - 1, flags);
+                if (flags == FLAG_VISIBLE + FLAG_HAS_HOLE + FLAG_TRANSLUCENT) return flags;
+
+                return scanPixels(fullEndX, endX, fullStartY, fullEndY - 1, flags);
+            }
+
+            private int queryFullTiles(int startTileX, int endTileX, int startTileY, int endTileY) {
+                int flags = 0;
+                if (prefixCount(visiblePrefix, startTileX, endTileX, startTileY, endTileY) > 0) {
+                    flags |= FLAG_VISIBLE;
+                }
+                if (prefixCount(holePrefix, startTileX, endTileX, startTileY, endTileY) > 0) {
+                    flags |= FLAG_HAS_HOLE;
+                }
+                if (prefixCount(translucentPrefix, startTileX, endTileX, startTileY, endTileY) > 0) {
+                    flags |= FLAG_TRANSLUCENT;
+                }
+                return flags;
+            }
+
+            private int prefixCount(int[] prefix, int startTileX, int endTileX, int startTileY, int endTileY) {
+                int topLeft = startTileY * prefixStride + startTileX;
+                int topRight = startTileY * prefixStride + endTileX;
+                int bottomLeft = endTileY * prefixStride + startTileX;
+                int bottomRight = endTileY * prefixStride + endTileX;
+                return prefix[bottomRight] - prefix[topRight] - prefix[bottomLeft] + prefix[topLeft];
+            }
+
+            private int scanPixels(int startX, int endX, int startY, int endY, int flags) {
+                if (startX > endX || startY > endY) return flags;
+
+                for (int y = startY; y <= endY; y++) {
+                    int rowOffset = y * width;
+                    for (int x = startX; x <= endX; x++) {
+                        flags |= pixelFlags[rowOffset + x];
+                        if (flags == FLAG_VISIBLE + FLAG_HAS_HOLE + FLAG_TRANSLUCENT) return flags;
+                    }
+                }
+                return flags;
+            }
+
+            private static int flagsForAlpha(int alpha) {
+                if (alpha == 0) return FLAG_HAS_HOLE;
+                if (alpha == 255) return FLAG_VISIBLE;
+                return FLAG_VISIBLE | FLAG_HAS_HOLE | FLAG_TRANSLUCENT;
+            }
         }
     }
 
@@ -238,7 +340,22 @@ public class YSMClientMapper {
         return encodeToPng(img, data);
     }
 
+    public static OuterFileTexture toTexture(byte[] data, int imageFormat, int width, int height) {
+        return toTexture(data, imageFormat, width, height, null);
+    }
+
+    private static OuterFileTexture toTexture(byte[] data, int imageFormat, int width, int height, BufferedImage decodedImage) {
+        int resolvedFormat = imageFormat == 0 ? YSMFolderDeserializer.detectFormat(data) : imageFormat;
+        if (resolvedFormat >= 1 && resolvedFormat <= 3) {
+            return new OuterFileTexture(data);
+        }
+        BufferedImage image = decodedImage != null ? decodedImage : decodeToImage(data, resolvedFormat, width, height);
+        return new OuterFileTexture(encodeToPng(image, data));
+    }
+
     public static ClientModelInfo buildParsedBundle(RawYsmModel raw, String modelId) {
+        Vector3v.beginConstantPooling();
+        try {
         Map<String, OuterFileTexture> mainTextures = new LinkedHashMap<>();
         int textureCount = Math.max(1, raw.mainEntity.textures.size());
 
@@ -248,17 +365,14 @@ public class YSMClientMapper {
             BufferedImage img = decodeToImage(rt.data, rt.imageFormat, rt.width, rt.height);
             imagesList.add(img);
 
-            byte[] processedData = (rt.imageFormat == 2) ? rt.data : encodeToPng(img, rt.data);
-            OuterFileTexture tex = new OuterFileTexture(processedData);
-
+            OuterFileTexture tex = toTexture(rt.data, rt.imageFormat, rt.width, rt.height, img);
             Map<ShadersTextureType, OuterFileTexture> suffixTextures = new LinkedHashMap<>();
             for (RawYsmModel.RawTexture.SubTexture sub : rt.subTextures) {
                 if (sub.data == null) continue;
-                byte[] processedSubData = toPng(sub.data, sub.imageFormat, sub.width, sub.height);
                 if (sub.specularType == 1) {
-                    suffixTextures.put(ShadersTextureType.NORMAL, new OuterFileTexture(processedSubData));
+                    suffixTextures.put(ShadersTextureType.NORMAL, toTexture(sub.data, sub.imageFormat, sub.width, sub.height));
                 } else if (sub.specularType == 2) {
-                    suffixTextures.put(ShadersTextureType.SPECULAR, new OuterFileTexture(processedSubData));
+                    suffixTextures.put(ShadersTextureType.SPECULAR, toTexture(sub.data, sub.imageFormat, sub.width, sub.height));
                 }
             }
             tex.setSuffixTextures(suffixTextures);
@@ -267,8 +381,7 @@ public class YSMClientMapper {
         Map<String, OuterFileTexture> avatarTextures = new LinkedHashMap<>();
         for (RawYsmModel.RawMetadata.Author author : raw.metadata.authors) {
             if (author.avatarImage == null) continue;
-            byte[] processedAvatarData = toPng(author.avatarImage.data, author.avatarImage.format, author.avatarImage.width, author.avatarImage.height);
-            OuterFileTexture tex = new OuterFileTexture(processedAvatarData);
+            OuterFileTexture tex = toTexture(author.avatarImage.data, author.avatarImage.format, author.avatarImage.width, author.avatarImage.height);
             avatarTextures.put(author.avatarImage.name, tex);
         }
         OrderedStringMap<String, OuterFileTexture> textureMap = buildTextureMap(mainTextures);
@@ -279,10 +392,10 @@ public class YSMClientMapper {
         TranslucencyScanner mainScanner = raw.mainEntity.mainModel != null ?
                 new TranslucencyScanner(imagesArray, textureCount) : null;
         TranslucencyScanner armScanner = raw.mainEntity.armModel != null ?
-                new TranslucencyScanner(imagesArray, textureCount) : null;
+                mainScanner != null ? mainScanner.fork(textureCount) : new TranslucencyScanner(imagesArray, textureCount) : null;
 
-        GeoModel mainMesh = buildMesh(raw.mainEntity.mainModel, context, textureCount, mainScanner);
-        GeoModel armMesh = raw.mainEntity.armModel != null ? buildMesh(raw.mainEntity.armModel, context, textureCount, armScanner) : mainMesh;
+        GeoModel mainMesh = buildMesh(raw.mainEntity.mainModel, context, textureCount, mainScanner, raw.properties.allCutout);
+        GeoModel armMesh = raw.mainEntity.armModel != null ? buildMesh(raw.mainEntity.armModel, context, textureCount, armScanner, raw.properties.allCutout) : mainMesh;
 
 //        System.out.println(modelId + Arrays.toString(mainMesh.translucentTexture));
 
@@ -312,9 +425,12 @@ public class YSMClientMapper {
         Map<String, OuterFileTexture> extraTextures = buildExtraTextures(raw);
 
         return new ClientModelInfo(mainModelData, extraItemModels, extraEntityModels, extraResources, modelInfo, avatarTextures, extraTextures);
+        } finally {
+            Vector3v.endConstantPooling();
+        }
     }
 
-    private static GeoModel buildMesh(RawYsmModel.RawGeometry rawGeo, GeometryDescription context, int textureCount, TranslucencyScanner scanner) {
+    private static GeoModel buildMesh(RawYsmModel.RawGeometry rawGeo, GeometryDescription context, int textureCount, TranslucencyScanner scanner, boolean allCutout) {
         if (rawGeo == null || rawGeo.bones.isEmpty()) {
             boolean[] fallbackArray = scanner != null ? scanner.getResults() : new boolean[Math.max(1, textureCount)];
             return buildMesh(new GeoBone[0], new HashMap<>(), context, fallbackArray);
@@ -339,25 +455,32 @@ public class YSMClientMapper {
             bb.rotZ = rb.rotation[2];
             bb.parentIdx = -1;
 
-            // TODO: 优化算法
+            boolean forceCull = allCutout;
+
             for (RawYsmModel.RawCube rc : rb.cubes) {
                 GeoModel.BakedCube bc = new GeoModel.BakedCube();
-
                 int validFaceCount = 0;
-                boolean hasTranslucentFace = false;
+                boolean cubeHasHole = false;
 
                 for (RawYsmModel.RawFace rf : rc.faces) {
-                    int faceState = scanner != null ? scanner.scan(rf) : TranslucencyScanner.STATE_OPAQUE;
+                    int faceState = scanner != null ? scanner.scan(rf) : TranslucencyScanner.FLAG_VISIBLE;
 
-                    if (faceState == TranslucencyScanner.STATE_INVISIBLE) {
+                    if ((faceState & TranslucencyScanner.FLAG_VISIBLE) == 0) {
                         continue;
                     }
 
-                    if (faceState == TranslucencyScanner.STATE_TRANSLUCENT) {
-                        hasTranslucentFace = true;
+                    if ((faceState & TranslucencyScanner.FLAG_HAS_HOLE) != 0) {
+                        cubeHasHole = true;
+                    }
+
+                    boolean isTranslucent = (faceState & TranslucencyScanner.FLAG_TRANSLUCENT) != 0;
+
+                    if (!forceCull && isNegativeSizedFace(rf)) {
+                        forceCull = true;
                     }
 
                     GeoModel.BakedQuad bq = new GeoModel.BakedQuad();
+                    bq.isTranslucent = isTranslucent;
                     System.arraycopy(rf.normal, 0, bq.normal, 0, 3);
                     for (int i = 0; i < 4; i++) {
                         int positionOffset = i * 3;
@@ -381,10 +504,7 @@ public class YSMClientMapper {
                             float dx = q.positions[offset] - basePositions[0];
                             float dy = q.positions[offset + 1] - basePositions[1];
                             float dz = q.positions[offset + 2] - basePositions[2];
-
-                            float distance = dx * baseNormal[0] + dy * baseNormal[1] + dz * baseNormal[2];
-
-                            if (Math.abs(distance) > 1e-3f) {
+                            if (Math.abs(dx * baseNormal[0] + dy * baseNormal[1] + dz * baseNormal[2]) > 1e-3f) {
                                 isZeroThickness = false;
                                 break;
                             }
@@ -395,7 +515,9 @@ public class YSMClientMapper {
                     isZeroThickness = false;
                 }
 
-                if (hasTranslucentFace) {
+                if (forceCull) {
+                    bc.cullable = true;
+                } else if (cubeHasHole) {
                     bc.cullable = false;
                 } else if (isZeroThickness && validFaceCount > 1) {
                     bc.cullable = true;
@@ -410,7 +532,6 @@ public class YSMClientMapper {
             bakedBones.add(bb);
         }
 
-        // 回填父级索引
         for (GeoModel.BakedBone b : bakedBones) {
             String parentName = parentMap.get(b.name);
             if (parentName != null && !parentName.isEmpty()) {
@@ -750,7 +871,7 @@ public class YSMClientMapper {
             }
         }
 
-        GeoModel mesh = buildMesh(sub.model, context, textureCount, subScanner);
+        GeoModel mesh = buildMesh(sub.model, context, textureCount, subScanner, false);
 
         Map<String, Animation> allAnimations = new LinkedHashMap<>();
         for (Map.Entry<String, RawYsmModel.RawAnimationFile> entry : sub.animationFiles.entrySet()) {
@@ -792,7 +913,7 @@ public class YSMClientMapper {
             }
         }
 
-        GeoModel mesh = buildMesh(sub.model, context, textureCount, subScanner);
+        GeoModel mesh = buildMesh(sub.model, context, textureCount, subScanner, false);
 
         Map<String, Animation> allAnimations = new LinkedHashMap<>();
         for (RawYsmModel.RawAnimationFile animFile : sub.animationFiles.values()) {
@@ -953,4 +1074,25 @@ public class YSMClientMapper {
                         .toArray()
         );
     }
+    private static boolean isNegativeSizedFace(RawYsmModel.RawFace f) {
+        float[] p0 = f.positions[0];
+        float[] p1 = f.positions[1];
+        float[] p2 = f.positions[2];
+
+        float ax = p1[0] - p0[0];
+        float ay = p1[1] - p0[1];
+        float az = p1[2] - p0[2];
+
+        float bx = p2[0] - p0[0];
+        float by = p2[1] - p0[1];
+        float bz = p2[2] - p0[2];
+
+        float nx = ay * bz - az * by;
+        float ny = az * bx - ax * bz;
+        float nz = ax * by - ay * bx;
+
+        float dot = nx * f.normal[0] + ny * f.normal[1] + nz * f.normal[2];
+        return dot < 0.0f;
+    }
+
 }
