@@ -13,6 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
 public class S2CVersionCheckPacket implements CustomPacketPayload, IPayloadHandler<S2CVersionCheckPacket> {
 
+    private static final String OPEN_YSM_BRAND = "open_ysm:v1";
     private static final String MODEL_SYNC_FRAGMENT_BRAND = "open_ysm:model_sync_fragments_v1";
 
     public static final CustomPacketPayload.Type<S2CVersionCheckPacket> TYPE =
@@ -38,7 +39,10 @@ public class S2CVersionCheckPacket implements CustomPacketPayload, IPayloadHandl
         boolean supportsModelSyncFragments = false;
         if (buf.readableBytes() > 0) {
             String brand = buf.readUtf();
-            if (brand.equals(MODEL_SYNC_FRAGMENT_BRAND)) {
+            if (brand.equals(OPEN_YSM_BRAND)) {
+                ClientModelManager.setOysmServer(true);
+                ClientModelManager.setAllowUpload(buf.readBoolean());
+            } else if (brand.equals(MODEL_SYNC_FRAGMENT_BRAND)) {
                 supportsModelSyncFragments = true;
             }
         }

@@ -80,6 +80,11 @@ public final class NetworkHandler {
         registrar.playToClient(S2CVersionCheckPacket.TYPE, S2CVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
         registrar.playToServer(C2SVersionCheckPacket.TYPE, C2SVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
         registrar.playToClient(FragmentPacket.TYPE, FragmentPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SModelUploadStartPacket.TYPE, C2SModelUploadStartPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CModelUploadStartPacket.TYPE, S2CModelUploadStartPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SModelUploadChunkPacket.TYPE, C2SModelUploadChunkPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToServer(C2SModelUploadFinishPacket.TYPE, C2SModelUploadFinishPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(S2CModelUploadResultPacket.TYPE, S2CModelUploadResultPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
     }
 
     @OnlyIn(Dist.CLIENT)
