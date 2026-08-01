@@ -12,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 public final class MaidScreenEvent {
     @SubscribeEvent
     public void onOpenMaidScreen(OpenYsmMaidScreenEvent event) {
+        com.elfmcys.yesstevemodel.YesSteveModel.LOGGER.info("[YSM] MaidScreenEvent triggered, cap={}", event.getMaid().getCapability(MaidCapabilityProvider.MAID_CAP) != null);
         if (event.getMaid().getCapability(MaidCapabilityProvider.MAID_CAP) != null) {
             Minecraft.getInstance().setScreen(new TouhouMaidModelScreen(event.getMaid()));
         }

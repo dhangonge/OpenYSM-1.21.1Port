@@ -18,6 +18,8 @@ public final class Pie {
     }
 
     public static void draw(GuiGraphics graphics, float centerX, float centerY, float innerRadius, float outerRadius, float startAngle, float endAngle, int rgba, float feather) {
+        // 安卓 GLES 不支持桌面 GL 着色器渲染，直接跳过
+        if (com.elfmcys.yesstevemodel.NativeLibLoader.isOnAndroid()) return;
         if (!PieShader.ensureCompiled()) return;
 
         float pad = feather + 1.0f;
