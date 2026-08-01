@@ -58,15 +58,45 @@ public final class NativeLibLoader {
     }
 
     public static void init() throws IOException {
+        detectAndroid();
         String path = System.getenv("YSM_CORE_LIB");
         if (StringUtil.isNullOrEmpty(path)) {
             path = extractAndGetLibPath();
+        } else {
+            // 诊断：YSM_CORE_LIB 环境变量会绕过平台判定（isAndroid 保持 false），打印确认
+            YesSteveModel.LOGGER.info("[YSM] YSM_CORE_LIB env set, skipping platform detection");
         }
 
         if (path != null && loadNativeLib(path)) {
             loaded = true;
         }
         available = true;
+        YesSteveModel.LOGGER.info("[YSM] NativeLibLoader: loaded={}, available={}, isAndroid={}, MOD_ANDROID_RUNTIME={}",
+                loaded, available, isAndroid, System.getenv("MOD_ANDROID_RUNTIME"));
+    }
+
+    /**
+     * 安卓判定（与 native 库加载路径解耦）：
+     * ZalithLauncher 不设置 MOD_ANDROID_RUNTIME 但设置 ZALITH_VERSION_CODE，
+     * 且可能通过 YSM_CORE_LIB 提供 native 路径绕过 extractAndGetLibPath → 原 isAndroid 保持 false，
+     * 导致 BlurStack/Pie/GPU 渲染的安卓短路全部失效（MobileGlues 上执行桌面 GL 模糊 → 全屏模糊 + 图层错乱）。
+     */
+    private static void detectAndroid() {
+        if (isAndroid) {
+            return;
+        }
+        String os = SystemUtils.OS_NAME == null ? "" : SystemUtils.OS_NAME.toLowerCase();
+        if (os.contains("android")) {
+            isAndroid = true;
+            return;
+        }
+        if (StringUtils.isNotBlank(System.getenv("MOD_ANDROID_RUNTIME"))) {
+            isAndroid = true;
+            return;
+        }
+        if (StringUtils.isNotBlank(System.getenv("ZALITH_VERSION_CODE"))) {
+            isAndroid = true;
+        }
     }
 
     private static @Nullable String extractAndGetLibPath() throws IOException {

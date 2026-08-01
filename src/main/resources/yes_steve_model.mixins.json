@@ -18,6 +18,7 @@
     "client.PauseScreenMixin",
     "client.RenderSystemAccessor",
     "client.ScreenAccessor",
+    "client.ScreenBlurDisableMixin",
     "client.ThrowableItemProjectileAccessor",
     "client.WorldRendererMixin"
   ],

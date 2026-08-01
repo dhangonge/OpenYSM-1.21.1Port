@@ -61,6 +61,13 @@ public final class GpuCapability {
             return;
         }
 
+        // GLES/MobileGlues 环境（安卓翻译层）不视为桌面 OpenGL：即使报告 GL 4.0 Core Profile，
+        // 也缺少桌面 GL 的完整特性（SSBO/程序接口查询等），且桌面 GL 着色器路径会破坏渲染状态
+        if (glslVersion != null && (glslVersion.contains("OpenGL ES") || glslVersion.toLowerCase().contains("mobileglues"))) {
+            reason = "GLES context detected (" + glslVersion + ")";
+            return;
+        }
+
         System.out.println("OpenGL version: " + glVersion);
         System.out.println("OpenGL renderer version: " + glRenderer);
         System.out.println("OpenGL vendor: " + glVendor);

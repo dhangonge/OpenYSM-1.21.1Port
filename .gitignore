@@ -29,3 +29,6 @@ forge*changelog.txt
 # 第三方 mod jar（compileOnly 依赖，按需放入 libs/）
 libs/*.jar
 runs/
+
+# 子代理临时产物
+.pi-subagents/

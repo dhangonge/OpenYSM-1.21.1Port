@@ -15,7 +15,11 @@ public class TouhouMaidModelButton extends ModelButton {
     private final EntityMaid maid;
 
     public TouhouMaidModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity previewEntity, ModelAssembly modelAssembly, EntityMaid entityMaid) {
-        super(x, y, isAuthLocked, previewEntity, modelAssembly);
+        this(x, y, isAuthLocked, previewEntity, modelAssembly, entityMaid, previewEntity.getModelId());
+    }
+
+    public TouhouMaidModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity previewEntity, ModelAssembly modelAssembly, EntityMaid entityMaid, String targetModelId) {
+        super(x, y, isAuthLocked, previewEntity, modelAssembly, targetModelId);
         this.maid = entityMaid;
     }
 

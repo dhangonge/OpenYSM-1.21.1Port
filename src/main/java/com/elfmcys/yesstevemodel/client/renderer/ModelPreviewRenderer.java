@@ -138,33 +138,37 @@ public final class ModelPreviewRenderer {
         entityRenderDispatcher.setRenderShadow(false);
 
         RenderSystem.runAsFancy(() -> {
-            AnimationTracker animationTracker = ((IPreviewAnimatable) animatableEntity).getAnimationStateMachine();
-            if (animationTracker.isCurrentAnimation("sleep")) {
-                guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw - 90.0f));
-                guiGraphics.pose().translate(0.5d, 0.5625d, 0.0d);
-                livingEntity.setPose(Pose.SLEEPING);
-            }
-            if (animationTracker.isCurrentAnimation("swim") || animationTracker.isCurrentAnimation("swim_stand")) {
-                livingEntity.setPose(Pose.SWIMMING);
-            }
-            if (animationTracker.isCurrentAnimation("sneak") || animationTracker.isCurrentAnimation("sneaking")) {
-                livingEntity.setPose(Pose.CROUCHING);
-            }
-            if (animationTracker.isCurrentAnimation("sit")) {
-                guiGraphics.pose().translate(0.0d, -0.5d, 0.0d);
-            }
-            if (animationTracker.isCurrentAnimation("ride")) {
-                guiGraphics.pose().translate(0.0d, 0.85d, 0.0d);
-            }
-            if (animationTracker.isCurrentAnimation("ride_pig")) {
-                guiGraphics.pose().translate(0.0d, 0.3125d, 0.0d);
-            }
-            if (animationTracker.isCurrentAnimation("boat")) {
-                guiGraphics.pose().translate(0.0d, -0.45d, 0.0d);
+            // capability（PlayerCapability/MaidCapability）不是 IPreviewAnimatable：只有预览实体才有动画状态机，
+            // 强转会导致 ModelSettingsScreen 齿轮入口渲染时 ClassCastException 闪退
+            AnimationTracker animationTracker = (animatableEntity instanceof IPreviewAnimatable preview) ? preview.getAnimationStateMachine() : null;
+            if (animationTracker != null) {
+                if (animationTracker.isCurrentAnimation("sleep")) {
+                    guiGraphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw - 90.0f));
+                    guiGraphics.pose().translate(0.5d, 0.5625d, 0.0d);
+                    livingEntity.setPose(Pose.SLEEPING);
+                }
+                if (animationTracker.isCurrentAnimation("swim") || animationTracker.isCurrentAnimation("swim_stand")) {
+                    livingEntity.setPose(Pose.SWIMMING);
+                }
+                if (animationTracker.isCurrentAnimation("sneak") || animationTracker.isCurrentAnimation("sneaking")) {
+                    livingEntity.setPose(Pose.CROUCHING);
+                }
+                if (animationTracker.isCurrentAnimation("sit")) {
+                    guiGraphics.pose().translate(0.0d, -0.5d, 0.0d);
+                }
+                if (animationTracker.isCurrentAnimation("ride")) {
+                    guiGraphics.pose().translate(0.0d, 0.85d, 0.0d);
+                }
+                if (animationTracker.isCurrentAnimation("ride_pig")) {
+                    guiGraphics.pose().translate(0.0d, 0.3125d, 0.0d);
+                }
+                if (animationTracker.isCurrentAnimation("boat")) {
+                    guiGraphics.pose().translate(0.0d, -0.45d, 0.0d);
+                }
             }
             try {
                 renderVehicleForAnimation(guiGraphics, yaw, animatableEntity, partialTick, entityRenderDispatcher);
-                if (animationTracker.isCurrentAnimation("sleep")) {
+                if (animationTracker != null && animationTracker.isCurrentAnimation("sleep")) {
                     renderBedPreview(guiGraphics, scale, pitch, yaw);
                 }
                 if (renderGround) {
@@ -229,7 +233,11 @@ public final class ModelPreviewRenderer {
 
     private static void renderVehicleForAnimation(GuiGraphics guiGraphics, float yaw, AnimatableEntity animatableEntity, float partialTick, EntityRenderDispatcher entityRenderDispatcher) throws ExecutionException {
         Entity entity = animatableEntity.getEntity();
-        AnimationTracker animationTracker = ((IPreviewAnimatable) animatableEntity).getAnimationStateMachine();
+        // capability（PlayerCapability/MaidCapability）不是 IPreviewAnimatable，不能强转；仅预览实体有骑乘姿态动画
+        if (!(animatableEntity instanceof IPreviewAnimatable preview)) {
+            return;
+        }
+        AnimationTracker animationTracker = preview.getAnimationStateMachine();
 
         if (animationTracker.isCurrentAnimation("ride")) {
             renderVehicleEntity(guiGraphics, yaw, entity, entityRenderDispatcher, AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(EntityType.HORSE), () -> EntityType.HORSE.create(entity.level())), partialTick);

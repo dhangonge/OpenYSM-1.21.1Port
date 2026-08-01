@@ -20,6 +20,8 @@ public final class MaidCapabilityEvent {
         if (!YesSteveModel.isAvailable()||!TouhouMaidCompat.isLoaded()) {
             return;
         }
+        // 所有 mod 构造完成后才解析真实 capability，避免类加载期顺序竞态绑定 dummy
+        MaidCapabilityProvider.ensureResolved();
         event.registerEntity(MaidCapabilityProvider.MAID_CAP, EntityMaid.TYPE, MaidCapabilityProvider.INSTANCE);
     }
 }

@@ -65,6 +65,24 @@ public final class BlurStack {
         if (!regions.isEmpty()) regions.remove(regions.size() - 1);
     }
 
+    /**
+     * GLES/MobileGlues 上下文检测（双保险）：即使 isAndroid 判定失效（如 Zalith 不设置 MOD_ANDROID_RUNTIME），
+     * 只要 GL 上下文是 GLES 或 MobileGlues 翻译层，就禁止执行桌面 GL 模糊着色器。
+     */
+    private static boolean isGlesContext() {
+        try {
+            String version = GL11.glGetString(GL11.GL_VERSION);
+            if (version != null) {
+                String v = version.toLowerCase();
+                if (v.contains("es") || v.contains("mobileglues") || v.contains("gles")) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
     public static void clear() {
         regions.clear();
     }
@@ -75,11 +93,13 @@ public final class BlurStack {
 
     public static void flush(GuiGraphics graphics) {
         if (regions.isEmpty()) return;
-        // 安卓 GLES 不支持桌面 GL 的模糊着色器渲染，直接禁用
-        if (com.elfmcys.yesstevemodel.NativeLibLoader.isOnAndroid()) {
-            regions.clear();
-            return;
-        }
+        // 诊断：确认安卓判定与短路是否生效（MobileGlues/Zalith 环境下 isAndroid 可能为 false）
+        com.elfmcys.yesstevemodel.YesSteveModel.LOGGER.info("[YSM] BlurStack.flush: regions={}, isAndroid={}, BLUR_GUI={}, gles={}",
+                regions.size(), com.elfmcys.yesstevemodel.NativeLibLoader.isOnAndroid(),
+                com.elfmcys.yesstevemodel.config.GeneralConfig.BLUR_GUI != null ? com.elfmcys.yesstevemodel.config.GeneralConfig.BLUR_GUI.get() : null,
+                isGlesContext());
+        // 上游（1.20.1）无安卓短路：用户实机对照证实桌面 GL 模糊在 MobileGlues 上正常（面板模糊+背景清晰），
+        // 恢复执行以对齐上游行为。诊断日志保留，确认执行路径。
         if (!BlurShader.ensureCompiled()) {
             regions.clear();
             return;

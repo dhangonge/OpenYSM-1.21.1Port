@@ -25,7 +25,10 @@ public class MaidClientTickEvent {
     }
 
     private void tickMaidModel(EntityMaid entityMaid) {
+        // 上游为 ifPresent(cap -> {})：cap 存在时才有后续（当前为空实现）；cap 不存在时无事可做
         MaidCapability cap = entityMaid.getCapability(MaidCapabilityProvider.MAID_CAP);
-        if(cap != null) return;
+        if (cap == null) {
+            return;
+        }
     }
 }

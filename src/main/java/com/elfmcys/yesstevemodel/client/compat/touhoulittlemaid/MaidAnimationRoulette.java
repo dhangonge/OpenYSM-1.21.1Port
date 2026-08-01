@@ -38,7 +38,11 @@ public class MaidAnimationRoulette {
         }
         Entity entity = ((EntityHitResult) hitResult).getEntity();
         if (entity instanceof EntityMaid) {
+            // 上游用 ifPresent 保护，移植版曾直接解引用：cap 为 null（TLM 兼容未注册）时 NPE 崩溃
             MaidCapability cap = entity.getCapability(MaidCapabilityProvider.MAID_CAP);
+            if (cap == null) {
+                return;
+            }
             ModelAssembly modelAssembly = cap.getModelAssembly();
             if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
                 if (Minecraft.getInstance().screen == null) {

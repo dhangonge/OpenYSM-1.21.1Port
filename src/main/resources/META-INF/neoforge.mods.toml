@@ -33,3 +33,13 @@ mandatory=true
 versionRange="[1.21.1,)"
 ordering="NONE"
 side="BOTH"
+
+# 强制 YSM 在 TLM 之前加载（ordering=BEFORE）：TLM 的 YsmCompat.init() 在其初始化期检查 ModList 中是否存在 yes_steve_model，
+# 若 TLM 先加载则 INSTALLED 永久为 false，女仆渲染器钩子（YSM_ENTITY_MAID_RENDERER）永远不会生效。
+# 注意 NeoForge 语义：ordering=BEFORE = 本 mod 在依赖 mod 之前加载
+[[dependencies.yes_steve_model]]
+modId="touhou_little_maid"
+mandatory=false
+versionRange="[1.1.15,)"
+ordering="BEFORE"
+side="BOTH"

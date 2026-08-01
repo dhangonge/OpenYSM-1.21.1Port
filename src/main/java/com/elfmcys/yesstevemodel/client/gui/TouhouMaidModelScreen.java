@@ -34,8 +34,10 @@ public class TouhouMaidModelScreen extends PlayerModelScreen {
     }
 
     @Override
-    public ModelButton createModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity previewEntity, ModelAssembly modelAssembly) {
-        return new TouhouMaidModelButton(x, y, isAuthLocked, previewEntity, modelAssembly, this.maid);
+    public ModelButton createModelButton(int x, int y, boolean isAuthLocked, PlayerPreviewEntity previewEntity, ModelAssembly modelAssembly, String targetModelId) {
+        // 必须匹配 6 参签名：PlayerModelScreen.init 调用 6 参版本，若只 override 5 参会动态分派到基类，
+        // 返回普通 ModelButton（onPress 改的是玩家模型）——上游 1.20.1 基线正是 6 参签名，移植时签名漂移导致女仆选模失效
+        return new TouhouMaidModelButton(x, y, isAuthLocked, previewEntity, modelAssembly, this.maid, targetModelId);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid;
 
+import com.elfmcys.yesstevemodel.YesSteveModel;
 import com.elfmcys.yesstevemodel.client.animation.molang.TLMBinding;
 import com.elfmcys.yesstevemodel.client.model.ModelResourceBundle;
 import com.elfmcys.yesstevemodel.client.model.PlayerModelBundle;
@@ -41,11 +42,30 @@ public class TouhouLittleMaidCompat {
                 IS_LOADED = !FMLEnvironment.production;
             }
             if (IS_LOADED) {
+                wakeTlmYsmCompat();
                 MaidEventHandler.init();
                 MaidEventHandler.registerMaidRenderer();
                 MaidAnimation.registerAnimationStates();
             }
         });
+    }
+
+    /**
+     * TLM 1.5.3 的 YsmCompat.init() 在整个 jar 中没有任何调用者（上游死代码），导致 INSTALLED 恒为 false：
+     * TLM 的 EntityMaidRenderer.initYsmModelRenderer() 第一行 if (!YsmCompat.isInstalled()) return，
+     * YSM 设置的 YSM_ENTITY_MAID_RENDERER 永远不会被使用（女仆模型数据能选、但渲染不接管，模型不变）。
+     * 此处反射调用 YsmCompat.init()（public static，内部按 [2.3.3,) 检查 YSM 版本，2.6.6.6-neoforge+mc1.21.1 满足），
+     * 使其 INSTALLED=true。时序安全：本方法在 FMLClientSetupEvent.enqueueWork 中执行，
+     * 早于 EntityRenderersEvent.RegisterRenderers（TLM 构造 EntityMaidRenderer 时钩子已生效）。
+     */
+    private static void wakeTlmYsmCompat() {
+        try {
+            Class<?> cls = Class.forName("com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat");
+            cls.getMethod("init").invoke(null);
+            YesSteveModel.LOGGER.info("[YSM] TLM YsmCompat.init() invoked via reflection, maid renderer hook enabled");
+        } catch (Throwable th) {
+            YesSteveModel.LOGGER.debug("[YSM] Failed to wake TLM YsmCompat: {}", th.toString());
+        }
     }
 
     public static Object buildControllers(PlayerModelBundle modelBundle, ModelResourceBundle resourceBundle) {

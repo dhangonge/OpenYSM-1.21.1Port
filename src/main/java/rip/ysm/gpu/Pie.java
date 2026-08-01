@@ -41,7 +41,6 @@ public final class Pie {
         RenderSystem.disableDepthTest();
 
         GlStateManager._glUseProgram(PieShader.program());
-
         if (PieShader.locProj() >= 0) GL20.glUniformMatrix4fv(PieShader.locProj(), false, mvpFloats);
         if (PieShader.locRect() >= 0) GL20.glUniform4f(PieShader.locRect(), rectX, rectY, rectW, rectH);
         if (PieShader.locCenter() >= 0) GL20.glUniform2f(PieShader.locCenter(), centerX, centerY);
@@ -59,6 +58,8 @@ public final class Pie {
         BufferUploader.invalidate();
         GlStateManager._glBindVertexArray(0);
 
+        RenderSystem.enableCull();
+        RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 }

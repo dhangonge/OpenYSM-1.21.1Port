@@ -37,8 +37,22 @@ public final class MaidCapabilityProvider implements ICapabilityProvider<Entity,
                         Void.class);
     }
 
-    public static final EntityCapability<MaidCapability, Void> MAID_CAP =
-            TouhouMaidCompat.isLoaded() ? MaidCapHolder.CAP : createDummyCap();
+    /**
+     * 占位初始化（dummy）；真实 capability 在 RegisterCapabilitiesEvent 阶段经 ensureResolved() 解析。
+     * 不能在此处静态判断：本类可能在 mod 扫描期（AutomaticEventSubscriber 加载 CleanupHandler 时）
+     * 就被初始化，此时 TLM 容器可能尚未构造，ModList.isLoaded() 结果不可靠。
+     */
+    public static volatile EntityCapability<MaidCapability, Void> MAID_CAP = createDummyCap();
+
+    /**
+     * 在 RegisterCapabilitiesEvent（所有 mod 已构造完成）阶段调用：
+     * TLM 已加载则绑定真实 capability；否则保持 dummy（未注册 provider，查询恒返回 null，行为安全）。
+     */
+    public static void ensureResolved() {
+        if (TouhouMaidCompat.isLoaded()) {
+            MAID_CAP = MaidCapHolder.CAP;
+        }
+    }
 
     public static final MaidCapabilityProvider INSTANCE = new MaidCapabilityProvider();
 
