@@ -13,21 +13,38 @@ import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange;
 import org.jetbrains.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class TouhouLittleMaidCompat {
 
     private static final String MOD_ID = "touhou_little_maid";
+    private static final VersionRange VERSION_RANGE;
     private static boolean IS_LOADED = false;
+
+    static {
+        try {
+            VERSION_RANGE = VersionRange.createFromVersionSpec("[1.1.15,)");
+        } catch (InvalidVersionSpecificationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static void init() {
         ModList.get().getModContainerById(MOD_ID).ifPresent(modContainer -> {
-            // 版本比较对带 qualifier 的版本（如 1.5.3-neoforge+mc1.21.1）不可靠，直接启用
-            IS_LOADED = true;
-            MaidEventHandler.init();
-            MaidEventHandler.registerMaidRenderer();
-            MaidAnimation.registerAnimationStates();
+            if (VERSION_RANGE.containsVersion(modContainer.getModInfo().getVersion())) {
+                IS_LOADED = true;
+            } else {
+                IS_LOADED = !FMLEnvironment.production;
+            }
+            if (IS_LOADED) {
+                MaidEventHandler.init();
+                MaidEventHandler.registerMaidRenderer();
+                MaidAnimation.registerAnimationStates();
+            }
         });
     }
 
