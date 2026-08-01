@@ -1,7 +1,7 @@
 package com.elfmcys.yesstevemodel.mixin.client;
 
 import com.elfmcys.yesstevemodel.util.accessors.BufferSourceAccessor;
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import org.spongepowered.asm.mixin.Final;
@@ -10,14 +10,14 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.util.Iterator;
-import java.util.Map;
+import java.util.SequencedMap;
 
 @Mixin({MultiBufferSource.BufferSource.class})
 public class BufferSourceMixin implements BufferSourceAccessor {
 
-    //@Shadow(remap = false)
+    @Shadow(remap = false)
     @Final
-    protected Map<RenderType, BufferBuilder> fixedBuffers;
+    protected SequencedMap<RenderType, ByteBufferBuilder> fixedBuffers;
 
     @Override
     @Unique

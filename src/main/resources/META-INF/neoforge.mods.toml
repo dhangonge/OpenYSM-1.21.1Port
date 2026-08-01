@@ -17,6 +17,9 @@ description="A mod based on GeckoLib that modifies the player model"
 [[accessTransformers]]
 file="META-INF/accesstransformer.cfg"
 
+[[mixins]]
+config="yes_steve_model.mixins.json"
+
 [[dependencies.yes_steve_model]]
 modId="neoforge"
 mandatory=true
