@@ -522,5 +522,6 @@
   "gui.yes_steve_model.textures.title": "材质",
   "gui.yes_steve_model.player_model.title": "YSM 玩家模型",
   "gui.yes_steve_model.player_texture.title": "玩家材质",
-  "gui.yes_steve_model.search_box.hint": "YSM 搜索框"
+  "gui.yes_steve_model.search_box.hint": "YSM 搜索框",
+  "gui.yes_steve_model.config.desc": "打开 YSM 配置界面"
 }

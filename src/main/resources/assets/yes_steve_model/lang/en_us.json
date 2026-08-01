@@ -522,5 +522,6 @@
   "gui.yes_steve_model.textures.title": "Textures",
   "gui.yes_steve_model.player_model.title": "YSM Player Model",
   "gui.yes_steve_model.player_texture.title": "Player Texture",
-  "gui.yes_steve_model.search_box.hint": "YSM Search Box"
+  "gui.yes_steve_model.search_box.hint": "YSM Search Box",
+  "gui.yes_steve_model.config.desc": "Open YSM configuration"
 }

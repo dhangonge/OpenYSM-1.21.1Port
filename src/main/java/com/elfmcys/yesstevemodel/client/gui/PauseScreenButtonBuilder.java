@@ -24,8 +24,7 @@ public class PauseScreenButtonBuilder {
 
     @Nullable
     public static List<Button> createButtons(PauseScreen pauseScreen) {
-        if (isServerConnected()) {
-            Minecraft minecraft = Minecraft.getInstance();
+        Minecraft minecraft = Minecraft.getInstance();
             Button buttonBuild = Button.builder(Component.translatable("gui.yes_steve_model.skin"), button -> {
                 if (GeneralConfig.DISCLAIMER_SHOW.get()) {
                     minecraft.setScreen(new DisclaimerScreen());
@@ -51,8 +50,10 @@ public class PauseScreenButtonBuilder {
                 }
             }).bounds((pauseScreen.width / 2) + 69, pauseScreen.height - 35, 50, 30).build();
             buttonBuild3.setTooltip(Tooltip.create(Component.translatable("key.yes_steve_model.animation_roulette.desc")));
-            return List.of(buttonBuild, buttonBuild2, buttonBuild3);
-        }
-        return null;
+            Button buttonBuild4 = Button.builder(Component.translatable("gui.yes_steve_model.config"), button4 -> {
+                minecraft.setScreen(new ExtraPlayerConfigScreen(null));
+            }).bounds((pauseScreen.width / 2) + 119, pauseScreen.height - 35, 60, 30).build();
+            buttonBuild4.setTooltip(Tooltip.create(Component.translatable("gui.yes_steve_model.config.desc")));
+            return List.of(buttonBuild, buttonBuild2, buttonBuild3, buttonBuild4);
     }
 }

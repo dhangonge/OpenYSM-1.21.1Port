@@ -22,6 +22,7 @@ public abstract class PauseScreenMixin extends Screen {
     @Inject(method = {"init()V"}, at = {@At("TAIL")}, remap = false)
     private void init(CallbackInfo callbackInfo) {
         List<Button> buttons = PauseScreenButtonBuilder.createButtons((PauseScreen) (Object) this);
+        com.elfmcys.yesstevemodel.YesSteveModel.LOGGER.info("[YSM] PauseScreen init: {} buttons created", buttons == null ? 0 : buttons.size());
         if (buttons != null && !buttons.isEmpty()) {
             for (Button button : buttons) {
                 addRenderableWidget(button);
