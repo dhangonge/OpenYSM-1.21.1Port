@@ -30,6 +30,7 @@ import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -993,7 +994,12 @@ public final class ServerModelManager {
         if (connection != null) {
             byte[] data = new byte[byteBuffer.remaining()];
             byteBuffer.get(data);
-            return sendPacketReliably(connection, new ClientboundCustomPayloadPacket(new S2CModelSyncPayload(data)), pendingTransfer);
+            for (CustomPacketPayload payload : NetworkHandler.toClientboundPackets(new S2CModelSyncPayload(data), uuid)) {
+                if (!sendPacketReliably(connection, new ClientboundCustomPayloadPacket(payload), pendingTransfer)) {
+                    return false;
+                }
+            }
+            return true;
         }
         YesSteveModel.LOGGER.warn("[YSM] sendModelData: no connection for uuid={}", uuid);
         return false;

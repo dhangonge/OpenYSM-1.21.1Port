@@ -25,6 +25,10 @@ public class S2CModelSyncPayload implements CustomPacketPayload, IPayloadHandler
         this.data = data;
     }
 
+    public byte[] getData() {
+        return data;
+    }
+
     public static void encode(FriendlyByteBuf buf, S2CModelSyncPayload message) {
         buf.writeByteArray(message.data);
     }

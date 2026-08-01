@@ -43,6 +43,16 @@ public final class NetworkHandler {
         return isConnectionValid(connection.getConnection());
     }
 
+    private static volatile boolean serverSupportsModelSyncFragments = false;
+
+    public static void setServerSupportsModelSyncFragments(boolean supported) {
+        serverSupportsModelSyncFragments = supported;
+    }
+
+    public static boolean serverSupportsModelSyncFragments() {
+        return serverSupportsModelSyncFragments;
+    }
+
     public static boolean isConnectionValid(@Nullable Connection connection) {
         return connection != null && connection.channel() != null && VERSION.equals(connection.channel().attr(CHANNEL_VERSION_KEY).get());
     }
@@ -69,6 +79,7 @@ public final class NetworkHandler {
         registrar.playToServer(C2SSwingArmPacket.TYPE, C2SSwingArmPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
         registrar.playToClient(S2CVersionCheckPacket.TYPE, S2CVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
         registrar.playToServer(C2SVersionCheckPacket.TYPE, C2SVersionCheckPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
+        registrar.playToClient(FragmentPacket.TYPE, FragmentPacket.STREAM_CODEC, (payload, ctx) -> payload.handle(payload, ctx));
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -92,5 +103,93 @@ public final class NetworkHandler {
 
     public static void sendToTrackingEntityAndSelf(CustomPacketPayload payload, Player player) {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf((ServerPlayer) player, payload);
+    }
+
+    // ===== 大模型同步分片（与上游 2.6.6.6 协议一致）=====
+
+    private static final int MAX_FRAGMENT_COUNT = 128;
+    private static final int MAX_REASSEMBLED_SIZE = 2 * 1024 * 1024;
+    private static final long FRAGMENT_TIMEOUT_NANOS = 30_000_000_000L;
+
+    private static final java.util.Map<Connection, java.util.Map<Integer, FragmentAccumulator>> incomingFragments = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @OnlyIn(Dist.CLIENT)
+    public static void handleClientFragment(FragmentPacket packet, net.neoforged.neoforge.network.handling.IPayloadContext context) {
+        long now = System.nanoTime();
+        Connection connection = context.connection();
+        java.util.Map<Integer, FragmentAccumulator> transfers = incomingFragments.computeIfAbsent(connection, c -> new java.util.concurrent.ConcurrentHashMap<>());
+        transfers.entrySet().removeIf(entry -> now - entry.getValue().lastUpdateNanos > FRAGMENT_TIMEOUT_NANOS);
+
+        FragmentAccumulator accumulator = transfers.computeIfAbsent(packet.transferId(), ignored -> new FragmentAccumulator(packet.fragmentCount()));
+        byte[] complete = accumulator.add(packet, now);
+        if (complete == null) {
+            return;
+        }
+        transfers.remove(packet.transferId());
+        if (transfers.isEmpty()) {
+            incomingFragments.remove(connection);
+        }
+
+        com.elfmcys.yesstevemodel.client.ClientModelManager.startSync(connection, java.nio.ByteBuffer.wrap(complete));
+    }
+
+    /** 服务端：将模型包切分为多个 FragmentPacket（支持大模型传输）。 */
+    public static java.util.List<CustomPacketPayload> toClientboundPackets(S2CModelSyncPayload payload, java.util.UUID receiver) {
+        byte[] data = payload.getData();
+        if (data.length <= FragmentPacket.MAX_FRAGMENT_DATA_SIZE) {
+            return java.util.List.of(payload);
+        }
+        java.util.List<CustomPacketPayload> packets = new java.util.ArrayList<>();
+        int transferId = (int) (System.nanoTime() & 0x7fffffff);
+        int fragmentCount = (data.length + FragmentPacket.MAX_FRAGMENT_DATA_SIZE - 1) / FragmentPacket.MAX_FRAGMENT_DATA_SIZE;
+        if (fragmentCount > MAX_FRAGMENT_COUNT) {
+            YesSteveModel.LOGGER.warn("[YSM] Model data too large to fragment ({} bytes, {} fragments), sending unfragmented", data.length, fragmentCount);
+            return java.util.List.of(payload);
+        }
+        for (int index = 0; index < fragmentCount; index++) {
+            int from = index * FragmentPacket.MAX_FRAGMENT_DATA_SIZE;
+            int to = Math.min(from + FragmentPacket.MAX_FRAGMENT_DATA_SIZE, data.length);
+            packets.add(new FragmentPacket(transferId, index, fragmentCount, java.util.Arrays.copyOfRange(data, from, to)));
+        }
+        return packets;
+    }
+
+    private static final class FragmentAccumulator {
+        private final byte[][] fragments;
+        private int received;
+        private int totalSize;
+        private volatile long lastUpdateNanos = System.nanoTime();
+
+        private FragmentAccumulator(int fragmentCount) {
+            if (fragmentCount <= 0 || fragmentCount > MAX_FRAGMENT_COUNT) {
+                throw new IllegalArgumentException("Invalid YSM fragment count: " + fragmentCount);
+            }
+            this.fragments = new byte[fragmentCount][];
+        }
+
+        private synchronized byte[] add(FragmentPacket packet, long now) {
+            if (packet.fragmentCount() != fragments.length || packet.fragmentIndex() < 0 || packet.fragmentIndex() >= fragments.length) {
+                throw new IllegalArgumentException("Inconsistent YSM fragment metadata");
+            }
+            lastUpdateNanos = now;
+            if (fragments[packet.fragmentIndex()] == null) {
+                fragments[packet.fragmentIndex()] = packet.data();
+                received++;
+                totalSize += packet.data().length;
+                if (totalSize > MAX_REASSEMBLED_SIZE) {
+                    throw new IllegalArgumentException("Fragmented YSM packet exceeds maximum size");
+                }
+            }
+            if (received != fragments.length) {
+                return null;
+            }
+            byte[] merged = new byte[totalSize];
+            int offset = 0;
+            for (byte[] fragment : fragments) {
+                System.arraycopy(fragment, 0, merged, offset, fragment.length);
+                offset += fragment.length;
+            }
+            return merged;
+        }
     }
 }
