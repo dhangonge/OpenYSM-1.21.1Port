@@ -185,8 +185,9 @@ public class RawYsmModel {
 
     public static class RawControllerState {
         public String name;
-        public Map<String, String> animations = new LinkedHashMap<>();
-        public Map<String, String> transitions = new LinkedHashMap<>();
+        // 对齐上游 List<Entry>：模型文件允许同名多条（多行片段/重复条件），Map 会覆盖丢失条目导致服装/变体条件缺失
+        public List<Map.Entry<String, String>> animations = new ArrayList<>();
+        public List<Map.Entry<String, String>> transitions = new ArrayList<>();
         public List<String> onEntry = new ArrayList<>();
         public List<String> onExit = new ArrayList<>();
         public List<String> soundEffects = new ArrayList<>();

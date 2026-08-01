@@ -666,7 +666,7 @@ public class YSMClientMapper {
             List<AnimationState> states = new ArrayList<>();
             for (RawYsmModel.RawControllerState rs : rac.states) {
                 List<Pair<String, IValue>> animations = new ArrayList<>();
-                for (Map.Entry<String, String> e : rs.animations.entrySet()) {
+                for (Map.Entry<String, String> e : rs.animations) {
                     IValue blend = null;
                     if (!e.getValue().isEmpty()) {
                         try {
@@ -678,7 +678,7 @@ public class YSMClientMapper {
                 }
 
                 List<Pair<String, IValue>> transitions = new ArrayList<>();
-                for (Map.Entry<String, String> e : rs.transitions.entrySet()) {
+                for (Map.Entry<String, String> e : rs.transitions) {
                     IValue condition = parse(e.getValue());
                     transitions.add(Pair.of(e.getKey(), condition));
                 }
