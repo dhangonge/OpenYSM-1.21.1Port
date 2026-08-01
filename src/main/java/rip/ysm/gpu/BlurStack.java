@@ -75,6 +75,11 @@ public final class BlurStack {
 
     public static void flush(GuiGraphics graphics) {
         if (regions.isEmpty()) return;
+        // 安卓 GLES 不支持桌面 GL 的模糊着色器渲染，直接禁用
+        if (com.elfmcys.yesstevemodel.NativeLibLoader.isOnAndroid()) {
+            regions.clear();
+            return;
+        }
         if (!BlurShader.ensureCompiled()) {
             regions.clear();
             return;
