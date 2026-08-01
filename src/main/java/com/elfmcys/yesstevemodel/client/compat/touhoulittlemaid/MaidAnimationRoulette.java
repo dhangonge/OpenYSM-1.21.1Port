@@ -42,8 +42,12 @@ public class MaidAnimationRoulette {
             ModelAssembly modelAssembly = cap.getModelAssembly();
             if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
                 if (Minecraft.getInstance().screen == null) {
-                    Minecraft.getInstance().setScreen(new AnimationRouletteScreen(cap.getModelId(), modelAssembly, cap));
-                } else if (Minecraft.getInstance().screen instanceof AnimationRouletteScreen) {
+                    if (com.elfmcys.yesstevemodel.config.GeneralConfig.effectiveModernRoulette()) {
+                        Minecraft.getInstance().setScreen(new rip.ysm.gui.ModernAnimationRouletteScreen(cap.getModelId(), modelAssembly, cap));
+                    } else {
+                        Minecraft.getInstance().setScreen(new AnimationRouletteScreen(cap.getModelId(), modelAssembly, cap));
+                    }
+                } else if (Minecraft.getInstance().screen instanceof AnimationRouletteScreen || Minecraft.getInstance().screen instanceof rip.ysm.gui.ModernAnimationRouletteScreen) {
                     Minecraft.getInstance().setScreen(null);
                 }
             }

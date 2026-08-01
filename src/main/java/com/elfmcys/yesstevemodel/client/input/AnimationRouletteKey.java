@@ -5,6 +5,8 @@ import com.elfmcys.yesstevemodel.capability.PlayerCapability;
 import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouLittleMaidCompat;
 import com.elfmcys.yesstevemodel.client.gui.AnimationRouletteScreen;
+import com.elfmcys.yesstevemodel.config.GeneralConfig;
+import rip.ysm.gui.ModernAnimationRouletteScreen;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.config.ServerConfig;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
@@ -39,8 +41,12 @@ public class AnimationRouletteKey {
                         ModelAssembly modelAssembly = cap.getModelAssembly();
                         if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
                             if (Minecraft.getInstance().screen == null) {
-                                Minecraft.getInstance().setScreen(new AnimationRouletteScreen(modelId, modelAssembly, cap));
-                            } else if (Minecraft.getInstance().screen instanceof AnimationRouletteScreen) {
+                                if (GeneralConfig.effectiveModernRoulette()) {
+                                    Minecraft.getInstance().setScreen(new ModernAnimationRouletteScreen(modelId, modelAssembly, cap));
+                                } else {
+                                    Minecraft.getInstance().setScreen(new AnimationRouletteScreen(modelId, modelAssembly, cap));
+                                }
+                            } else if (Minecraft.getInstance().screen instanceof AnimationRouletteScreen || Minecraft.getInstance().screen instanceof ModernAnimationRouletteScreen) {
                                 Minecraft.getInstance().setScreen(null);
                             }
                         }

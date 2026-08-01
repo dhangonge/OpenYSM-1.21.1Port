@@ -44,7 +44,11 @@ public class PauseScreenButtonBuilder {
                         String str = cap.getModelId();
                         ModelAssembly modelAssembly = cap.getModelAssembly();
                         if (modelAssembly != null && !modelAssembly.getModelData().getModelProperties().getExtraAnimation().isEmpty()) {
-                            minecraft.setScreen(new AnimationRouletteScreen(str, modelAssembly, cap));
+                            if (GeneralConfig.effectiveModernRoulette()) {
+                                minecraft.setScreen(new rip.ysm.gui.ModernAnimationRouletteScreen(str, modelAssembly, cap));
+                            } else {
+                                minecraft.setScreen(new AnimationRouletteScreen(str, modelAssembly, cap));
+                            }
                         }
                     }
                 }

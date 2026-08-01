@@ -5,7 +5,6 @@ import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.TouhouMaidCompat
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapability;
 import com.elfmcys.yesstevemodel.client.compat.touhoulittlemaid.capability.MaidCapabilityProvider;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import net.minecraft.world.entity.EntityType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,6 +20,6 @@ public final class MaidCapabilityEvent {
         if (!YesSteveModel.isAvailable()||!TouhouMaidCompat.isLoaded()) {
             return;
         }
-        event.registerEntity(MaidCapabilityProvider.MAID_CAP, EntityType.PLAYER, MaidCapabilityProvider.INSTANCE);
+        event.registerEntity(MaidCapabilityProvider.MAID_CAP, EntityMaid.TYPE, MaidCapabilityProvider.INSTANCE);
     }
 }

@@ -6,6 +6,7 @@ import com.elfmcys.yesstevemodel.capability.PlayerCapabilityProvider;
 import com.elfmcys.yesstevemodel.resource.models.ModelProperties;
 import com.elfmcys.yesstevemodel.client.event.AnimationLockEvent;
 import com.elfmcys.yesstevemodel.client.gui.AnimationRouletteScreen;
+import com.elfmcys.yesstevemodel.config.GeneralConfig;
 import com.elfmcys.yesstevemodel.client.model.ModelAssembly;
 import com.elfmcys.yesstevemodel.geckolib3.core.molang.util.StringPool;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
@@ -67,6 +68,10 @@ public class ExtraAnimationKey {
                         if (rouletteKey.startsWith("#") && modelProperties.getExtraAnimationClassify().containsKey(rouletteKey.substring(1))) {
                             AnimationRouletteScreen.setInitialSubmenu(rouletteKey.substring(1));
                             Minecraft.getInstance().setScreen(new AnimationRouletteScreen(modelProperties.getExtraAnimationButtons(), modelProperties.getExtraAnimationClassify(), modelAssembly, cap));
+                            return;
+                        }
+                        if (GeneralConfig.effectiveModernRoulette() && Minecraft.getInstance().screen == null) {
+                            Minecraft.getInstance().setScreen(new rip.ysm.gui.ModernAnimationRouletteScreen(cap.getModelId(), modelAssembly, cap));
                             return;
                         }
                         NetworkHandler.sendToServer(new C2SPlayAnimationPacket(index, StringPool.EMPTY));
