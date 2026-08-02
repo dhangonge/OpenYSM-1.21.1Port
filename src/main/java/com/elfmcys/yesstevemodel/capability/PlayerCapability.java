@@ -77,6 +77,15 @@ public final class PlayerCapability extends CustomPlayerEntity {
         return this.serverVarContainer;
     }
 
+    // 对齐上游：RoamingPropertyHolder 接口方法在移植版改名 getPropertyContainer，
+    // CustomPlayerEntity.setupAnim 通过它注入 roaming struct——必须覆写返回 serverVarContainer，
+    // 否则身体模型 roaming 绑定为 null，v.roaming.mujicacloth 等赋值/求值全部落空（vars 恒空）。
+    @Override
+    @Nullable
+    public com.elfmcys.yesstevemodel.molang.runtime.Struct getPropertyContainer() {
+        return this.serverVarContainer;
+    }
+
     @Override
     public void onModelLoaded(ModelAssembly context) {
         super.onModelLoaded(context);

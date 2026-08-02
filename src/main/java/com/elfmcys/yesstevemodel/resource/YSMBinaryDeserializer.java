@@ -32,7 +32,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
 
 
     private RawYsmModel deserializeInternal(boolean closeOnExit) {
-        System.out.println("deserializing format " + format + " file...");
         if (format < 4) {
             deserializeLegacyV1();
         } else if (format <= 15) {
@@ -44,7 +43,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
         if (closeOnExit) {
             this.reader.close();
         }
-        System.out.println("end offset: 0x" + Integer.toHexString(offset));
         return model;
     }
 
@@ -78,7 +76,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
             }
 
         } catch (Throwable t) {
-            System.out.println("ERROR");
             t.printStackTrace(System.out);
         }
     }
@@ -106,7 +103,18 @@ public class YSMBinaryDeserializer implements AutoCloseable{
             int unknownPadding = reader.readVarInt();
             if (unknownPadding != 1) throw new RuntimeException("Expected 1");
             RawYsmModel.RawAnimationFile rawAnimationFile = parseAnimations();
-            model.mainEntity.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            if (animationId == 5) {
+                // 对齐上游：arrow 动画放子实体（不进 mainAnimations——避免与 main 的同名 parallel0 等互相覆盖）
+                RawYsmModel.RawSubEntity arrow = model.projectiles.get("minecraft:arrow");
+                if (arrow == null) {
+                    arrow = new RawYsmModel.RawSubEntity();
+                    arrow.identifier = "minecraft:arrow";
+                    model.projectiles.put("minecraft:arrow", arrow);
+                }
+                arrow.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            } else {
+                model.mainEntity.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            }
             rawAnimationFile.animType = animationId;
             tempAnims.put(animationId, rawAnimationFile);
         }
@@ -154,7 +162,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
         }
 
         String unkString = reader.readString();
-        System.out.println(unkString);
     }
 
     private void deserializeLegacyV15() {
@@ -181,7 +188,18 @@ public class YSMBinaryDeserializer implements AutoCloseable{
             int unknownPadding = reader.readVarInt();
             if (unknownPadding != 1) throw new RuntimeException("Expected 1");
             RawYsmModel.RawAnimationFile rawAnimationFile = parseAnimations();
-            model.mainEntity.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            if (animationId == 5) {
+                // 对齐上游：arrow 动画放子实体（不进 mainAnimations）
+                RawYsmModel.RawSubEntity arrow = model.projectiles.get("minecraft:arrow");
+                if (arrow == null) {
+                    arrow = new RawYsmModel.RawSubEntity();
+                    arrow.identifier = "minecraft:arrow";
+                    model.projectiles.put("minecraft:arrow", arrow);
+                }
+                arrow.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            } else {
+                model.mainEntity.animationFiles.put(YSMFolderDeserializer.getAnimKeyFromType(animationId), rawAnimationFile);
+            }
             rawAnimationFile.animType = animationId;
             tempAnims.put(animationId, rawAnimationFile);
         }
@@ -302,9 +320,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
         for (RawYsmModel.RawSubEntity value : model.projectiles.values()) {
             for (RawYsmModel.RawTexture rawTexture : value.textures.values()) {
                 RawYsmModel.RawTexture remove = model.mainEntity.textures.remove(rawTexture.name);
-                if (remove != null) {
-                    System.out.println();
-                }
             }
         }
 
@@ -339,10 +354,24 @@ public class YSMBinaryDeserializer implements AutoCloseable{
             String hash = reader.readString();
 
             RawYsmModel.RawAnimationFile animRef = parseAnimations();
-            model.mainEntity.animationFiles.put(
-                    YSMFolderDeserializer.getAnimKeyFromType(type),
-                    animRef
-            );
+            if (type == 5) {
+                // 对齐上游：arrow 动画放子实体（不进 mainAnimations，避免同名动画覆盖）
+                RawYsmModel.RawSubEntity arrow = model.projectiles.get("minecraft:arrow");
+                if (arrow == null) {
+                    arrow = new RawYsmModel.RawSubEntity();
+                    arrow.identifier = "minecraft:arrow";
+                    model.projectiles.put("minecraft:arrow", arrow);
+                }
+                arrow.animationFiles.put(
+                        YSMFolderDeserializer.getAnimKeyFromType(type),
+                        animRef
+                );
+            } else {
+                model.mainEntity.animationFiles.put(
+                        YSMFolderDeserializer.getAnimKeyFromType(type),
+                        animRef
+                );
+            }
             animRef.animType = type;
             animRef.fileHash = hash;
         }
@@ -360,7 +389,6 @@ public class YSMBinaryDeserializer implements AutoCloseable{
             geoRef.sha256 = hash;
             geoRef.modelType = modelType;
             tempMainModels.add(geoRef);
-            System.out.println("Model Table Entry: ID=" + modelType + ", Hash=" + hash);
         }
         assignMainModels(tempMainModels);
 

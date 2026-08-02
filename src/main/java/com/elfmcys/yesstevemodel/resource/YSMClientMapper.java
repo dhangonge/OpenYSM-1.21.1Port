@@ -955,18 +955,24 @@ public class YSMClientMapper {
             return values;
         }
 
-        // 容错合并：先整体合并解析（支持模型作者把一条 molang 表达式拆成多行存储，如服装/变体条件）；
-        // 合并解析失败（任一行有语法错误）时回退逐条解析——只把坏的那条置 0，其余正常保留，
-        // 避免『坏表达式拖垮整组』（酒狐 hp 变体叠加）与『多行表达式逐条失败』（服装全部显示）两难。
-        String merged = String.join("\n", array);
+        // 对齐上游原版逻辑：整体合并解析（模型文件按多行存储的表达式），失败时整组退化为 ZERO。
+        // 注意：mergeMultilineExpr 由模型文件字段决定（dump 证实酒狐=false、丰川祥子=true），
+        // 默认值与容错回退均不影响模型行为——此前加的逐条回退偏离上游，导致 true 模型服装条件错乱。
         try {
-            values.add(GeckoLibCache.getMolangParser().parseExpression(merged, false));
-            return values;
-        } catch (Throwable ignored) {
-            // 合并失败：逐条容错解析
-            for (String expr : array) values.add(parse(expr));
-            return values;
+            StringBuilder parserText = new StringBuilder();
+
+            for (int i = 0; i < array.size(); i++) {
+                parserText.append(array.get(i));
+                if (i < array.size() - 1) {
+                    parserText.append("\n");
+                }
+            }
+
+            values.add(parse(parserText.toString()));
+        } catch (Throwable ex) {
+            values.add(FloatValue.ZERO);
         }
+        return values;
     }
 
     public static IValue parse(String str) {

@@ -147,7 +147,8 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
 
     @Nullable
     public final List<IValue> getAnimationExpressions(String str) {
-        return this.animationMap.get(str);
+        // 女仆路径（MaidCapability）未走 GeoEntity.refreshModel 的 initAnimationControllers，animationMap 可能为 null，防空。
+        return this.animationMap == null ? null : this.animationMap.get(str);
     }
 
     public PhysicsManager getPhysicsManager() {

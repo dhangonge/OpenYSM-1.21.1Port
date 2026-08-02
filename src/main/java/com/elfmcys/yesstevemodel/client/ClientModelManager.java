@@ -1033,4 +1033,6 @@ public class ClientModelManager {
     public static void enterClientOnlyMode() {
         YesSteveModel.LOGGER.info("[YSM] enterClientOnlyMode() called (stub - full impl pending Phase 2)");
     }
+
 }
+
